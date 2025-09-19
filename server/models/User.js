@@ -67,5 +67,10 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 userSchema.statics.findActive = function () {
   return this.find({ isActive: true });
 };
+userSchema.statics.changePassword = async function (
+  userId,
+  oldPassword,
+  newPassword
+) {};
 
 module.exports = mongoose.model("User", userSchema);

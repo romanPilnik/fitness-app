@@ -4,10 +4,6 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-router.get("/test", (req, res) => {
-  res.json({ message: "Auth routes are working!" });
-});
-
 router.post("/register", async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -73,4 +69,5 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 module.exports = router;
