@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const validator = require("validator");
 
 const userSchema = new mongoose.Schema(
   {
@@ -17,7 +18,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters"],
+      minlength: 8,
       select: false,
     },
 
@@ -71,6 +72,19 @@ userSchema.statics.changePassword = async function (
   userId,
   oldPassword,
   newPassword
-) {};
+) {
+  const user = await this.findById(userId).select("+password");
+
+  if (!(await user.comparePassword(oldPassword)))
+    throw new Error("Current password is incorrect");
+
+  if (!newPassword) throw new Error("New password is required");
+
+  if (newPassword === oldPassword)
+    throw new Error("New password must be different from current password");
+
+  user.password = newPassword;
+  await user.save();
+};
 
 module.exports = mongoose.model("User", userSchema);
