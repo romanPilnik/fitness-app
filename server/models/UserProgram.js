@@ -2,13 +2,12 @@ const mongoose = require("mongoose");
 
 const userProgramSchema = new mongoose.Schema(
   {
-    //belongs to user
+    // === OWNERSHIP & SOURCE ===
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
     sourceTemplateId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "ProgramTemplate",
@@ -21,26 +20,25 @@ const userProgramSchema = new mongoose.Schema(
       default: "scratch",
     },
 
-    // User's instance data
-    startDate: {
-      type: Date,
-      default: Date.now,
-    },
-    currentWeek: {
-      type: Number,
-      default: 1,
-    },
-    status: {
-      type: String,
-      enum: ["active", "paused", "completed"],
-      default: "active",
-    },
-
+    // === PROGRAM METADATA ===
     name: {
       type: String,
       required: true,
       trim: true,
     },
+    description: String,
+    difficulty: {
+      type: String,
+      enum: ["beginner", "intermediate", "advanced"],
+    },
+    goals: [
+      {
+        type: String,
+        enum: ["strength", "hypertrophy", "endurance"],
+      },
+    ],
+
+    // === PROGRAM STRUCTURE ===
     splitType: {
       type: String,
       enum: [
@@ -59,6 +57,27 @@ const userProgramSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    workouts: [
+      {
+        name: { type: String, required: true },
+        dayNumber: { type: Number },
+        exercises: [
+          {
+            exerciseId: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "Exercise",
+              required: true,
+            },
+            targetSets: { type: Number, required: true },
+            targetReps: { type: Number, required: true },
+            notes: String,
+            order: { type: Number, required: true },
+          },
+        ],
+      },
+    ],
+
+    // === PERIODIZATION CONFIG ===
     periodization: {
       type: {
         type: String,
@@ -69,7 +88,6 @@ const userProgramSchema = new mongoose.Schema(
         weeks: Number, // Mesocycle length
         rirProgression: [Number], // [4,3,2,1,0,0,5] for each week
         deloadWeek: Number,
-
         autoDeload: {
           enabled: { type: Boolean, default: true },
           triggerAfterFailures: { type: Number, default: 2 },
@@ -83,44 +101,30 @@ const userProgramSchema = new mongoose.Schema(
         },
       },
     },
-    workouts: [
-      {
-        name: { type: String, required: true },
-        dayNumber: { type: Number },
-        exercises: [
-          {
-            exerciseId: {
-              type: mongoose.Schema.Types.ObjectId,
-              ref: "Exercise",
-              required: true,
-            },
-            targetSets: { type: Number, required: true },
-            targetReps: { type: String, required: true },
-            notes: String,
-            order: { type: Number, required: true },
-          },
-        ],
-      },
-    ],
+
+    // === USER'S PROGRESS TRACKING ===
+    status: {
+      type: String,
+      enum: ["active", "paused", "completed"],
+      default: "active",
+    },
+    startDate: {
+      type: Date,
+      default: Date.now,
+    },
+    currentWeek: {
+      type: Number,
+      default: 1,
+    },
     nextWorkoutIndex: {
       type: Number,
       default: 0,
     },
-    // Modification tracking
+    lastCompletedWorkoutDate: Date,
+
+    // === MODIFICATION TRACKING ===
     isModified: { type: Boolean, default: false },
     lastModified: Date,
-    description: String,
-    difficulty: {
-      type: String,
-      enum: ["beginner", "intermediate", "advanced"],
-    },
-    goals: [
-      {
-        type: String,
-        enum: ["strength", "hypertrophy", "endurance"],
-      },
-    ],
-    lastCompletedWorkoutDate: Date,
   },
   {
     timestamps: true,
