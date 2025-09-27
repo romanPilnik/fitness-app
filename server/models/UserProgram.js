@@ -81,12 +81,18 @@ const userProgramSchema = new mongoose.Schema(
     periodization: {
       type: {
         type: String,
-        enum: ["linear_rir", "dup", "block"],
+        enum: ["linear_rir", "dup", "block"], // placeholders
+        required: true,
         default: "linear_rir",
       },
       config: {
-        weeks: Number, // Mesocycle length
-        rirProgression: [Number], // [4,3,2,1,0,0,5] for each week
+        weeks: {
+          type: Number,
+          min: [1, "Mesocycle must be atleast 1 week"],
+          max: [12, "Mesocycle cannot exceed 12 weeks"],
+          required: true,
+        },
+        rirProgression: [Number], // [4,3,3,2,2,1,1,0] for each week
         deloadWeek: Number,
         autoDeload: {
           enabled: { type: Boolean, default: true },
