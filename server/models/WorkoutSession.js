@@ -19,6 +19,7 @@ const WorkoutSessionSchema = new mongoose.Schema(
       type: String,
       maxlength: [35, "Name is too long"],
       required: true,
+      trim: true,
     },
     dayNumber: {
       type: Number,
@@ -73,9 +74,11 @@ const WorkoutSessionSchema = new mongoose.Schema(
                       "giant set",
                       "cluster set",
                     ],
-                    message: "{VALUE} is not valid. Must be type of set", // for self
+                    message: "{VALUE} is not valid, Must be type of set", // for self
                   },
                   default: "straight set",
+                  required: true,
+                  lowercase: true,
                 },
                 reps: {
                   type: Number,
