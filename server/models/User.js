@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Email is required"],
       lowercase: true,
       trim: true,
+      unique: true,
       match: [
         /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         "Please enter a valid email",
@@ -17,20 +18,47 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
-      minlength: 8,
+      minlength: [8, "Password length must be at least 8 characters"],
+      maxlength: [128, "Password length cannot exceed 128 characters"],
       select: false,
+      validate: {
+        validator: function (password) {
+          if (!this.isModified("password")) return true;
+          return /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(password);
+        },
+        message: "Password must contain at least one letter and one number",
+      },
     },
 
     name: {
       type: String,
       required: [true, "Name is required"],
       trim: true,
+      minlength: [2, "Name must be at least 2 characters"],
       maxlength: [50, "Name cannot exceed 50 characters"],
+    },
+
+    preferences: {
+      units: {
+        type: String,
+        enum: ["metric", "imperial"],
+        default: "metric",
+      },
+
+      weekStartsOn: {
+        type: Number,
+        min: 0, // 0 = Sunday
+        max: 6, // 6 = Saturday
+        default: 1, // Monday
+      },
     },
 
     role: {
       type: String,
-      enum: ["user", "admin"],
+      enum: {
+        values: ["user", "admin"],
+        message: "{VALUE} is not valid, must be role",
+      },
       default: "user",
     },
 

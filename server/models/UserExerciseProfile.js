@@ -9,26 +9,47 @@ const userExerciseProfileSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
     exerciseId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Exercise",
       required: true,
     },
 
-    // === LAST PERFORMANCE (Always Useful) ===
+    // === LAST PERFORMANCE ===
 
     lastPerformed: {
       date: Date,
-      weight: Number,
-      rep: Number,
-      sets: Number,
-      rir: Number,
+
+      weight: {
+        type: Number,
+        min: [0, "Weight must be at least bodyweight"],
+        max: [999, "Weight cannot exceed 999 kg"],
+      },
+
+      rep: {
+        type: Number,
+        min: [1, "Reps must be at least 1"],
+        max: [50, "Reps cannot exceed 50"],
+      },
+
+      sets: {
+        type: Number,
+        min: [1, "Sets must be at least 1"],
+        max: [20, "Sets cannot exceed 20"],
+      },
+
+      rir: {
+        type: Number,
+        min: [0, "Rir cannot be lower than 0"],
+        max: [10, "Rir cannot be higher than 10"],
+      },
     },
 
     // === PERSONAL RECORDS ===
     personalRecords: {
       // Might adjust
-      weight: { value: Number, date: Date },
+      weight: { value: Number, date: Date }, /// should be validated already
       reps: { value: Number, date: Date },
       volume: { value: Number, date: Date },
     },
@@ -54,10 +75,31 @@ const userExerciseProfileSchema = new mongoose.Schema(
     recentSessions: [
       {
         date: Date,
-        avgWeight: Number,
-        avgReps: Number,
-        totalSets: Number,
-        avgRir: Number,
+
+        avgWeight: {
+          type: Number,
+          min: [0, "Weight must be at least bodyweight"],
+          max: [999, "Weight cannot exceed 999 kg"],
+        },
+
+        avgReps: {
+          type: Number,
+          min: [1, "Reps must be at least 1"],
+          max: [50, "Reps cannot exceed 50"],
+        },
+
+        totalSets: {
+          type: Number,
+          min: [1, "Sets must be at least 1"],
+          max: [20, "Sets cannot exceed 20"],
+        },
+
+        avgRir: {
+          type: Number,
+          min: [0, "Rir cannot be lower than 0"],
+          max: [10, "Rir cannot be higher than 10"],
+        },
+
         sessionId: mongoose.Schema.Types.ObjectId,
       },
     ],
@@ -74,7 +116,7 @@ const userExerciseProfileSchema = new mongoose.Schema(
 
       // Best working sets (not quite PRs)
       bestWorkingSets: {
-        "2-4reps": { weight: Number, date: Date },
+        "2-4reps": { weight: Number, date: Date }, // should be validated already
         "5-7reps": { weight: Number, date: Date },
         "8-11reps": { weight: Number, date: Date },
         "12-15reps": { weight: Number, date: Date },
@@ -85,8 +127,14 @@ const userExerciseProfileSchema = new mongoose.Schema(
     userInsights: {
       difficultyRating: { type: Number, min: 1, max: 5 }, // User's perceived difficulty
       enjoymentRating: { type: Number, min: 1, max: 5 }, // Adherence predictor
-      formNotes: String, // "Finally got depth right"
-      injuryNotes: String, // "Avoid due to shoulder"
+      formNotes: {
+        type: String,
+        maxlength: [500, "Notes cannot exceed 500 characters"],
+      },
+      injuryNotes: {
+        type: String,
+        maxlength: [500, "Notes cannot exceed 500 characters"],
+      },
     },
 
     // === STATUS FLAGS ===

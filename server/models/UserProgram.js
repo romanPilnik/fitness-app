@@ -87,6 +87,7 @@ const userProgramSchema = new mongoose.Schema(
       max: [14, "Session number per week cannot exceed 14"],
       required: true,
     },
+
     workouts: {
       type: [
         {
@@ -135,7 +136,7 @@ const userProgramSchema = new mongoose.Schema(
                 },
                 notes: {
                   type: String,
-                  maxlength: [500, "Text cannot exceed 500 characters"],
+                  maxlength: [500, "Notes cannot exceed 500 characters"],
                 },
               },
             ],
@@ -168,6 +169,7 @@ const userProgramSchema = new mongoose.Schema(
         default: "linear_rir",
         lowercase: true,
       },
+
       config: {
         weeks: {
           type: Number,
@@ -175,7 +177,7 @@ const userProgramSchema = new mongoose.Schema(
           max: [12, "Mesocycle cannot exceed 12 weeks"],
           required: true,
         },
-        // help with rirprogression,deloadweek validation
+
         rirProgression: {
           type: [Number],
           validate: {
@@ -194,6 +196,7 @@ const userProgramSchema = new mongoose.Schema(
               "RIR progression must match week count and be between 0-10",
           },
         }, // [4,3,3,2,2,1,1,0] for each week
+
         deloadWeek: {
           type: Number,
           min: [4, "Deload weeks must be between 4-20"],
@@ -211,14 +214,17 @@ const userProgramSchema = new mongoose.Schema(
             message: "Deload week must be within mesocycle duration",
           },
         },
+
         autoDeload: {
           enabled: { type: Boolean, default: true },
+
           triggerAfterFailures: {
             type: Number,
             default: 2,
             min: [1, "Must fail at least 1 session to trigger"],
             max: [5, "Trigger threshold too high"],
           },
+
           fatigueThreshold: {
             type: Number,
             default: 8,
@@ -226,6 +232,7 @@ const userProgramSchema = new mongoose.Schema(
             max: [10, "Fatigue threshold maximum is 10"],
           },
         },
+
         volumeProgression: {
           // might not use
           type: String,

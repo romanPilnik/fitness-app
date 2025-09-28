@@ -52,68 +52,111 @@ const exerciseSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+      maxlength: [50, "Name cannot exceed 50 characters"],
     },
     equipment: {
       type: String,
-      enum: [
-        "barbell",
-        "dumbbell",
-        "cable",
-        "machine",
-        "bodyweight",
-        "bands",
-        "kettlebell",
-        "none",
-      ],
+      enum: {
+        values: [
+          "barbell",
+          "dumbbell",
+          "cable",
+          "machine",
+          "bodyweight",
+          "bands",
+          "kettlebell",
+          "none",
+        ],
+        message: "{VALUE} is not valid, must be equipment type",
+      },
       required: true,
+      lowercase: true,
+      default: "none",
     },
+
     primaryMuscle: {
       type: String,
-      enum: MUSCLE_GROUPS,
+      enum: {
+        values: MUSCLE_GROUPS,
+        message: "{VALUE} is not valid, must be muscle group",
+      },
       required: true,
       lowercase: true,
     },
+
     secondaryMuscles: {
       type: [String],
-      enum: MUSCLE_GROUPS,
+      enum: {
+        values: MUSCLE_GROUPS,
+        message: "{VALUE} is not valid, must be muscle group",
+      },
+      lowercase: true,
       default: [],
+      validate: {
+        validator: (arr) => arr.length <= 3,
+        message: "Maximum of 3 secondary muscle groups",
+      },
     },
+
     category: {
       type: String,
-      enum: ["compound", "isolation"],
+      enum: {
+        values: ["compound", "isolation"],
+        message: "{VALUE} is not valid, must be exercise type",
+      },
       required: true,
       lowercase: true,
     },
+
     movementPattern: {
       type: String,
-      enum: MOVEMENT_PATTERNS,
+      enum: {
+        values: MOVEMENT_PATTERNS,
+        message: "{VALUE} is not valid, must be movement pattern",
+      },
       required: true,
       lowercase: true,
     },
+
     typicalRepRange: {
       min: { type: Number, default: 5 },
       max: { type: Number, default: 30 },
     },
+
     rirBoundaries: {
       min: { type: Number, default: 0 },
       max: { type: Number, default: 5 },
     },
+
     progressionType: {
       type: String,
-      enum: ["repetitions", "weight", "sets"],
+      enum: {
+        values: ["repetitions", "weight", "sets"],
+        message: "{VALUE} is not valid, must be exercise type",
+      },
       default: "weight",
+      lowercase: true,
+      // consider required
     },
+
     progressionIncrement: {
       type: Number,
       default: function () {
-        return this.progressionType === "weight" ? 5 : 1;
+        return this.progressionType === "weight" ? 1.25 : 1;
       },
+      min: [1, "Progression must be at least by 1 rep or 1.25 kg"],
+      max: [2.5, "Progression cannot exceed 2.5 kg"],
     },
+
     defaultSets: {
       type: Number,
       default: 3,
     },
-    instructions: String,
+
+    instructions: {
+      type: String,
+      maxlength: [500, "Instructions cannot exceed 500 characters"],
+    },
 
     isActive: {
       type: Boolean,
