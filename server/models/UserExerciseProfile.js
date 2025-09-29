@@ -61,13 +61,6 @@ const userExerciseProfileSchema = new mongoose.Schema(
       lastProgressionDate: Date,
     },
 
-    // === USER PREFERENCES ===
-    recentProgression: {
-      attempts: { type: Number, default: 0 },
-      successes: { type: Number, default: 0 },
-      lastProgressionDate: Date,
-    },
-
     // === FUTURE ALGORITHM DATA ===
     algorithmData: mongoose.Schema.Types.Mixed,
 
@@ -78,7 +71,7 @@ const userExerciseProfileSchema = new mongoose.Schema(
 
         avgWeight: {
           type: Number,
-          min: [0, "Weight must be at least bodyweight"],
+          min: [0, "Weight cannot be negative"],
           max: [999, "Weight cannot exceed 999 kg"],
         },
 
@@ -114,13 +107,17 @@ const userExerciseProfileSchema = new mongoose.Schema(
       isPlateaued: { type: Boolean, default: false }, // No progress in 3+ sessions
       plateauCount: { type: Number, default: 0 },
 
-      // Best working sets (not quite PRs)
-      bestWorkingSets: {
-        "2-4reps": { weight: Number, date: Date }, // should be validated already
-        "5-7reps": { weight: Number, date: Date },
-        "8-11reps": { weight: Number, date: Date },
-        "12-15reps": { weight: Number, date: Date },
-      },
+      // Best working sets
+      bestWorkingSets: [
+        {
+          repRange: {
+            type: String,
+            enum: ["2-4", "5-7", "8-11", "12-15"],
+          },
+          weight: Number,
+          date: Date,
+        },
+      ],
     },
 
     // === USER NOTES & FEEDBACK ===

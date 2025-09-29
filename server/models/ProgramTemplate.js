@@ -16,7 +16,6 @@ const programTemplateSchema = new mongoose.Schema({
     minlength: [2, "Owner name must be at least 2 characters"],
     maxlength: [50, "Owner name cannot exceed 50 characters"],
     trim: true,
-    unique: true,
     required: true,
   },
 
@@ -40,6 +39,7 @@ const programTemplateSchema = new mongoose.Schema({
 
   daysPerWeek: {
     type: Number,
+    min: [1, "Must have at least 1 day per week"],
     max: [14, "Session number per week cannot exceed 14"],
     required: true,
   },

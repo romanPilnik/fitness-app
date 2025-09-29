@@ -132,7 +132,7 @@ const exerciseSchema = new mongoose.Schema(
       type: String,
       enum: {
         values: ["repetitions", "weight", "sets"],
-        message: "{VALUE} is not valid, must be exercise type",
+        message: "{VALUE} is not valid, must be progression type",
       },
       default: "weight",
       lowercase: true,
@@ -142,15 +142,18 @@ const exerciseSchema = new mongoose.Schema(
     progressionIncrement: {
       type: Number,
       default: function () {
-        return this.progressionType === "weight" ? 1.25 : 1;
+        return this.progressionType === "weight" ? 2.5 : 1;
       },
-      min: [1, "Progression must be at least by 1 rep or 1.25 kg"],
-      max: [2.5, "Progression cannot exceed 2.5 kg"],
-    },
-
-    defaultSets: {
-      type: Number,
-      default: 3,
+      validate: {
+        validator: function (value) {
+          if (this.progressionType === "weight") {
+            return value >= 1 && value <= 10;
+          } else {
+            return value >= 1 && value <= 5;
+          }
+        },
+        message: "Invalid progression increment for type",
+      },
     },
 
     instructions: {
