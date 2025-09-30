@@ -173,6 +173,6 @@ const exerciseSchema = new mongoose.Schema(
 
 exerciseSchema.index({ primaryMuscle: 1 });
 exerciseSchema.index({ equipment: 1 });
-exerciseSchema.index({ name: "text" }); // Text search
+exerciseSchema.index({ name: "text" });
 
 module.exports = mongoose.model("Exercise", exerciseSchema);

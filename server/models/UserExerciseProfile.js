@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const { findById } = require("./User");
+
+const MAX_RECENT_SESSIONS = 10;
 
 const userExerciseProfileSchema = new mongoose.Schema(
   {
@@ -27,7 +30,7 @@ const userExerciseProfileSchema = new mongoose.Schema(
         max: [999, "Weight cannot exceed 999 kg"],
       },
 
-      rep: {
+      reps: {
         type: Number,
         min: [1, "Reps must be at least 1"],
         max: [50, "Reps cannot exceed 50"],
@@ -69,13 +72,13 @@ const userExerciseProfileSchema = new mongoose.Schema(
       {
         date: Date,
 
-        avgWeight: {
+        topSetWeight: {
           type: Number,
           min: [0, "Weight cannot be negative"],
           max: [999, "Weight cannot exceed 999 kg"],
         },
 
-        avgReps: {
+        topSetReps: {
           type: Number,
           min: [1, "Reps must be at least 1"],
           max: [50, "Reps cannot exceed 50"],
@@ -84,16 +87,20 @@ const userExerciseProfileSchema = new mongoose.Schema(
         totalSets: {
           type: Number,
           min: [1, "Sets must be at least 1"],
-          max: [20, "Sets cannot exceed 20"],
+          max: [50, "Sets cannot exceed 50"],
         },
 
-        avgRir: {
+        topSetRir: {
           type: Number,
           min: [0, "Rir cannot be lower than 0"],
           max: [10, "Rir cannot be higher than 10"],
         },
 
-        sessionId: mongoose.Schema.Types.ObjectId,
+        sessionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "WorkoutSession",
+          required: true,
+        },
       },
     ],
 
@@ -102,10 +109,6 @@ const userExerciseProfileSchema = new mongoose.Schema(
       // Frequency
       avgDaysBetweenSessions: Number,
       totalSessions: { type: Number, default: 0 },
-
-      // Performance stability
-      isPlateaued: { type: Boolean, default: false }, // No progress in 3+ sessions
-      plateauCount: { type: Number, default: 0 },
 
       // Best working sets
       bestWorkingSets: [
@@ -145,10 +148,122 @@ const userExerciseProfileSchema = new mongoose.Schema(
 
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
 userExerciseProfileSchema.index({ userId: 1, exerciseId: 1 }, { unique: true });
+userExerciseProfileSchema.index({ userId: 1, "status.isActive": 1 });
+
+// === Pre/post hooks ===
+
+// === Instance methods ===
+
+// Get % of successful PRs
+userExerciseProfileSchema.methods.getProgressionRate = function () {
+  if (this.recentProgression.attempts === 0) return 0;
+  return Number(
+    (
+      (this.recentProgression.successes / this.recentProgression.attempts) *
+      100
+    ).toFixed(1)
+  );
+};
+
+// Update profile with latest session performance data
+userExerciseProfileSchema.methods.updateLastPerformed = function (sessionData) {
+  if (!sessionData || typeof sessionData !== "object") {
+    throw new Error("Session data is required and must be an object");
+  }
+
+  const { weight, reps, sets, rir, date } = sessionData;
+
+  if (
+    weight === undefined ||
+    reps === undefined ||
+    sets === undefined ||
+    rir === undefined
+  ) {
+    throw new Error("Session data must include weight, reps, sets, and rir");
+  }
+
+  this.lastPerformed = {
+    date: date || Date.now(),
+    weight: Number(weight),
+    reps: Number(reps),
+    sets: Number(sets),
+    rir: Number(rir),
+  };
+
+  this.metrics.totalSessions = (this.metrics.totalSessions || 0) + 1;
+  this.recentProgression.lastProgressionDate = this.lastPerformed.date;
+
+  return this;
+};
+
+// Update completed workout to last 10 performed
+userExerciseProfileSchema.methods.addSessionToHistory = function (
+  sessionSummary
+) {
+  this.recentSessions.unshift(sessionSummary);
+
+  if (this.recentSessions.length > MAX_RECENT_SESSIONS) {
+    this.recentSessions = this.recentSessions.slice(0, MAX_RECENT_SESSIONS);
+  }
+
+  return this;
+};
+
+// Get custom number of recent sessions
+userExerciseProfileSchema.methods.getRecentSessions = function (limit = 5) {
+  return this.recentSessions.slice(0, limit);
+};
+
+// === Static methods ===
+
+// Find existing profile or create new one
+userExerciseProfileSchema.statics.getOrCreateProfile = async function (
+  userId,
+  exerciseId
+) {
+  // Validate required parameters
+  if (!userId || !exerciseId) {
+    throw new Error("userId and exerciseId are required");
+  }
+
+  // Try to find existing profile
+  let profile = await this.findOne({ userId, exerciseId });
+
+  // If doesn't exist, create with defaults
+  if (!profile) {
+    profile = await this.create({
+      userId,
+      exerciseId,
+      // All other fields use schema defaults
+    });
+  }
+
+  return profile;
+};
+
+// Get all active profiles for a user
+userExerciseProfileSchema.statics.getActiveProfilesForUser = async function (
+  userId
+) {
+  if (!userId) {
+    throw new Error("userId is required");
+  }
+
+  const profiles = await this.find({
+    userId,
+    "status.isActive": true,
+  })
+    .populate("exerciseId", "name primaryMuscle equipment")
+    .sort({ "lastPerformed.date": -1 });
+
+  return profiles;
+};
 
 module.exports = mongoose.model(
   "UserExerciseProfile",

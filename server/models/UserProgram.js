@@ -278,10 +278,57 @@ const userProgramSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
 // Indexes
 userProgramSchema.index({ userId: 1, status: 1 });
+
+// Instance methods
+
+// Check if it is deload week
+userProgramSchema.methods.isDeloadWeek = function () {
+  return this.currentWeek === this.periodization.config.deloadWeek;
+};
+
+// Get current week RIR
+userProgramSchema.methods.getCurrentWeekRIR = function () {
+  const index = this.currentWeek - 1;
+  const rirArray = this.periodization.config.rirProgression;
+
+  if (index < 0 || index >= rirArray.length) {
+    return null;
+  }
+  return rirArray[index];
+};
+
+// Get next workout
+userProgramSchema.methods.getNextWorkout = function () {
+  if (!this.workouts || this.workouts.length === 0) {
+    return null;
+  }
+  if (this.nextWorkoutIndex >= this.workouts.length) {
+    return this.workouts[0];
+  }
+  return this.workouts[this.nextWorkoutIndex];
+};
+
+// Static methods
+
+// Find user's active program (if exists)
+userProgramSchema.statics.findActiveProgram = async function (userId) {
+  if (!userId) {
+    throw new Error("userId is required");
+  }
+
+  return await this.findOne({
+    userId,
+    status: "active",
+  });
+};
+
+// Virtual field ideas: current week target rir,weeks remaining, progressPercentage.
 
 module.exports = mongoose.model("UserProgram", userProgramSchema);
