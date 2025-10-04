@@ -184,6 +184,8 @@ const workoutSessionSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
@@ -240,6 +242,15 @@ workoutSessionSchema.statics.getExerciseHistory = async function (
     .sort({ datePerformed: -1 })
     .limit(limit);
 };
+
+//=== pre/post hooks
+
+pre("save", async function () {
+  if (this.isModified("workouts") || this.isModified("periodization")) {
+    this.isModified = true;
+    this.lastModified = Date.now();
+  }
+});
 
 workoutSessionSchema.module.exports = mongoose.model(
   "WorkoutSession",

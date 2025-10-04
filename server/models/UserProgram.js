@@ -331,4 +331,16 @@ userProgramSchema.statics.findActiveProgram = async function (userId) {
 
 // Virtual field ideas: current week target rir,weeks remaining, progressPercentage.
 
+userProgramSchema.virtual("progressPercentage").get(function () {
+  return (this.currentWeek / this.periodization.config.weeks) * 100;
+});
+
+userProgramSchema.virtual("weeksRemaining").get(function () {
+  return this.periodization.config.weeks - this.currentWeek;
+});
+
+userProgramSchema.virtual("isComplete").get(function () {
+  return this.currentWeek > this.periodization.config.weeks;
+});
+
 module.exports = mongoose.model("UserProgram", userProgramSchema);

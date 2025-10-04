@@ -265,6 +265,20 @@ userExerciseProfileSchema.statics.getActiveProfilesForUser = async function (
   return profiles;
 };
 
+// === Virtual Fields ===
+
+userExerciseProfileSchema.virtual("daysSinceLastPerformed").get(function () {
+  return Date.now - this.lastPerformed.date;
+});
+
+userExerciseProfileSchema.virtual("volumeLastSession").get(function () {
+  return (
+    this.lastPerformed.weight *
+    this.lastPerformed.reps *
+    this.lastPerformed.sets
+  );
+});
+
 module.exports = mongoose.model(
   "UserExerciseProfile",
   userExerciseProfileSchema
