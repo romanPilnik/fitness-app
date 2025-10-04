@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const WorkoutSessionSchema = new mongoose.Schema(
+const workoutSessionSchema = new mongoose.Schema(
   {
     // === RELATIONSHIPS ===
     userId: {
@@ -162,7 +162,7 @@ const WorkoutSessionSchema = new mongoose.Schema(
     },
 
     // === TIMING & METADATA ===
-    timePerformed: {
+    datePerformed: {
       type: Date,
       required: true,
       default: Date.now,
@@ -188,8 +188,60 @@ const WorkoutSessionSchema = new mongoose.Schema(
 );
 
 // === INDEXES FOR QUERY PERFORMANCE ===
-WorkoutSessionSchema.index({ userId: 1, timePerformed: -1 }); // Recent sessions
-WorkoutSessionSchema.index({ programId: 1 }); // Sessions for program
-WorkoutSessionSchema.index({ userId: 1, "exercises.exerciseId": 1 }); // Exercise history
+workoutSessionSchema.index({ userId: 1, timePerformed: -1 }); // Recent sessions
+workoutSessionSchema.index({ programId: 1 }); // Sessions for program
+workoutSessionSchema.index({ userId: 1, "exercises.exerciseId": 1 }); // Exercise history
 
-module.exports = mongoose.model("WorkoutSession", WorkoutSessionSchema);
+// === Instance methods ===
+
+// Calculate total volume (weight × reps) for entire session
+workoutSessionSchema.methods.calculateTotalVolume = function () {
+  let totalVolume = 0;
+
+  for (const exercise of this.exercises) {
+    for (const set of exercise.sets) {
+      totalVolume += set.weight * set.reps;
+    }
+  }
+
+  return totalVolume;
+};
+// === Static methods ===
+
+// Get recent workouts performed
+workoutSessionSchema.statics.getRecentSessions = async function (
+  userId,
+  limit = 10
+) {
+  if (!userId) {
+    throw new Error("userId is required");
+  }
+
+  return await this.find({ userId, sessionStatus: "completed" })
+    .sort({ datePerformed: -1 })
+    .limit(limit);
+};
+
+// Get all workouts where user performed a specific exercise
+workoutSessionSchema.statics.getExerciseHistory = async function (
+  userId,
+  exerciseId,
+  limit = 20
+) {
+  if (!userId || !exerciseId) {
+    throw new Error("userId and exerciseId required");
+  }
+
+  return await this.find({
+    userId,
+    "exercises.exerciseId": exerciseId,
+    sessionStatus: "completed",
+  })
+    .sort({ datePerformed: -1 })
+    .limit(limit);
+};
+
+workoutSessionSchema.module.exports = mongoose.model(
+  "WorkoutSession",
+  workoutSessionSchema
+);
