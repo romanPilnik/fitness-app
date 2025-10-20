@@ -5,6 +5,8 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
+const templateRoutes = require("./routes/programTemplate.routes");
+const programRoutes = require("./routes/userProgram.routes");
 
 const app = express();
 
@@ -13,6 +15,8 @@ app.use(cors());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/v1/templates", templateRoutes);
+app.use("/api/v1/programs", programRoutes);
 
 mongoose
   .connect(process.env.MONGODB_URI)
