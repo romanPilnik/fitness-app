@@ -273,7 +273,7 @@ const userProgramSchema = new mongoose.Schema(
     lastCompletedWorkoutDate: Date,
 
     // === MODIFICATION TRACKING ===
-    isModified: { type: Boolean, default: false },
+    hasBeenModified: { type: Boolean, default: false },
     lastModified: Date,
   },
   {

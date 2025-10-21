@@ -12,41 +12,31 @@
 
 const verifyOwnership = (Model, foreignKey = "userId") => {
   return async (req, res, next) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          message: "Authentication required",
-        });
-      }
-      const resource = await Model.findById(req, params.id);
-
-      if (!resource) {
-        return res.status(404).json({
-          success: false,
-          message: "Resource not found",
-        });
-      }
-
-      const ownerId = resource[foreignKey].toString();
-      const userId = req.user._id.toString();
-
-      if (ownerId !== userId) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to access this resource",
-        });
-      }
-
-      req.resource = resource;
-
-      next();
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Unexpected server error",
-      });
+    if (!req.user) {
+      const error = new Error("Authentication required");
+      error.statusCode = 401;
+      throw error;
     }
+    const resource = await Model.findById(req.params.id);
+
+    if (!resource) {
+      const error = new Error("Resource not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const ownerId = resource[foreignKey].toString();
+    const userId = req.user._id.toString();
+
+    if (ownerId !== userId) {
+      const error = new Error("Not authorized to access this resource");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    req.resource = resource;
+
+    next();
   };
 };
 

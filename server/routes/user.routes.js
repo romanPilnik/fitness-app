@@ -14,15 +14,11 @@ router.get("/me", (req, res) => {
 });
 
 router.post("/change-password", async (req, res) => {
-  try {
-    const { oldPassword, newPassword } = req.body;
+  const { oldPassword, newPassword } = req.body;
 
-    await User.changePassword(req.user._id, oldPassword, newPassword);
+  await User.changePassword(req.user._id, oldPassword, newPassword);
 
-    res.json({ message: "Password changed successfully" }); //200 default status code
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+  res.json({ message: "Password changed successfully" });
 });
 
 module.exports = router;

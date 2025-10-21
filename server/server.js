@@ -5,8 +5,10 @@ require("dotenv").config();
 
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
-const templateRoutes = require("./routes/programTemplate.routes");
-const programRoutes = require("./routes/userProgram.routes");
+const templateRoutes = require("./routes/template.routes");
+const programRoutes = require("./routes/Program.routes");
+
+const { errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 
@@ -29,6 +31,8 @@ app.get("/", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
