@@ -1,10 +1,26 @@
 const express = require("express");
 const { verifyToken } = require("../middleware/auth");
+const requiredRole = require("../middleware/authorize");
+const exerciseController = require("../controllers/exercise.controller");
+const { body, validationResult } = require("express-validator");
+
+// Simple request validator for creating exercises
+const validateExercise = [
+  body("name").isString().trim().isLength({ min: 1, max: 50 }).withMessage("name is required and must be <= 50 chars"),
+  body("primaryMuscle").isString().trim().isLength({ min: 1 }).withMessage("primaryMuscle is required"),
+  body("category").isIn(["compound", "isolation"]).withMessage("category must be 'compound' or 'isolation'"),
+  body("movementPattern").isString().trim().isLength({ min: 1 }).withMessage("movementPattern is required"),
+  // validation result handler
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    next();
+  },
+];
 
 const router = express.Router();
-
-// TODO: Import controller when created
-// const exerciseController = require('../controllers/exercise.controller');
 
 // ============================================
 // PUBLIC ROUTES
@@ -16,70 +32,56 @@ const router = express.Router();
  * @access  Public
  * @query   page, limit, muscle, equipment, category, search
  */
-router.get("/", async (req, res) => {
-  // TODO: Move to exerciseController.getExercises
-  res.json({ message: "Get all exercises - controller pending" });
-});
+router.get("/", exerciseController.getExercises);
 
 /**
  * @route   GET /api/v1/exercises/:id
  * @desc    Get single exercise by ID
  * @access  Public
  */
-router.get("/:id", async (req, res) => {
-  // TODO: Move to exerciseController.getExerciseById
-  res.json({ message: "Get exercise by ID - controller pending" });
-});
+router.get("/:id", exerciseController.getExerciseById);
 
 // ============================================
 // PROTECTED ROUTES
 // ============================================
 
-router.use(verifyToken);
-
 /**
  * @route   POST /api/v1/exercises
  * @desc    Create new exercise
- * @access  Private (later: Admin only)
+ * @access  Private
  * @body    { name, equipment, primaryMuscle, category, movementPattern, ... }
  */
-router.post("/", async (req, res) => {
-  // TODO: Add validation middleware
-  // TODO: Move to exerciseController.createExercise
-  res.json({ message: "Create exercise - controller pending" });
-});
-
-/**
- * @route   PUT /api/v1/exercises/:id
- * @desc    Update exercise (full update)
- * @access  Private (later: Admin only)
- * @body    Complete exercise object
- */
-router.put("/:id", async (req, res) => {
-  // TODO: Add validation middleware
-  // TODO: Move to exerciseController.updateExercise
-  res.json({ message: "Update exercise - controller pending" });
-});
+router.post(
+  "/",
+  verifyToken,
+  requiredRole("admin"),
+  validateExercise,
+  exerciseController.createExercise
+);
 
 /**
  * @route   PATCH /api/v1/exercises/:id
- * @desc    Partial update exercise (e.g., deactivate)
- * @access  Private (later: Admin only)
+ * @desc    Partial update exercise
+ * @access  Private
  * @body    Partial exercise fields
  */
-router.patch("/:id", async (req, res) => {
-  // TODO: Move to exerciseController.patchExercise
-  res.json({ message: "Patch exercise - controller pending" });
-});
+router.patch(
+  "/:id",
+  verifyToken,
+  requiredRole("admin"),
+  exerciseController.updateExercise
+);
 
 /**
  * @route   DELETE /api/v1/exercises/:id
  * @desc    Soft delete exercise (set isActive: false)
- * @access  Private (later: Admin only)
+ * @access  Private
  */
-router.delete("/:id", async (req, res) => {
-  // TODO: Move to exerciseController.deleteExercise
-  res.json({ message: "Delete exercise - controller pending" });
-});
+router.delete(
+  "/:id",
+  verifyToken,
+  requiredRole("admin"),
+  exerciseController.deleteExercise
+);
 
 module.exports = router;
