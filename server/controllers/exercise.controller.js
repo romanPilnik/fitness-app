@@ -3,7 +3,7 @@ const exerciseService = require("../services/exercise/exercise.service");
 /**
  * Exercise Controller
  * Handles HTTP requests and responses for exercise operations
- * 
+ *
  * TODO/Improvements:
  * 1. Additional Endpoints:
  *    - GET /exercises/trending - Most popular exercises
@@ -11,49 +11,49 @@ const exerciseService = require("../services/exercise/exercise.service");
  *    - GET /exercises/alternatives/:id - Get alternative exercises
  *    - POST /exercises/:id/feedback - Submit exercise feedback
  *    - POST /exercises/:id/form-check - Submit form check
- * 
+ *
  * 2. Enhanced Filtering:
  *    - Support multiple muscle group filtering
  *    - Add difficulty level filtering
  *    - Filter by required equipment
  *    - Support experience level filtering
  *    - Add movement pattern filtering
- * 
+ *
  * 3. Response Optimization:
  *    - Implement field selection (?fields=name,muscles)
  *    - Add response compression
  *    - Support partial responses
  *    - Add ETag support
  *    - Implement conditional requests
- * 
+ *
  * 4. Bulk Operations:
  *    - Add batch create endpoint
  *    - Support bulk updates
  *    - Implement mass status changes
  *    - Add batch delete capability
  *    - Support exercise import
- * 
+ *
  * 5. Media Handling:
  *    - Add image upload endpoint
  *    - Support video submissions
  *    - Handle form check videos
  *    - Manage exercise demonstrations
  *    - Support multiple media formats
- * 
+ *
  * 6. Validation & Security:
  *    - Add request rate limiting
  *    - Implement input sanitization
  *    - Add role-based access
  *    - Validate media submissions
  *    - Add abuse prevention
- * 
+ *
  * 7. Documentation:
  *    - Add OpenAPI/Swagger specs
  *    - Include example requests
  *    - Document rate limits
  *    - Add error code documentation
  *    - Include usage guidelines
- * 
+ *
  * 8. Integration Features:
  *    - Add webhook support
  *    - Support external IDs
@@ -66,11 +66,11 @@ const exerciseService = require("../services/exercise/exercise.service");
  * @desc    Get all exercises with optional filtering and pagination
  * @route   GET /api/v1/exercises
  * @access  Public
- * @query   page - Page number
- * @query   limit - Items per page
- * @query   muscle - Filter by primary muscle
- * @query   equipment - Filter by equipment type
- * @query   category - Filter by category (compound/isolation)
+ * @query   {number} page - Page number
+ * @query   {number} limit - Items per page
+ * @query   {string} muscle - Filter by primary muscle
+ * @query   {string} equipment - Filter by equipment type
+ * @query   {string} category - Filter by category (compound/isolation)
  * @returns {Object} { success, count, data: exercises[], pagination }
  */
 const getExercises = async (req, res, next) => {

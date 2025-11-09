@@ -1,63 +1,35 @@
+/**
+ * @fileoverview Authentication routes for user registration and login
+ * @module routes/auth
+ */
+
 const express = require("express");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const authController = require("../controllers/auth.controller");
 
 const router = express.Router();
 
-router.post("/register", async (req, res) => {
-  const { email, password, name } = req.body;
+/**
+ * POST /api/auth/register
+ * @route POST /register
+ * @group Authentication - User authentication operations
+ * @param {string} email.body.required - User's email address
+ * @param {string} password.body.required - User's password (min 8 characters)
+ * @param {string} name.body.required - User's full name
+ * @returns {Object} 201 - User created successfully with JWT token
+ * @returns {Object} 409 - User already exists
+ * @returns {Object} 400 - Validation error
+ */
+router.post("/register", authController.registerUser);
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return res.status(400).json({ message: "User already exists" });
-  }
-
-  const user = new User({ email, password, name });
-  await user.save();
-
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-
-  res.status(201).json({
-    message: "User created successfully",
-    token,
-    user: {
-      id: user._id,
-      email: user.email,
-      name: user.name,
-    },
-  });
-});
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  // Find user by email (include password for comparison)
-  const user = await User.findOne({ email }).select("+password");
-  if (!user) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-
-  // Compare password
-  const isValidPassword = await user.comparePassword(password);
-  if (!isValidPassword) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-
-  // Generate token
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-
-  res.status(200).json({
-    message: "Login successful",
-    token,
-    user: {
-      userId: user._id,
-      email: user.email,
-      name: user.name,
-    },
-  });
-});
+/**
+ * POST /api/auth/login
+ * @route POST /login
+ * @group Authentication - User authentication operations
+ * @param {string} email.body.required - User's email address
+ * @param {string} password.body.required - User's password
+ * @returns {Object} 200 - Login successful with JWT token
+ * @returns {Object} 401 - Invalid credentials
+ */
+router.post("/login", authController.loginUser);
 
 module.exports = router;

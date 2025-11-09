@@ -1,4 +1,29 @@
-function errorHandler(err, req, res, next) {
+/**
+ * Centralized error handling middleware
+ * Transforms various error types into consistent JSON responses.
+ * Handles Mongoose validation/cast errors, JWT errors, MongoDB duplicates, and custom errors.
+ *
+ * @param {Error} err - Error object to handle
+ * @param {Object} err.name - Error type name (ValidationError, CastError, JsonWebTokenError, etc.)
+ * @param {number} [err.statusCode] - HTTP status code (defaults to 500)
+ * @param {string} [err.message] - Error message
+ * @param {number} [err.code] - MongoDB error code (11000 for duplicates)
+ * @param {Object} _req - Express request object (unused)
+ * @param {Object} res - Express response object
+ * @param {Function} _next - Express next middleware function (unused)
+ * @returns {Object} JSON response with { success: false, message, errors? }
+ *
+ * @example
+ * Use as last middleware in Express app
+ * app.use(errorHandler);
+ *
+ * @example
+ * Trigger from controller
+ * const error = new Error("Resource not found");
+ * error.statusCode = 404;
+ * next(error);
+ */
+function errorHandler(err, _req, res, _next) {
   console.log(err);
 
   // === VALIDATION ERROR ===
