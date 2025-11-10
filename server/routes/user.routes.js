@@ -4,12 +4,10 @@
  */
 
 const express = require("express");
-const User = require("../models/User");
 const { verifyToken } = require("../middleware/auth");
+const userController = require("../controllers/user.controller");
 
 const router = express.Router();
-
-router.use(verifyToken);
 
 /**
  * GET /api/users/me
@@ -18,12 +16,20 @@ router.use(verifyToken);
  * @returns {Object} 200 - Current user profile
  * @returns {Object} 401 - Unauthorized
  */
-router.get("/me", (req, res) => {
-  res.status(200).json({
-    message: "User retrieved",
-    user: req.user,
-  });
-});
+router.get("/me", verifyToken, userController.getCurrentUser);
+
+/**
+ * PATCH /api/users/me
+ * @route PATCH /me
+ * @group User - User profile operations
+ * @param {String} name.body.optional - User's name
+ * @param {String} preferences.units.body.optional - User's preferred units
+ * @param {String} preferences.weekStartsOn.body.optional -  User's preferred week start day
+ * @returns {Object} 200 - User profile updated successfully
+ * @returns {Object} 400 - Validation error
+ * @returns {Object} 401 - Unauthorized
+ */
+router.patch("/me", verifyToken, userController.updateCurrentUser);
 
 /**
  * POST /api/users/change-password
@@ -35,12 +41,6 @@ router.get("/me", (req, res) => {
  * @returns {Object} 400 - Validation error
  * @returns {Object} 401 - Unauthorized or incorrect old password
  */
-router.post("/change-password", async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
-
-  await User.changePassword(req.user._id, oldPassword, newPassword);
-
-  res.json({ message: "Password changed successfully" });
-});
+router.post("/change-password", verifyToken, userController.changePassword);
 
 module.exports = router;

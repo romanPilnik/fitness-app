@@ -23,11 +23,11 @@ const User = require("../models/User");
  * @throws {Error} 401 - User not found or account inactive
  *
  * @example
- * // Protect route with authentication
+ *  Protect route with authentication
  * router.get('/profile', verifyToken, getUserProfile);
  *
  * @example
- * // Access authenticated user in controller
+ *  Access authenticated user in controller
  * const userId = req.user._id;
  * const userEmail = req.user.email;
  */
