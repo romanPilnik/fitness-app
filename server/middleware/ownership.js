@@ -10,26 +10,26 @@
  * router.patch('/programs/:id', verifyToken, verifyOwnership(UserProgram), controller)
  */
 
-const verifyOwnership = (Model, foreignKey = "userId") => {
+const verifyOwnership = (Model, foreignKey = 'userId') => {
   return async (req, res, next) => {
     if (!req.user) {
-      const error = new Error("Authentication required");
+      const error = new Error('Authentication required');
       error.statusCode = 401;
       throw error;
     }
     const resource = await Model.findById(req.params.id);
 
     if (!resource) {
-      const error = new Error("Resource not found");
+      const error = new Error('Resource not found');
       error.statusCode = 404;
       throw error;
     }
-
+    // eslint-disable-next-line security/detect-object-injection
     const ownerId = resource[foreignKey].toString();
     const userId = req.user._id.toString();
 
     if (ownerId !== userId) {
-      const error = new Error("Not authorized to access this resource");
+      const error = new Error('Not authorized to access this resource');
       error.statusCode = 403;
       throw error;
     }

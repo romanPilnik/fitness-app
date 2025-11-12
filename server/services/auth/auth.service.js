@@ -1,4 +1,4 @@
-const User = require("../../models/User");
+const User = require('../../models/User');
 
 /**
  * Registers a new user in the database
@@ -13,7 +13,7 @@ const registerUser = async (email, password, name) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
-    const error = new Error("User already exists");
+    const error = new Error('User already exists');
     error.statusCode = 409;
     throw error;
   }
@@ -35,17 +35,17 @@ const registerUser = async (email, password, name) => {
  * @throws {Error} 401 - If email not found or password is incorrect
  */
 const loginUser = async (email, password) => {
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email }).select('+password');
 
   if (!user) {
-    const error = new Error("Invalid email or password");
+    const error = new Error('Invalid email or password');
     error.statusCode = 401;
     throw error;
   }
 
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
-    const error = new Error("Invalid email or password");
+    const error = new Error('Invalid email or password');
     error.statusCode = 401;
     throw error;
   }

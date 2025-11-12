@@ -3,9 +3,9 @@
  * @module routes/user
  */
 
-const express = require("express");
-const { verifyToken } = require("../middleware/auth");
-const userController = require("../controllers/user.controller");
+const express = require('express');
+const { verifyToken } = require('../middleware/auth');
+const userController = require('../controllers/user.controller');
 
 const router = express.Router();
 
@@ -16,7 +16,7 @@ const router = express.Router();
  * @returns {Object} 200 - Current user profile
  * @returns {Object} 401 - Unauthorized
  */
-router.get("/me", verifyToken, userController.getCurrentUser);
+router.get('/me', verifyToken, userController.getCurrentUser);
 
 /**
  * PATCH /api/users/me
@@ -29,7 +29,7 @@ router.get("/me", verifyToken, userController.getCurrentUser);
  * @returns {Object} 400 - Validation error
  * @returns {Object} 401 - Unauthorized
  */
-router.patch("/me", verifyToken, userController.updateCurrentUser);
+router.patch('/me', verifyToken, userController.updateCurrentUser);
 
 /**
  * POST /api/users/change-password
@@ -41,6 +41,6 @@ router.patch("/me", verifyToken, userController.updateCurrentUser);
  * @returns {Object} 400 - Validation error
  * @returns {Object} 401 - Unauthorized or incorrect old password
  */
-router.post("/change-password", verifyToken, userController.changePassword);
+router.post('/change-password', verifyToken, userController.changePassword);
 
 module.exports = router;

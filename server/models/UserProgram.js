@@ -1,26 +1,26 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const userProgramSchema = new mongoose.Schema(
   {
     // === OWNERSHIP & SOURCE ===
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     sourceTemplateId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ProgramTemplate",
+      ref: 'ProgramTemplate',
       default: null, // null if custom program
     },
     sourceTemplateName: String, // Cached for display even if template deleted
     createdFrom: {
       type: String,
       enum: {
-        values: ["template", "scratch", "shared"],
-        message: "{VALUE} is not valid, must be the program source",
+        values: ['template', 'scratch', 'shared'],
+        message: '{VALUE} is not valid, must be the program source',
       },
-      default: "scratch",
+      default: 'scratch',
       lowercase: true,
       required: true,
     },
@@ -28,19 +28,19 @@ const userProgramSchema = new mongoose.Schema(
     // === PROGRAM METADATA ===
     name: {
       type: String,
-      maxlength: [50, "Name cannot exceed 50 characters"],
+      maxlength: [50, 'Name cannot exceed 50 characters'],
       required: true,
       trim: true,
     },
     description: {
       type: String,
-      maxlength: [500, "Description cannot exceed 500 characters"],
+      maxlength: [500, 'Description cannot exceed 500 characters'],
     },
     difficulty: {
       type: String,
       enum: {
-        values: ["beginner", "intermediate", "advanced"],
-        message: "{VALUE} is not valid, must be difficulty",
+        values: ['beginner', 'intermediate', 'advanced'],
+        message: '{VALUE} is not valid, must be difficulty',
       },
       required: true,
       lowercase: true,
@@ -50,17 +50,17 @@ const userProgramSchema = new mongoose.Schema(
         {
           type: String,
           enum: {
-            values: ["strength", "hypertrophy", "endurance"],
-            message: "{VALUE} is not valid, must a type of goal",
+            values: ['strength', 'hypertrophy', 'endurance'],
+            message: '{VALUE} is not valid, must a type of goal',
           },
           required: true,
           lowercase: true,
-          default: "hypertrophy",
+          default: 'hypertrophy',
         },
       ],
       validate: {
         validator: (arr) => arr.length <= 3,
-        message: "Maximum of 3 goals",
+        message: 'Maximum of 3 goals',
       },
     },
 
@@ -69,22 +69,22 @@ const userProgramSchema = new mongoose.Schema(
       type: String,
       enum: {
         values: [
-          "full body",
-          "push pull legs",
-          "upper lower",
-          "arnold",
-          "modified full body",
-          "other",
+          'full body',
+          'push pull legs',
+          'upper lower',
+          'arnold',
+          'modified full body',
+          'other',
         ],
-        message: "{VALUE} is not valid, must be split type",
+        message: '{VALUE} is not valid, must be split type',
       },
-      default: "other",
+      default: 'other',
       required: true,
       lowercase: true,
     },
     daysPerWeek: {
       type: Number,
-      max: [14, "Session number per week cannot exceed 14"],
+      max: [14, 'Session number per week cannot exceed 14'],
       required: true,
     },
 
@@ -93,13 +93,13 @@ const userProgramSchema = new mongoose.Schema(
         {
           name: {
             type: String,
-            maxlength: [50, "Name cannot exceed 50 characters"],
+            maxlength: [50, 'Name cannot exceed 50 characters'],
             required: true,
             trim: true,
           },
           dayNumber: {
             type: Number,
-            min: [1, "Workout day must be at least 1"],
+            min: [1, 'Workout day must be at least 1'],
           },
 
           // === PLANNED EXERCISES ===
@@ -108,35 +108,35 @@ const userProgramSchema = new mongoose.Schema(
               {
                 exerciseId: {
                   type: mongoose.Schema.Types.ObjectId,
-                  ref: "Exercise",
+                  ref: 'Exercise',
                   required: true,
                 },
                 order: {
                   type: Number,
                   required: true,
-                  min: [1, "Order must start at 1"],
+                  min: [1, 'Order must start at 1'],
                 },
                 targetSets: {
                   type: Number,
-                  min: [1, "Sets must be at least 1"],
-                  max: [20, "Sets cannot exceed 20"],
+                  min: [1, 'Sets must be at least 1'],
+                  max: [20, 'Sets cannot exceed 20'],
                   required: true,
                 },
                 targetReps: {
                   type: Number,
-                  min: [1, "Reps must be at least 1"],
-                  max: [100, "Reps cannot exceed 100"],
+                  min: [1, 'Reps must be at least 1'],
+                  max: [100, 'Reps cannot exceed 100'],
                   required: true,
                 },
                 targetRir: {
                   type: Number,
-                  min: [0, "Rir cannot be negative"],
-                  max: [10, "Rir cannot be above 10"],
+                  min: [0, 'Rir cannot be negative'],
+                  max: [10, 'Rir cannot be above 10'],
                   required: true,
                 },
                 notes: {
                   type: String,
-                  maxlength: [500, "Notes cannot exceed 500 characters"],
+                  maxlength: [500, 'Notes cannot exceed 500 characters'],
                 },
               },
             ],
@@ -144,7 +144,7 @@ const userProgramSchema = new mongoose.Schema(
               validator: function (arr) {
                 return arr.length > 0;
               },
-              message: "Workout must have atleast 1 exercise",
+              message: 'Workout must have atleast 1 exercise',
             },
           },
         },
@@ -153,7 +153,7 @@ const userProgramSchema = new mongoose.Schema(
         validator: function (arr) {
           return arr.length > 0;
         },
-        message: "Split must have atleast 1 workout",
+        message: 'Split must have atleast 1 workout',
       },
     },
 
@@ -162,19 +162,19 @@ const userProgramSchema = new mongoose.Schema(
       type: {
         type: String,
         enum: {
-          values: ["linear_rir", "dup", "block"],
-          message: "{VALUE} is not valid, must be type of periodization",
+          values: ['linear_rir', 'dup', 'block'],
+          message: '{VALUE} is not valid, must be type of periodization',
         }, // placeholders
         required: true,
-        default: "linear_rir",
+        default: 'linear_rir',
         lowercase: true,
       },
 
       config: {
         weeks: {
           type: Number,
-          min: [1, "Mesocycle must be atleast 1 week"],
-          max: [12, "Mesocycle cannot exceed 12 weeks"],
+          min: [1, 'Mesocycle must be atleast 1 week'],
+          max: [12, 'Mesocycle cannot exceed 12 weeks'],
           required: true,
         },
 
@@ -193,14 +193,14 @@ const userProgramSchema = new mongoose.Schema(
               return arr.every((rir) => rir >= 0 && rir <= 10);
             },
             message:
-              "RIR progression must match week count and be between 0-10",
+              'RIR progression must match week count and be between 0-10',
           },
         }, // [4,3,3,2,2,1,1,0] for each week
 
         deloadWeek: {
           type: Number,
-          min: [4, "Deload weeks must be between 4-20"],
-          max: [20, "Deload weeks must be between 4-20"],
+          min: [4, 'Deload weeks must be between 4-20'],
+          max: [20, 'Deload weeks must be between 4-20'],
           validate: {
             validator: function (value) {
               if (
@@ -211,7 +211,7 @@ const userProgramSchema = new mongoose.Schema(
               }
               return true;
             },
-            message: "Deload week must be within mesocycle duration",
+            message: 'Deload week must be within mesocycle duration',
           },
         },
 
@@ -221,15 +221,15 @@ const userProgramSchema = new mongoose.Schema(
           triggerAfterFailures: {
             type: Number,
             default: 2,
-            min: [1, "Must fail at least 1 session to trigger"],
-            max: [5, "Trigger threshold too high"],
+            min: [1, 'Must fail at least 1 session to trigger'],
+            max: [5, 'Trigger threshold too high'],
           },
 
           fatigueThreshold: {
             type: Number,
             default: 8,
-            min: [1, "Fatigue threshold minimum is 1"],
-            max: [10, "Fatigue threshold maximum is 10"],
+            min: [1, 'Fatigue threshold minimum is 1'],
+            max: [10, 'Fatigue threshold maximum is 10'],
           },
         },
 
@@ -237,10 +237,10 @@ const userProgramSchema = new mongoose.Schema(
           // might not use
           type: String,
           enum: {
-            values: ["static", "ascending", "wave"],
-            message: "{VALUE} is not valid, must be volume progression type",
+            values: ['static', 'ascending', 'wave'],
+            message: '{VALUE} is not valid, must be volume progression type',
           },
-          default: "static",
+          default: 'static',
           required: true,
           lowercase: true,
         },
@@ -251,10 +251,10 @@ const userProgramSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["active", "paused", "completed"],
-        message: "{VALUE} is not valid, must be status",
+        values: ['active', 'paused', 'completed'],
+        message: '{VALUE} is not valid, must be status',
       },
-      default: "active",
+      default: 'active',
       required: true,
       lowercase: true,
     },
@@ -301,6 +301,7 @@ userProgramSchema.methods.getCurrentWeekRIR = function () {
   if (index < 0 || index >= rirArray.length) {
     return null;
   }
+  // eslint-disable-next-line security/detect-object-injection
   return rirArray[index];
 };
 
@@ -320,27 +321,27 @@ userProgramSchema.methods.getNextWorkout = function () {
 // Find user's active program (if exists)
 userProgramSchema.statics.findActiveProgram = async function (userId) {
   if (!userId) {
-    throw new Error("userId is required");
+    throw new Error('userId is required');
   }
 
   return await this.findOne({
     userId,
-    status: "active",
+    status: 'active',
   });
 };
 
 // Virtual field ideas: current week target rir,weeks remaining, progressPercentage.
 
-userProgramSchema.virtual("progressPercentage").get(function () {
+userProgramSchema.virtual('progressPercentage').get(function () {
   return (this.currentWeek / this.periodization.config.weeks) * 100;
 });
 
-userProgramSchema.virtual("weeksRemaining").get(function () {
+userProgramSchema.virtual('weeksRemaining').get(function () {
   return this.periodization.config.weeks - this.currentWeek;
 });
 
-userProgramSchema.virtual("isComplete").get(function () {
+userProgramSchema.virtual('isComplete').get(function () {
   return this.currentWeek > this.periodization.config.weeks;
 });
 
-module.exports = mongoose.model("UserProgram", userProgramSchema);
+module.exports = mongoose.model('UserProgram', userProgramSchema);

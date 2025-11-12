@@ -3,32 +3,32 @@
  * @module routes/exercise
  */
 
-const express = require("express");
-const { verifyToken } = require("../middleware/auth");
-const requiredRole = require("../middleware/authorize");
-const exerciseController = require("../controllers/exercise.controller");
-const { body, validationResult } = require("express-validator");
+const express = require('express');
+const { verifyToken } = require('../middleware/auth');
+const requiredRole = require('../middleware/authorize');
+const exerciseController = require('../controllers/exercise.controller');
+const { body, validationResult } = require('express-validator');
 
 // Simple request validator for creating exercises
 const validateExercise = [
-  body("name")
+  body('name')
     .isString()
     .trim()
     .isLength({ min: 1, max: 50 })
-    .withMessage("name is required and must be <= 50 chars"),
-  body("primaryMuscle")
+    .withMessage('name is required and must be <= 50 chars'),
+  body('primaryMuscle')
     .isString()
     .trim()
     .isLength({ min: 1 })
-    .withMessage("primaryMuscle is required"),
-  body("category")
-    .isIn(["compound", "isolation"])
+    .withMessage('primaryMuscle is required'),
+  body('category')
+    .isIn(['compound', 'isolation'])
     .withMessage("category must be 'compound' or 'isolation'"),
-  body("movementPattern")
+  body('movementPattern')
     .isString()
     .trim()
     .isLength({ min: 1 })
-    .withMessage("movementPattern is required"),
+    .withMessage('movementPattern is required'),
   // validation result handler
   (req, res, next) => {
     const errors = validationResult(req);
@@ -57,7 +57,7 @@ const router = express.Router();
  * @param {string} search.query - Search term
  * @returns {Object} 200 - List of exercises with pagination
  */
-router.get("/", exerciseController.getExercises);
+router.get('/', exerciseController.getExercises);
 
 /**
  * GET /api/v1/exercises/:id
@@ -67,7 +67,7 @@ router.get("/", exerciseController.getExercises);
  * @returns {Object} 200 - Single exercise details
  * @returns {Object} 404 - Exercise not found
  */
-router.get("/:id", exerciseController.getExerciseById);
+router.get('/:id', exerciseController.getExerciseById);
 
 // ============================================
 // PROTECTED ROUTES
@@ -88,9 +88,9 @@ router.get("/:id", exerciseController.getExerciseById);
  * @returns {Object} 403 - Forbidden (admin only)
  */
 router.post(
-  "/",
+  '/',
   verifyToken,
-  requiredRole("admin"),
+  requiredRole('admin'),
   validateExercise,
   exerciseController.createExercise
 );
@@ -107,9 +107,9 @@ router.post(
  * @returns {Object} 403 - Forbidden (admin only)
  */
 router.patch(
-  "/:id",
+  '/:id',
   verifyToken,
-  requiredRole("admin"),
+  requiredRole('admin'),
   exerciseController.updateExercise
 );
 
@@ -124,9 +124,9 @@ router.patch(
  * @returns {Object} 403 - Forbidden (admin only)
  */
 router.delete(
-  "/:id",
+  '/:id',
   verifyToken,
-  requiredRole("admin"),
+  requiredRole('admin'),
   exerciseController.deleteExercise
 );
 

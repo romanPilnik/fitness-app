@@ -14,9 +14,15 @@ const parsePaginationParams = (query, defaultLimit = 20, maxLimit = 100) => {
   let limit = parseInt(query.limit) || defaultLimit;
 
   // Validation
-  if (page < 1) page = 1;
-  if (limit < 1) limit = defaultLimit;
-  if (limit > maxLimit) limit = maxLimit;
+  if (page < 1) {
+    page = 1;
+  }
+  if (limit < 1) {
+    limit = defaultLimit;
+  }
+  if (limit > maxLimit) {
+    limit = maxLimit;
+  }
 
   const skip = (page - 1) * limit;
 

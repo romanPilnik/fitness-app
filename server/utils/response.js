@@ -35,7 +35,7 @@ const sendError = (
   res,
   message,
   statusCode = 500,
-  code = "ERROR",
+  code = 'ERROR',
   details = null
 ) => {
   const response = {

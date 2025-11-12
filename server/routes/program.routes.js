@@ -3,10 +3,10 @@
  * @module routes/program
  */
 
-const express = require("express");
-const { verifyToken } = require("../middleware/auth");
-const { verifyOwnership } = require("../middleware/ownership");
-const UserProgram = require("../models/UserProgram");
+const express = require('express');
+const { verifyToken } = require('../middleware/auth');
+const { verifyOwnership } = require('../middleware/ownership');
+const UserProgram = require('../models/UserProgram');
 
 const router = express.Router();
 
@@ -30,7 +30,7 @@ router.use(verifyToken);
  * @returns {Object} 200 - List of user's programs
  * @returns {Object} 401 - Unauthorized
  */
-router.get("/", async (req, res) => {});
+router.get('/', async (req, res) => {});
 
 /**
  * POST /api/v1/programs/from-template
@@ -42,7 +42,7 @@ router.get("/", async (req, res) => {});
  * @returns {Object} 404 - Template not found
  * @returns {Object} 401 - Unauthorized
  */
-router.post("/from-template", async (req, res) => {});
+router.post('/from-template', async (req, res) => {});
 
 /**
  * POST /api/v1/programs/custom
@@ -56,7 +56,7 @@ router.post("/from-template", async (req, res) => {});
  * @returns {Object} 400 - Validation error
  * @returns {Object} 401 - Unauthorized
  */
-router.post("/custom", async (req, res) => {});
+router.post('/custom', async (req, res) => {});
 
 // ============================================
 // CONVENIENCE ROUTES
@@ -70,7 +70,7 @@ router.post("/custom", async (req, res) => {});
  * @returns {Object} 404 - No active program found
  * @returns {Object} 401 - Unauthorized
  */
-router.get("/active", async (req, res) => {});
+router.get('/active', async (req, res) => {});
 
 // ============================================
 // PROGRAM RESOURCE
@@ -86,7 +86,7 @@ router.get("/active", async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (not owner)
  */
-router.get("/:id", verifyOwnership(UserProgram), async (req, res) => {});
+router.get('/:id', verifyOwnership(UserProgram), async (req, res) => {});
 
 /**
  * PATCH /api/v1/programs/:id
@@ -99,7 +99,7 @@ router.get("/:id", verifyOwnership(UserProgram), async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (not owner)
  */
-router.patch("/:id", verifyOwnership(UserProgram), async (req, res) => {});
+router.patch('/:id', verifyOwnership(UserProgram), async (req, res) => {});
 
 /**
  * DELETE /api/v1/programs/:id
@@ -111,6 +111,6 @@ router.patch("/:id", verifyOwnership(UserProgram), async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (not owner)
  */
-router.delete("/:id", verifyOwnership(UserProgram), async (req, res) => {});
+router.delete('/:id', verifyOwnership(UserProgram), async (req, res) => {});
 
 module.exports = router;

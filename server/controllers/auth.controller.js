@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const authService = require("../services/auth/auth.service");
+const jwt = require('jsonwebtoken');
+const authService = require('../services/auth/auth.service');
 
 /**
  * Handles user registration HTTP request
@@ -21,11 +21,11 @@ const registerUser = async (req, res, next) => {
     const user = await authService.registerUser(email, password, name);
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: '7d',
     });
 
     res.status(201).json({
-      message: "User created successfully",
+      message: 'User created successfully',
       token,
       user: {
         id: user._id,
@@ -56,10 +56,10 @@ const loginUser = async (req, res, next) => {
 
     const user = await authService.loginUser(email, password);
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: '7d',
     });
     res.status(200).json({
-      message: "User logged in successfully",
+      message: 'User logged in successfully',
       token,
       user: {
         id: user._id,

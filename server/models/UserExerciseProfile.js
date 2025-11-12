@@ -1,6 +1,4 @@
-const mongoose = require("mongoose");
-const { findById } = require("./User");
-
+const mongoose = require('mongoose');
 const MAX_RECENT_SESSIONS = 10;
 
 const userExerciseProfileSchema = new mongoose.Schema(
@@ -9,13 +7,13 @@ const userExerciseProfileSchema = new mongoose.Schema(
 
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
 
     exerciseId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Exercise",
+      ref: 'Exercise',
       required: true,
     },
 
@@ -26,26 +24,26 @@ const userExerciseProfileSchema = new mongoose.Schema(
 
       weight: {
         type: Number,
-        min: [0, "Weight must be at least bodyweight"],
-        max: [999, "Weight cannot exceed 999 kg"],
+        min: [0, 'Weight must be at least bodyweight'],
+        max: [999, 'Weight cannot exceed 999 kg'],
       },
 
       reps: {
         type: Number,
-        min: [1, "Reps must be at least 1"],
-        max: [50, "Reps cannot exceed 50"],
+        min: [1, 'Reps must be at least 1'],
+        max: [50, 'Reps cannot exceed 50'],
       },
 
       sets: {
         type: Number,
-        min: [1, "Sets must be at least 1"],
-        max: [20, "Sets cannot exceed 20"],
+        min: [1, 'Sets must be at least 1'],
+        max: [20, 'Sets cannot exceed 20'],
       },
 
       rir: {
         type: Number,
-        min: [0, "Rir cannot be lower than 0"],
-        max: [10, "Rir cannot be higher than 10"],
+        min: [0, 'Rir cannot be lower than 0'],
+        max: [10, 'Rir cannot be higher than 10'],
       },
     },
 
@@ -74,31 +72,31 @@ const userExerciseProfileSchema = new mongoose.Schema(
 
         topSetWeight: {
           type: Number,
-          min: [0, "Weight cannot be negative"],
-          max: [999, "Weight cannot exceed 999 kg"],
+          min: [0, 'Weight cannot be negative'],
+          max: [999, 'Weight cannot exceed 999 kg'],
         },
 
         topSetReps: {
           type: Number,
-          min: [1, "Reps must be at least 1"],
-          max: [50, "Reps cannot exceed 50"],
+          min: [1, 'Reps must be at least 1'],
+          max: [50, 'Reps cannot exceed 50'],
         },
 
         totalSets: {
           type: Number,
-          min: [1, "Sets must be at least 1"],
-          max: [50, "Sets cannot exceed 50"],
+          min: [1, 'Sets must be at least 1'],
+          max: [50, 'Sets cannot exceed 50'],
         },
 
         topSetRir: {
           type: Number,
-          min: [0, "Rir cannot be lower than 0"],
-          max: [10, "Rir cannot be higher than 10"],
+          min: [0, 'Rir cannot be lower than 0'],
+          max: [10, 'Rir cannot be higher than 10'],
         },
 
         sessionId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "WorkoutSession",
+          ref: 'WorkoutSession',
           required: true,
         },
       },
@@ -115,7 +113,7 @@ const userExerciseProfileSchema = new mongoose.Schema(
         {
           repRange: {
             type: String,
-            enum: ["2-4", "5-7", "8-11", "12-15"],
+            enum: ['2-4', '5-7', '8-11', '12-15'],
           },
           weight: Number,
           date: Date,
@@ -129,11 +127,11 @@ const userExerciseProfileSchema = new mongoose.Schema(
       enjoymentRating: { type: Number, min: 1, max: 5 }, // Adherence predictor
       formNotes: {
         type: String,
-        maxlength: [500, "Notes cannot exceed 500 characters"],
+        maxlength: [500, 'Notes cannot exceed 500 characters'],
       },
       injuryNotes: {
         type: String,
-        maxlength: [500, "Notes cannot exceed 500 characters"],
+        maxlength: [500, 'Notes cannot exceed 500 characters'],
       },
     },
 
@@ -154,7 +152,7 @@ const userExerciseProfileSchema = new mongoose.Schema(
 );
 
 userExerciseProfileSchema.index({ userId: 1, exerciseId: 1 }, { unique: true });
-userExerciseProfileSchema.index({ userId: 1, "status.isActive": 1 });
+userExerciseProfileSchema.index({ userId: 1, 'status.isActive': 1 });
 
 // === Pre/post hooks ===
 
@@ -162,7 +160,9 @@ userExerciseProfileSchema.index({ userId: 1, "status.isActive": 1 });
 
 // Get % of successful PRs
 userExerciseProfileSchema.methods.getProgressionRate = function () {
-  if (this.recentProgression.attempts === 0) return 0;
+  if (this.recentProgression.attempts === 0) {
+    return 0;
+  }
   return Number(
     (
       (this.recentProgression.successes / this.recentProgression.attempts) *
@@ -173,8 +173,8 @@ userExerciseProfileSchema.methods.getProgressionRate = function () {
 
 // Update profile with latest session performance data
 userExerciseProfileSchema.methods.updateLastPerformed = function (sessionData) {
-  if (!sessionData || typeof sessionData !== "object") {
-    throw new Error("Session data is required and must be an object");
+  if (!sessionData || typeof sessionData !== 'object') {
+    throw new Error('Session data is required and must be an object');
   }
 
   const { weight, reps, sets, rir, date } = sessionData;
@@ -185,7 +185,7 @@ userExerciseProfileSchema.methods.updateLastPerformed = function (sessionData) {
     sets === undefined ||
     rir === undefined
   ) {
-    throw new Error("Session data must include weight, reps, sets, and rir");
+    throw new Error('Session data must include weight, reps, sets, and rir');
   }
 
   this.lastPerformed = {
@@ -229,7 +229,7 @@ userExerciseProfileSchema.statics.getOrCreateProfile = async function (
 ) {
   // Validate required parameters
   if (!userId || !exerciseId) {
-    throw new Error("userId and exerciseId are required");
+    throw new Error('userId and exerciseId are required');
   }
 
   // Try to find existing profile
@@ -252,26 +252,26 @@ userExerciseProfileSchema.statics.getActiveProfilesForUser = async function (
   userId
 ) {
   if (!userId) {
-    throw new Error("userId is required");
+    throw new Error('userId is required');
   }
 
   const profiles = await this.find({
     userId,
-    "status.isActive": true,
+    'status.isActive': true,
   })
-    .populate("exerciseId", "name primaryMuscle equipment")
-    .sort({ "lastPerformed.date": -1 });
+    .populate('exerciseId', 'name primaryMuscle equipment')
+    .sort({ 'lastPerformed.date': -1 });
 
   return profiles;
 };
 
 // === Virtual Fields ===
 
-userExerciseProfileSchema.virtual("daysSinceLastPerformed").get(function () {
+userExerciseProfileSchema.virtual('daysSinceLastPerformed').get(function () {
   return Date.now - this.lastPerformed.date;
 });
 
-userExerciseProfileSchema.virtual("volumeLastSession").get(function () {
+userExerciseProfileSchema.virtual('volumeLastSession').get(function () {
   return (
     this.lastPerformed.weight *
     this.lastPerformed.reps *
@@ -280,6 +280,6 @@ userExerciseProfileSchema.virtual("volumeLastSession").get(function () {
 });
 
 module.exports = mongoose.model(
-  "UserExerciseProfile",
+  'UserExerciseProfile',
   userExerciseProfileSchema
 );

@@ -1,4 +1,4 @@
-const User = require("../../models/User");
+const User = require('../../models/User');
 
 /**
  * Update user profile
@@ -14,7 +14,7 @@ const User = require("../../models/User");
  */
 const updateCurrentUser = async (userId, updates) => {
   if (!updates || Object.keys(updates).length === 0) {
-    const error = new Error("No fields to update");
+    const error = new Error('No fields to update');
     error.statusCode = 400;
     throw error;
   }
@@ -22,9 +22,9 @@ const updateCurrentUser = async (userId, updates) => {
     userId,
     { $set: updates },
     { new: true, runValidators: true }
-  ).select("-password -__v");
+  ).select('-password -__v');
   if (!user) {
-    const error = new Error("User not found");
+    const error = new Error('User not found');
     error.statusCode = 404;
     throw error;
   }

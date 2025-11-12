@@ -1,33 +1,33 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-require("dotenv").config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
 
-const authRoutes = require("./routes/auth.routes");
-const userRoutes = require("./routes/user.routes");
-const templateRoutes = require("./routes/template.routes");
-const programRoutes = require("./routes/Program.routes");
+const authRoutes = require('./routes/auth.routes');
+const userRoutes = require('./routes/user.routes');
+const templateRoutes = require('./routes/template.routes');
+const programRoutes = require('./routes/Program.routes');
 
-const { errorHandler } = require("./middleware/errorHandler");
+const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
 
-app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/v1/templates", templateRoutes);
-app.use("/api/v1/programs", programRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/v1/templates', templateRoutes);
+app.use('/api/v1/programs', programRoutes);
 
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("Error", err));
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.error('Error', err));
 
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   res.json({
-    message: "Api is working",
+    message: 'Api is working',
     timestamp: new Date().toISOString(),
   });
 });

@@ -1,48 +1,53 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const validator = require('validator');
 
 const userSchema = new mongoose.Schema(
   {
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: [true, 'Email is required'],
       lowercase: true,
       trim: true,
       unique: true,
-      match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-        "Please enter a valid email",
-      ],
+      validate: {
+        validator: function (v) {
+          return validator.isEmail(v);
+        },
+        message: 'Please enter a valid email',
+      },
     },
 
     password: {
       type: String,
-      required: [true, "Password is required"],
-      minlength: [8, "Password length must be at least 8 characters"],
-      maxlength: [128, "Password length cannot exceed 128 characters"],
+      required: [true, 'Password is required'],
+      minlength: [8, 'Password length must be at least 8 characters'],
+      maxlength: [128, 'Password length cannot exceed 128 characters'],
       select: false,
       validate: {
         validator: function (password) {
-          if (!this.isModified("password")) return true;
+          if (!this.isModified('password')) {
+            return true;
+          }
           return /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(password);
         },
-        message: "Password must contain at least one letter and one number",
+        message: 'Password must contain at least one letter and one number',
       },
     },
 
     name: {
       type: String,
-      required: [true, "Name is required"],
+      required: [true, 'Name is required'],
       trim: true,
-      minlength: [2, "Name must be at least 2 characters"],
-      maxlength: [50, "Name cannot exceed 50 characters"],
+      minlength: [2, 'Name must be at least 2 characters'],
+      maxlength: [50, 'Name cannot exceed 50 characters'],
     },
 
     preferences: {
       units: {
         type: String,
-        enum: ["metric", "imperial"],
-        default: "metric",
+        enum: ['metric', 'imperial'],
+        default: 'metric',
       },
 
       weekStartsOn: {
@@ -56,10 +61,10 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: {
-        values: ["user", "admin"],
-        message: "{VALUE} is not valid, must be role",
+        values: ['user', 'admin'],
+        message: '{VALUE} is not valid, must be role',
       },
-      default: "user",
+      default: 'user',
     },
 
     isActive: {
@@ -76,8 +81,10 @@ const userSchema = new mongoose.Schema(
 
 userSchema.index({ createdAt: -1 });
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
 
   this.password = await bcrypt.hash(this.password, 12);
   next();
@@ -98,18 +105,22 @@ userSchema.statics.changePassword = async function (
   oldPassword,
   newPassword
 ) {
-  const user = await this.findById(userId).select("+password");
+  const user = await this.findById(userId).select('+password');
 
-  if (!(await user.comparePassword(oldPassword)))
-    throw new Error("Current password is incorrect");
+  if (!(await user.comparePassword(oldPassword))) {
+    throw new Error('Current password is incorrect');
+  }
 
-  if (!newPassword) throw new Error("New password is required");
+  if (!newPassword) {
+    throw new Error('New password is required');
+  }
 
-  if (newPassword === oldPassword)
-    throw new Error("New password must be different from current password");
+  if (newPassword === oldPassword) {
+    throw new Error('New password must be different from current password');
+  }
 
   user.password = newPassword;
   await user.save();
 };
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema);

@@ -1,6 +1,6 @@
-const User = require("../models/User");
-const { sendSuccess } = require("../utils/response");
-const userService = require("../services/user/user.service");
+const User = require('../models/User');
+const { sendSuccess } = require('../utils/response');
+const userService = require('../services/user/user.service');
 
 /**
  * @desc    Get current authenticated user
@@ -10,7 +10,7 @@ const userService = require("../services/user/user.service");
  * @returns {Object} { success, message, data: user }
  */
 const getCurrentUser = (req, res) => {
-  sendSuccess(res, req.user, 200, "User retrieved");
+  sendSuccess(res, req.user, 200, 'User retrieved');
 };
 
 /**
@@ -25,20 +25,22 @@ const getCurrentUser = (req, res) => {
 const updateCurrentUser = async (req, res, next) => {
   try {
     const allowedUpdates = [
-      "name",
-      "preferences.units",
-      "preferences.weekStartsOn",
+      'name',
+      'preferences.units',
+      'preferences.weekStartsOn',
     ];
     const updates = {};
 
+    /* eslint-disable security/detect-object-injection */
     Object.keys(req.body).forEach((key) => {
       if (allowedUpdates.includes(key)) {
         updates[key] = req.body[key];
       }
     });
+    /* eslint-enable security/detect-object-injection */
 
     const user = await userService.updateCurrentUser(req.user._id, updates);
-    sendSuccess(res, user, 200, "User updated");
+    sendSuccess(res, user, 200, 'User updated');
   } catch (error) {
     next(error);
   }
@@ -57,7 +59,7 @@ const changePassword = async (req, res, next) => {
   try {
     const { oldPassword, newPassword } = req.body;
     await User.changePassword(req.user._id, oldPassword, newPassword);
-    sendSuccess(res, null, 200, "Password changed successfully");
+    sendSuccess(res, null, 200, 'Password changed successfully');
   } catch (error) {
     next(error);
   }

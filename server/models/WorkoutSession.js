@@ -1,35 +1,35 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const workoutSessionSchema = new mongoose.Schema(
   {
     // === RELATIONSHIPS ===
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     programId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "UserProgram",
+      ref: 'UserProgram',
       required: true,
     },
 
     // === SESSION DETAILS ===
     workoutName: {
       type: String,
-      maxlength: [35, "Name is too long"],
+      maxlength: [35, 'Name is too long'],
       required: true,
       trim: true,
     },
     dayNumber: {
       type: Number,
-      min: [1, "Workout day must be at least 1"],
+      min: [1, 'Workout day must be at least 1'],
     },
     sessionStatus: {
       type: String,
       enum: {
-        values: ["completed", "partially", "skipped"],
-        message: "{VALUE} is not valid. Use completed, partially or skipped",
+        values: ['completed', 'partially', 'skipped'],
+        message: '{VALUE} is not valid. Use completed, partially or skipped',
       },
       required: true,
     },
@@ -41,22 +41,22 @@ const workoutSessionSchema = new mongoose.Schema(
           // exercise reference
           exerciseId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Exercise",
+            ref: 'Exercise',
             required: true,
           },
           order: {
             type: Number,
             required: true,
-            min: [1, "Order must start at 1"],
+            min: [1, 'Order must start at 1'],
           },
           completionStatus: {
             type: String,
             enum: {
-              values: ["completed", "partially", "skipped"],
+              values: ['completed', 'partially', 'skipped'],
               message:
-                "{VALUE} is not valid. Use completed, partially or skipped",
+                '{VALUE} is not valid. Use completed, partially or skipped',
             },
-            default: "completed",
+            default: 'completed',
           },
           // performance data
           sets: {
@@ -66,35 +66,35 @@ const workoutSessionSchema = new mongoose.Schema(
                   type: String,
                   enum: {
                     values: [
-                      "straight set",
-                      "drop set",
-                      "super set",
-                      "myoreps",
-                      "myorep match",
-                      "giant set",
-                      "cluster set",
+                      'straight set',
+                      'drop set',
+                      'super set',
+                      'myoreps',
+                      'myorep match',
+                      'giant set',
+                      'cluster set',
                     ],
-                    message: "{VALUE} is not valid, Must be type of set", // for self
+                    message: '{VALUE} is not valid, Must be type of set', // for self
                   },
-                  default: "straight set",
+                  default: 'straight set',
                   required: true,
                   lowercase: true,
                 },
                 reps: {
                   type: Number,
-                  min: [1, "Reps must be at least 1"],
-                  max: [100, "Reps cannot exceed 100"],
+                  min: [1, 'Reps must be at least 1'],
+                  max: [100, 'Reps cannot exceed 100'],
                   required: true,
                 },
                 weight: {
                   type: Number,
-                  min: [0, "Weight cannot be negative"],
+                  min: [0, 'Weight cannot be negative'],
                   required: true,
                 },
                 rir: {
                   type: Number,
-                  min: [0, "Rir cannot be negative"],
-                  max: [10, "Rir cannot exceed 10"],
+                  min: [0, 'Rir cannot be negative'],
+                  max: [10, 'Rir cannot exceed 10'],
                   required: true,
                 },
               },
@@ -104,7 +104,7 @@ const workoutSessionSchema = new mongoose.Schema(
               validator: function (arr) {
                 return arr.length > 0;
               },
-              message: "Exercise must have atleast 1 set",
+              message: 'Exercise must have atleast 1 set',
             },
           },
 
@@ -150,14 +150,14 @@ const workoutSessionSchema = new mongoose.Schema(
               required: false,
             },
           },
-          notes: { type: String, maxlength: [500, "Text is too long"] },
+          notes: { type: String, maxlength: [500, 'Text is too long'] },
         },
       ],
       validate: {
         validator: function (arr) {
           return arr.length > 0;
         },
-        message: "Workout must have at least 1 exercise",
+        message: 'Workout must have at least 1 exercise',
       },
     },
 
@@ -169,10 +169,10 @@ const workoutSessionSchema = new mongoose.Schema(
     },
     sessionDuration: {
       type: Number,
-      min: [0, "Duration cannot be negative"],
-      max: [600, "Duration limit exceeded (10 hours)"],
+      min: [0, 'Duration cannot be negative'],
+      max: [600, 'Duration limit exceeded (10 hours)'],
     },
-    notes: { type: String, maxlength: [999, "Text is too long"] },
+    notes: { type: String, maxlength: [999, 'Text is too long'] },
 
     // === ALGORITHM DATA ===
     algorithmNotes: String, // Human-readable decisions
@@ -192,7 +192,7 @@ const workoutSessionSchema = new mongoose.Schema(
 // === INDEXES FOR QUERY PERFORMANCE ===
 workoutSessionSchema.index({ userId: 1, timePerformed: -1 }); // Recent sessions
 workoutSessionSchema.index({ programId: 1 }); // Sessions for program
-workoutSessionSchema.index({ userId: 1, "exercises.exerciseId": 1 }); // Exercise history
+workoutSessionSchema.index({ userId: 1, 'exercises.exerciseId': 1 }); // Exercise history
 
 // === Instance methods ===
 
@@ -216,10 +216,10 @@ workoutSessionSchema.statics.getRecentSessions = async function (
   limit = 10
 ) {
   if (!userId) {
-    throw new Error("userId is required");
+    throw new Error('userId is required');
   }
 
-  return await this.find({ userId, sessionStatus: "completed" })
+  return await this.find({ userId, sessionStatus: 'completed' })
     .sort({ datePerformed: -1 })
     .limit(limit);
 };
@@ -231,13 +231,13 @@ workoutSessionSchema.statics.getExerciseHistory = async function (
   limit = 20
 ) {
   if (!userId || !exerciseId) {
-    throw new Error("userId and exerciseId required");
+    throw new Error('userId and exerciseId required');
   }
 
   return await this.find({
     userId,
-    "exercises.exerciseId": exerciseId,
-    sessionStatus: "completed",
+    'exercises.exerciseId': exerciseId,
+    sessionStatus: 'completed',
   })
     .sort({ datePerformed: -1 })
     .limit(limit);
@@ -245,14 +245,14 @@ workoutSessionSchema.statics.getExerciseHistory = async function (
 
 //=== pre/post hooks
 
-pre("save", async function () {
-  if (this.isModified("workouts") || this.isModified("periodization")) {
+workoutSessionSchema.pre('save', async function () {
+  if (this.isModified('workouts') || this.isModified('periodization')) {
     this.isModified = true;
     this.lastModified = Date.now();
   }
 });
 
 workoutSessionSchema.module.exports = mongoose.model(
-  "WorkoutSession",
+  'WorkoutSession',
   workoutSessionSchema
 );

@@ -1,66 +1,4 @@
-const exerciseService = require("../services/exercise/exercise.service");
-
-/**
- * Exercise Controller
- * Handles HTTP requests and responses for exercise operations
- *
- * TODO/Improvements:
- * 1. Additional Endpoints:
- *    - GET /exercises/trending - Most popular exercises
- *    - GET /exercises/variations/:id - Get exercise variations
- *    - GET /exercises/alternatives/:id - Get alternative exercises
- *    - POST /exercises/:id/feedback - Submit exercise feedback
- *    - POST /exercises/:id/form-check - Submit form check
- *
- * 2. Enhanced Filtering:
- *    - Support multiple muscle group filtering
- *    - Add difficulty level filtering
- *    - Filter by required equipment
- *    - Support experience level filtering
- *    - Add movement pattern filtering
- *
- * 3. Response Optimization:
- *    - Implement field selection (?fields=name,muscles)
- *    - Add response compression
- *    - Support partial responses
- *    - Add ETag support
- *    - Implement conditional requests
- *
- * 4. Bulk Operations:
- *    - Add batch create endpoint
- *    - Support bulk updates
- *    - Implement mass status changes
- *    - Add batch delete capability
- *    - Support exercise import
- *
- * 5. Media Handling:
- *    - Add image upload endpoint
- *    - Support video submissions
- *    - Handle form check videos
- *    - Manage exercise demonstrations
- *    - Support multiple media formats
- *
- * 6. Validation & Security:
- *    - Add request rate limiting
- *    - Implement input sanitization
- *    - Add role-based access
- *    - Validate media submissions
- *    - Add abuse prevention
- *
- * 7. Documentation:
- *    - Add OpenAPI/Swagger specs
- *    - Include example requests
- *    - Document rate limits
- *    - Add error code documentation
- *    - Include usage guidelines
- *
- * 8. Integration Features:
- *    - Add webhook support
- *    - Support external IDs
- *    - Enable API key authentication
- *    - Add export capabilities
- *    - Support third-party integrations
- */
+const exerciseService = require('../services/exercise/exercise.service');
 
 /**
  * @desc    Get all exercises with optional filtering and pagination
@@ -76,9 +14,15 @@ const exerciseService = require("../services/exercise/exercise.service");
 const getExercises = async (req, res, next) => {
   try {
     const filters = {};
-    if (req.query.muscle) filters.primaryMuscle = req.query.muscle;
-    if (req.query.equipment) filters.equipment = req.query.equipment;
-    if (req.query.category) filters.category = req.query.category;
+    if (req.query.muscle) {
+      filters.primaryMuscle = req.query.muscle;
+    }
+    if (req.query.equipment) {
+      filters.equipment = req.query.equipment;
+    }
+    if (req.query.category) {
+      filters.category = req.query.category;
+    }
 
     const result = await exerciseService.getExercises(filters, req.query);
 
@@ -109,7 +53,7 @@ const getExerciseById = async (req, res, next) => {
     if (!exercise) {
       return res.status(404).json({
         success: false,
-        message: "Exercise not found",
+        message: 'Exercise not found',
       });
     }
 
@@ -118,7 +62,7 @@ const getExerciseById = async (req, res, next) => {
       data: exercise,
     });
   } catch (error) {
-    if (error.type === "VALIDATION_ERROR") {
+    if (error.type === 'VALIDATION_ERROR') {
       return res.status(400).json({
         success: false,
         message: error.message,
@@ -151,20 +95,20 @@ const createExercise = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: "Exercise created successfully",
+      message: 'Exercise created successfully',
       data: newExercise,
     });
   } catch (error) {
-    if (error.type === "DUPLICATE_ERROR") {
+    if (error.type === 'DUPLICATE_ERROR') {
       return res.status(409).json({
         success: false,
         message: error.message,
       });
     }
-    if (error.name === "ValidationError") {
+    if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
-        message: "Validation failed",
+        message: 'Validation failed',
         errors: Object.values(error.errors).map((e) => e.message),
       });
     }
@@ -192,13 +136,13 @@ const updateExercise = async (req, res, next) => {
     if (!updatedExercise) {
       return res.status(404).json({
         success: false,
-        message: "Exercise not found",
+        message: 'Exercise not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "Updated successfully",
+      message: 'Updated successfully',
       data: updatedExercise,
     });
   } catch (error) {
@@ -221,12 +165,12 @@ const deleteExercise = async (req, res, next) => {
     if (!deletedExercise) {
       return res.status(404).json({
         success: false,
-        message: "Exercise not found",
+        message: 'Exercise not found',
       });
     }
     res.status(204).json({
       success: true,
-      message: "Exercise deleted successfully",
+      message: 'Exercise deleted successfully',
     });
   } catch (error) {
     next(error);

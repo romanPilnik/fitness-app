@@ -1,45 +1,5 @@
-const programTemplateService = require("../services/template/programTemplate.service");
-const { sendSuccess, sendError } = require("../utils/response");
-
-/**
- * Program Template Controller
- * Handles HTTP requests and responses for program template operations
- *
- * TODO/Improvements:
- * 1. Input Validation:
- *    - Add validation middleware for request body schemas
- *    - Validate query parameters for getProgramTemplates
- *    - Sanitize user inputs
- *
- * 2. Additional Endpoints Needed:
- *    - GET /api/v1/templates/featured - Get featured/popular templates
- *    - GET /api/v1/templates/stats - Get usage statistics
- *    - POST /api/v1/templates/:id/duplicate - Clone a template
- *    - POST /api/v1/templates/:id/rate - Add user rating
- *    - GET /api/v1/templates/categories - Get available template categories
- *
- * 3. Authorization:
- *    - Add role-based access control middleware
- *    - Implement template ownership checks
- *    - Add rate limiting for public endpoints
- *
- * 4. Response Enhancement:
- *    - Include metadata in responses (e.g., totalUsers, avgRating)
- *    - Support field selection (e.g., ?fields=name,description)
- *    - Add ETag support for caching
- *    - Implement conditional requests (If-Modified-Since)
- *
- * 5. Query Features:
- *    - Advanced filtering (difficulty level, duration, equipment)
- *    - Search by similar templates
- *    - Sort by popularity/rating
- *    - Filter by user fitness level
- *
- * 6. Bulk Operations:
- *    - Batch create/update templates
- *    - Bulk delete with safety checks
- *    - Mass template status updates
- */
+const programTemplateService = require('../services/template/programTemplate.service');
+const { sendSuccess } = require('../utils/response');
 
 /**
  * @desc    Get all program templates with optional filters
@@ -56,16 +16,20 @@ const { sendSuccess, sendError } = require("../utils/response");
 const getProgramTemplates = async (req, res, next) => {
   try {
     const allowedFilters = [
-      "splitType",
-      "createdBy",
-      "difficulty",
-      "daysPerWeek",
+      'splitType',
+      'createdBy',
+      'difficulty',
+      'daysPerWeek',
     ];
     const filters = {};
 
+    /* eslint-disable security/detect-object-injection */
     allowedFilters.forEach((key) => {
-      if (req.query[key]) filters[key] = req.query[key];
+      if (req.query[key]) {
+        filters[key] = req.query[key];
+      }
     });
+    /* eslint-enable security/detect-object-injection */
 
     const result = await programTemplateService.getProgramTemplates(
       filters,
@@ -123,7 +87,7 @@ const createProgramTemplate = async (req, res, next) => {
     return sendSuccess(
       res,
       { template },
-      "Program template created successfully",
+      'Program template created successfully',
       201
     );
   } catch (error) {
@@ -150,7 +114,7 @@ const updateProgramTemplate = async (req, res, next) => {
     return sendSuccess(
       res,
       { template },
-      "Program template updated successfully"
+      'Program template updated successfully'
     );
   } catch (error) {
     next(error);
@@ -168,7 +132,7 @@ const updateProgramTemplate = async (req, res, next) => {
 const deleteProgramTemplate = async (req, res, next) => {
   try {
     await programTemplateService.deleteProgramTemplate(req.params.id);
-    return sendSuccess(res, null, "Program template deleted successfully");
+    return sendSuccess(res, null, 'Program template deleted successfully');
   } catch (error) {
     next(error);
   }

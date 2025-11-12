@@ -3,8 +3,8 @@
  * @module middleware/auth
  */
 
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
 /**
  * JWT token verification middleware
@@ -34,10 +34,10 @@ const User = require("../models/User");
 
 const verifyToken = async (req, res, next) => {
   // Get token from header
-  const authHeader = req.header("Authorization");
+  const authHeader = req.header('Authorization');
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    const error = new Error("Token required");
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const error = new Error('Token required');
     error.statusCode = 401;
     throw error;
   }
@@ -49,10 +49,10 @@ const verifyToken = async (req, res, next) => {
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
   // Get user from database (excluding password)
-  const user = await User.findById(decoded.userId).select("-password");
+  const user = await User.findById(decoded.userId).select('-password');
 
   if (!user || !user.isActive) {
-    const error = new Error("Invalid token");
+    const error = new Error('Invalid token');
     error.statusCode = 401;
     throw error;
   }

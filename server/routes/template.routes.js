@@ -3,9 +3,9 @@
  * @module routes/template
  */
 
-const express = require("express");
-const { verifyToken } = require("../middleware/auth");
-const { requireRole } = require("../middleware/authorize");
+const express = require('express');
+const { verifyToken } = require('../middleware/auth');
+const { requireRole } = require('../middleware/authorize');
 
 const router = express.Router();
 
@@ -29,7 +29,7 @@ const router = express.Router();
  * @param {string} search.query - Search term
  * @returns {Object} 200 - List of templates with pagination
  */
-router.get("/", async (req, res) => {});
+router.get('/', async (req, res) => {});
 
 /**
  * POST /api/v1/programs/templates
@@ -46,7 +46,7 @@ router.get("/", async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.post("/", verifyToken, requireRole("admin"), async (req, res) => {});
+router.post('/', verifyToken, requireRole('admin'), async (req, res) => {});
 
 // ============================================
 // TEMPLATE RESOURCE
@@ -60,7 +60,7 @@ router.post("/", verifyToken, requireRole("admin"), async (req, res) => {});
  * @returns {Object} 200 - Single template details
  * @returns {Object} 404 - Template not found
  */
-router.get("/:id", async (req, res) => {});
+router.get('/:id', async (req, res) => {});
 
 /**
  * PATCH /api/v1/programs/templates/:id
@@ -73,7 +73,7 @@ router.get("/:id", async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.patch("/:id", verifyToken, requireRole("admin"), async (req, res) => {});
+router.patch('/:id', verifyToken, requireRole('admin'), async (req, res) => {});
 
 /**
  * DELETE /api/v1/programs/templates/:id
@@ -86,9 +86,9 @@ router.patch("/:id", verifyToken, requireRole("admin"), async (req, res) => {});
  * @returns {Object} 403 - Forbidden (admin only)
  */
 router.delete(
-  "/:id",
+  '/:id',
   verifyToken,
-  requireRole("admin"),
+  requireRole('admin'),
   async (req, res) => {}
 );
 
