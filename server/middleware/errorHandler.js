@@ -23,7 +23,7 @@
  * error.statusCode = 404;
  * next(error);
  */
-function errorHandler(err, _req, res, _next) {
+const errorHandler = (err, _req, res, _next) => {
   console.log(err);
 
   // === VALIDATION ERROR ===
@@ -83,4 +83,4 @@ function errorHandler(err, _req, res, _next) {
   });
 }
 
-module.exports = { errorHandler };
+module.exports = errorHandler ;

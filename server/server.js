@@ -5,8 +5,11 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
+const exerciseRoutes = require('./routes/exercise.routes');
+const exerciseProfileRoutes = require('./routes/exerciseProfile.routes');
 const templateRoutes = require('./routes/template.routes');
-const programRoutes = require('./routes/Program.routes');
+const programRoutes = require('./routes/program.routes');
+const sessionRoutes = require('./routes/session.routes');
 
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -17,8 +20,11 @@ app.use(cors());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/v1/exercises', exerciseRoutes);
+app.use('/api/v1/profile/exercises', exerciseProfileRoutes);
 app.use('/api/v1/templates', templateRoutes);
 app.use('/api/v1/programs', programRoutes);
+app.use('/api/v1/session', sessionRoutes);
 
 mongoose
   .connect(process.env.MONGODB_URI)
