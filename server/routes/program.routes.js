@@ -30,7 +30,12 @@ router.use(verifyToken);
  * @returns {Object} 200 - List of user's programs
  * @returns {Object} 401 - Unauthorized
  */
-router.get('/', async (req, res) => {});
+router.get(
+  '/',
+  verifyToken,
+  verifyOwnership(UserProgram),
+  async (req, res) => {}
+);
 
 /**
  * POST /api/v1/programs/from-template
