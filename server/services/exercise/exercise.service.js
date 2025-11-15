@@ -46,17 +46,13 @@ const getExercises = async (filters = {}, options = {}) => {
  * @throws {Error} When exercise not found or invalid ID
  */
 const getExerciseById = async (id) => {
-  try {
-    const exercise = await Exercise.findById(id);
-    return exercise;
-  } catch (error) {
-    if (error.name === 'CastError') {
-      const customError = new Error('Invalid exercise ID format');
-      customError.type = 'VALIDATION_ERROR';
-      throw customError;
-    }
+  const exercise = await Exercise.findById(id);
+  if (!exercise) {
+    const error = new Error('Exercise not found');
+    error.statusCode = 404;
     throw error;
   }
+  return exercise;
 };
 
 /**
@@ -72,18 +68,18 @@ const getExerciseById = async (id) => {
  * @throws {Error} On validation failure or duplicate name
  */
 const createExercise = async (exerciseData) => {
-  try {
-    const exercise = new Exercise(exerciseData);
-    await exercise.save();
-    return exercise;
-  } catch (error) {
-    if (error.code === 11000) {
-      const customError = new Error('Exercise with this name already exists');
-      customError.type = 'DUPLICATE_ERROR';
-      throw customError;
-    }
+  const existing = await Exercise.findOne({
+    name: exerciseData.name,
+    isActive: true,
+  });
+  if (existing) {
+    const error = new Error('Exercise with this name already exists');
+    error.statusCode = 409;
     throw error;
   }
+  const exercise = new Exercise(exerciseData);
+  await exercise.save();
+  return exercise;
 };
 
 /**
@@ -100,25 +96,36 @@ const createExercise = async (exerciseData) => {
  * @throws {Error} When exercise not found or validation fails
  */
 const updateExercise = async (id, updatedFields) => {
-  return await Exercise.findByIdAndUpdate(
+  const updatedExercise = await Exercise.findByIdAndUpdate(
     id,
     { $set: updatedFields },
     { new: true, runValidators: true }
   );
+  if (!updatedExercise) {
+    const error = new Error('Exercise not found');
+    error.statusCode = 404;
+    throw error;
+  }
+  return updatedExercise;
 };
 
 /**
  * Soft delete an exercise
  * @param {string} id - Exercise ID
- * @returns {Promise<Object>} Deleted exercise document
+ * @returns {Promise<void>}
  * @throws {Error} When exercise not found
  */
 const deleteExercise = async (id) => {
-  return await Exercise.findByIdAndUpdate(
+  const deletedExercise = await Exercise.findByIdAndUpdate(
     id,
     { $set: { isActive: false } },
     { new: true }
   );
+  if (!deletedExercise) {
+    const error = new Error('Exercise not found');
+    error.statusCode = 404;
+    throw error;
+  }
 };
 
 module.exports = {

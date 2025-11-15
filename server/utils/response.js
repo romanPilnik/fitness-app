@@ -11,6 +11,9 @@
  * @param {String} message - Optional success message
  */
 const sendSuccess = (res, data, statusCode = 200, message = null) => {
+  if (statusCode === 204) {
+    return res.status(204).send();
+  }
   const response = {
     success: true,
     data,
@@ -33,8 +36,8 @@ const sendSuccess = (res, data, statusCode = 200, message = null) => {
  */
 const sendError = (
   res,
-  message,
   statusCode = 500,
+  message = null,
   code = 'ERROR',
   details = null
 ) => {

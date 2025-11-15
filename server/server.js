@@ -24,7 +24,7 @@ app.use('/api/v1/exercises', exerciseRoutes);
 app.use('/api/v1/profile/exercises', exerciseProfileRoutes);
 app.use('/api/v1/templates', templateRoutes);
 app.use('/api/v1/programs', programRoutes);
-app.use('/api/v1/session', sessionRoutes);
+app.use('/api/v1/sessions', sessionRoutes);
 
 mongoose
   .connect(process.env.MONGODB_URI)

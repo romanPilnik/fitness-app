@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const authService = require('../services/auth/auth.service');
+const { sendSuccess } = require('../utils/response');
 
 /**
  * Handles user registration HTTP request
@@ -24,15 +25,19 @@ const registerUser = async (req, res, next) => {
       expiresIn: '7d',
     });
 
-    res.status(201).json({
-      message: 'User created successfully',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
+    sendSuccess(
+      res,
+      {
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+        },
       },
-    });
+      201,
+      'User created successfully'
+    );
   } catch (error) {
     next(error);
   }
@@ -58,15 +63,19 @@ const loginUser = async (req, res, next) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
-    res.status(200).json({
-      message: 'User logged in successfully',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
+    sendSuccess(
+      res,
+      {
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+        },
       },
-    });
+      200,
+      'User logged in successfully'
+    );
   } catch (error) {
     next(error);
   }

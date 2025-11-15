@@ -81,6 +81,6 @@ const errorHandler = (err, _req, res, _next) => {
     success: false,
     message,
   });
-}
+};
 
-module.exports = errorHandler ;
+module.exports = errorHandler;
