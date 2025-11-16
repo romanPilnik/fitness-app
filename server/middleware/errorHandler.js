@@ -1,3 +1,5 @@
+const { sendError } = require('../utils/response');
+
 /**
  * Centralized error handling middleware
  * Transforms various error types into consistent JSON responses.
@@ -23,6 +25,7 @@
  * error.statusCode = 404;
  * next(error);
  */
+
 const errorHandler = (err, _req, res, _next) => {
   console.log(err);
 
@@ -32,55 +35,47 @@ const errorHandler = (err, _req, res, _next) => {
       field: e.path,
       message: e.message,
     }));
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors: errors,
-    });
+    return sendError(res, 400, 'Validation failed', 'VALIDATION_ERROR', errors);
   }
 
   // === CAST ERROR ===
   else if (err.name === 'CastError') {
-    return res.status(400).json({
-      success: false,
-      message: `Invalid ${err.path}: ${err.value}`,
-    });
+    return sendError(
+      res,
+      400,
+      `Invalid ${err.path}: ${err.value}`,
+      'CAST_ERROR'
+    );
   }
 
   // === JsonWebTokenError ===
   else if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid token',
-    });
+    return sendError(res, 401, 'Invalid token', 'INVALID_TOKEN');
   }
 
   // === TokenExpiredError ===
   else if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token expired',
-    });
+    return sendError(res, 401, 'Token has expired', 'TOKEN_EXPIRED');
   }
 
   // === Duplicate Value ===
   else if (err.code === 11000) {
     const field = Object.keys(err.keyPattern)[0];
 
-    return res.status(409).json({
-      success: false,
-      message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`,
-    });
+    return sendError(
+      res,
+      409,
+      `Duplicate value for field: ${field}`,
+      'DUPLICATE_VALUE'
+    );
   }
 
   // === DEFAULT ERROR ===
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal server error';
+  const code = err.code || 'ERROR';
 
-  return res.status(statusCode).json({
-    success: false,
-    message,
-  });
+  return sendError(res, statusCode, message, code);
 };
 
 module.exports = errorHandler;

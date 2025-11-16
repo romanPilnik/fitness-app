@@ -29,8 +29,8 @@ const sendSuccess = (res, data, statusCode = 200, message = null) => {
 /**
  * Send error response
  * @param {Object} res - Express response object
- * @param {String} message - Human-readable error message
  * @param {Number} statusCode - HTTP status code (default: 500)
+ * @param {String} message - Human-readable error message
  * @param {String} code - Machine-readable error code (default: "ERROR")
  * @param {Object} details - Additional error details (validation errors, etc.)
  */

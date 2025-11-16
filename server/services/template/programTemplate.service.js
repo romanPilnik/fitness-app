@@ -20,13 +20,19 @@ const getProgramTemplates = async (filters = {}, options = {}) => {
   const textFilter = options.q ? { $text: { $search: options.q } } : {};
   const query = { ...queryFilters, ...textFilter };
 
-  const templates = await ProgramTemplate.find(query)
+  const findQuery = ProgramTemplate.find(query)
     .select('-__v')
     .skip(skip)
     .limit(limit)
+    .sort({ createdAt: -1 })
     .lean();
 
-  const count = await ProgramTemplate.countDocuments(query);
+  const countQuery = ProgramTemplate.countDocuments(query);
+
+  const [templates, count] = await Promise.all([
+    findQuery.exec(),
+    countQuery.exec(),
+  ]);
   const pagination = calculatePagination(count, page, limit);
 
   return {
@@ -42,7 +48,7 @@ const getProgramTemplates = async (filters = {}, options = {}) => {
  * @returns {Promise<Object>}
  */
 const getProgramTemplateById = async (id) => {
-  const template = await ProgramTemplate.findById(id).select('-__v');
+  const template = await ProgramTemplate.findById(id).select('-__v').lean();
   if (!template) {
     const error = new Error('Program template not found');
     error.statusCode = 404;
@@ -60,7 +66,7 @@ const createProgramTemplate = async (templateData) => {
   const existing = await ProgramTemplate.findOne({
     name: templateData.name,
     isActive: true,
-  });
+  }).lean();
 
   if (existing) {
     const error = new Error('Template with this name already exists');
@@ -68,8 +74,9 @@ const createProgramTemplate = async (templateData) => {
     throw error;
   }
   const template = new ProgramTemplate(templateData);
-  await template.validate();
-  return template.save();
+  const saved = await template.save();
+
+  return saved;
 };
 
 /**
@@ -103,7 +110,9 @@ const updateProgramTemplate = async (id, updateData) => {
     id,
     { $set: updates },
     { new: true, runValidators: true }
-  ).select('-__v');
+  )
+    .select('-__v')
+    .lean();
 
   if (!template) {
     const error = new Error('Program template not found');
@@ -124,7 +133,9 @@ const deleteProgramTemplate = async (id) => {
     id,
     { $set: { isActive: false } },
     { new: true }
-  ).select('-__v');
+  )
+    .select('-__v')
+    .lean();
 
   if (!template) {
     const error = new Error('Program template not found');

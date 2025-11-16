@@ -1,4 +1,3 @@
-const User = require('../models/User');
 const { sendSuccess } = require('../utils/response');
 const userService = require('../services/user/user.service');
 
@@ -10,7 +9,7 @@ const userService = require('../services/user/user.service');
  * @returns {Object} { success, message, data: user }
  */
 const getCurrentUser = (req, res) => {
-  sendSuccess(res, req.user, 200, 'User retrieved');
+  return sendSuccess(res, req.user, 200, 'User retrieved');
 };
 
 /**
@@ -22,29 +21,26 @@ const getCurrentUser = (req, res) => {
  * @returns {Object} { success, message, data: user }
  * @throws  {400} Validation error
  */
-const updateCurrentUser = async (req, res, next) => {
-  try {
-    const allowedUpdates = [
-      'name',
-      'preferences.units',
-      'preferences.weekStartsOn',
-    ];
-    const updates = {};
+const updateCurrentUser = async (req, res) => {
+  const allowedUpdates = [
+    'name',
+    'preferences.units',
+    'preferences.weekStartsOn',
+  ];
+  const updates = {};
 
-    /* eslint-disable security/detect-object-injection */
-    Object.keys(req.body).forEach((key) => {
-      if (allowedUpdates.includes(key)) {
-        updates[key] = req.body[key];
-      }
-    });
-    /* eslint-enable security/detect-object-injection */
+  /* eslint-disable security/detect-object-injection */
+  Object.keys(req.body).forEach((key) => {
+    if (allowedUpdates.includes(key)) {
+      updates[key] = req.body[key];
+    }
+  });
+  /* eslint-enable security/detect-object-injection */
 
-    const user = await userService.updateCurrentUser(req.user._id, updates);
-    sendSuccess(res, user, 200, 'User updated');
-  } catch (error) {
-    next(error);
-  }
+  const user = await userService.updateCurrentUser(req.user._id, updates);
+  return sendSuccess(res, user, 200, 'User updated');
 };
+
 /**
  * @desc    Change user password
  * @route   POST /api/user/change-password
@@ -55,14 +51,10 @@ const updateCurrentUser = async (req, res, next) => {
  * @throws  {401} Current password incorrect
  * @throws  {400} Validation error
  */
-const changePassword = async (req, res, next) => {
-  try {
-    const { oldPassword, newPassword } = req.body;
-    await User.changePassword(req.user._id, oldPassword, newPassword);
-    sendSuccess(res, null, 200, 'Password changed successfully');
-  } catch (error) {
-    next(error);
-  }
+const changePassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  await userService.changePassword(req.user._id, oldPassword, newPassword);
+  sendSuccess(res, null, 200, 'Password changed successfully');
 };
 
 module.exports = {

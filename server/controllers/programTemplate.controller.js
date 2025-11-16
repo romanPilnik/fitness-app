@@ -13,36 +13,34 @@ const { sendSuccess } = require('../utils/response');
  * @query   {number} limit - Items per page
  * @returns {Object} { success, data: { templates, pagination } }
  */
-const getProgramTemplates = async (req, res, next) => {
-  try {
-    const allowedFilters = [
-      'splitType',
-      'createdBy',
-      'difficulty',
-      'daysPerWeek',
-    ];
-    const filters = {};
+const getProgramTemplates = async (req, res) => {
+  const allowedFilters = [
+    'splitType',
+    'createdBy',
+    'difficulty',
+    'daysPerWeek',
+  ];
+  const filters = {};
 
-    /* eslint-disable security/detect-object-injection */
-    allowedFilters.forEach((key) => {
-      if (req.query[key]) {
-        filters[key] = req.query[key];
-      }
-    });
-    /* eslint-enable security/detect-object-injection */
+  /* eslint-disable security/detect-object-injection */
+  allowedFilters.forEach((key) => {
+    if (req.query[key]) {
+      filters[key] = req.query[key];
+    }
+  });
+  /* eslint-enable security/detect-object-injection */
 
-    const result = await programTemplateService.getProgramTemplates(
-      filters,
-      req.query
-    );
+  const result = await programTemplateService.getProgramTemplates(
+    filters,
+    req.query
+  );
 
-    return sendSuccess(res, {
-      templates: result.templates,
-      pagination: result.pagination,
-    });
-  } catch (error) {
-    next(error);
-  }
+  return sendSuccess(
+    res,
+    result,
+    200,
+    'Program templates retrieved successfully'
+  );
 };
 
 /**
@@ -54,15 +52,16 @@ const getProgramTemplates = async (req, res, next) => {
  * @throws  {404} Template not found
  * @throws  {400} Invalid ID format
  */
-const getProgramTemplateById = async (req, res, next) => {
-  try {
-    const template = await programTemplateService.getProgramTemplateById(
-      req.params.id
-    );
-    return sendSuccess(res, { template });
-  } catch (error) {
-    next(error);
-  }
+const getProgramTemplateById = async (req, res) => {
+  const template = await programTemplateService.getProgramTemplateById(
+    req.params.id
+  );
+  return sendSuccess(
+    res,
+    template,
+    200,
+    'Program template retrieved successfully'
+  );
 };
 
 /**
@@ -79,20 +78,14 @@ const getProgramTemplateById = async (req, res, next) => {
  * @throws  {400} Validation error
  * @throws  {409} Template name already exists
  */
-const createProgramTemplate = async (req, res, next) => {
-  try {
-    const template = await programTemplateService.createProgramTemplate(
-      req.body
-    );
-    return sendSuccess(
-      res,
-      { template },
-      'Program template created successfully',
-      201
-    );
-  } catch (error) {
-    next(error);
-  }
+const createProgramTemplate = async (req, res) => {
+  const template = await programTemplateService.createProgramTemplate(req.body);
+  return sendSuccess(
+    res,
+    template,
+    'Program template created successfully',
+    201
+  );
 };
 
 /**
@@ -105,20 +98,17 @@ const createProgramTemplate = async (req, res, next) => {
  * @throws  {404} Template not found
  * @throws  {400} Validation error
  */
-const updateProgramTemplate = async (req, res, next) => {
-  try {
-    const template = await programTemplateService.updateProgramTemplate(
-      req.params.id,
-      req.body
-    );
-    return sendSuccess(
-      res,
-      { template },
-      'Program template updated successfully'
-    );
-  } catch (error) {
-    next(error);
-  }
+const updateProgramTemplate = async (req, res) => {
+  const template = await programTemplateService.updateProgramTemplate(
+    req.params.id,
+    req.body
+  );
+  return sendSuccess(
+    res,
+    template,
+    200,
+    'Program template updated successfully'
+  );
 };
 
 /**
@@ -129,13 +119,9 @@ const updateProgramTemplate = async (req, res, next) => {
  * @returns {Object} { success, message }
  * @throws  {404} Template not found
  */
-const deleteProgramTemplate = async (req, res, next) => {
-  try {
-    await programTemplateService.deleteProgramTemplate(req.params.id);
-    return sendSuccess(res, null, 'Program template deleted successfully');
-  } catch (error) {
-    next(error);
-  }
+const deleteProgramTemplate = async (req, res) => {
+  await programTemplateService.deleteProgramTemplate(req.params.id);
+  return sendSuccess(res, null, 204);
 };
 
 module.exports = {

@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
 const authService = require('../services/auth/auth.service');
 const { sendSuccess } = require('../utils/response');
+const tokenService = require('../services/auth/token.service');
 
 /**
  * Handles user registration HTTP request
@@ -15,32 +15,24 @@ const { sendSuccess } = require('../utils/response');
  * @returns {Promise<void>} Sends JSON response with token and user data
  * @description Creates a new user account and returns JWT token
  */
-const registerUser = async (req, res, next) => {
-  try {
-    const { email, password, name } = req.body;
+const registerUser = async (req, res) => {
+  const { email, password, name } = req.body;
+  const user = await authService.registerUser(email, password, name);
+  const token = tokenService.generateAuthToken(user._id);
 
-    const user = await authService.registerUser(email, password, name);
-
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d',
-    });
-
-    sendSuccess(
-      res,
-      {
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-        },
+  return sendSuccess(
+    res,
+    {
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
       },
-      201,
-      'User created successfully'
-    );
-  } catch (error) {
-    next(error);
-  }
+    },
+    201,
+    'User created successfully'
+  );
 };
 
 /**
@@ -55,30 +47,24 @@ const registerUser = async (req, res, next) => {
  * @returns {Promise<void>} Sends JSON response with token and user data
  * @description Authenticates user and returns JWT token
  */
-const loginUser = async (req, res, next) => {
-  try {
-    const { email, password } = req.body;
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+  const user = await authService.loginUser(email, password);
+  const token = tokenService.generateAuthToken(user._id);
 
-    const user = await authService.loginUser(email, password);
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d',
-    });
-    sendSuccess(
-      res,
-      {
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-        },
+  return sendSuccess(
+    res,
+    {
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
       },
-      200,
-      'User logged in successfully'
-    );
-  } catch (error) {
-    next(error);
-  }
+    },
+    200,
+    'User logged in successfully'
+  );
 };
 
 module.exports = {

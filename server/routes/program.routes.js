@@ -5,20 +5,9 @@
 
 const express = require('express');
 const { verifyToken } = require('../middleware/auth');
-const { verifyOwnership } = require('../middleware/ownership');
-const UserProgram = require('../models/UserProgram');
+const userProgramController = require('../controllers/userProgram.controller');
 
 const router = express.Router();
-
-// TODO: Import controller when created
-// const programController = require('../controllers/program.controller');
-
-// All user program routes require authentication
-router.use(verifyToken);
-
-// ============================================
-// PROGRAM COLLECTION
-// ============================================
 
 /**
  * GET /api/v1/programs
@@ -30,12 +19,29 @@ router.use(verifyToken);
  * @returns {Object} 200 - List of user's programs
  * @returns {Object} 401 - Unauthorized
  */
-router.get(
-  '/',
-  verifyToken,
-  verifyOwnership(UserProgram),
-  async (req, res) => {}
-);
+router.get('/', verifyToken, userProgramController.getPrograms);
+
+/**
+ * GET /api/v1/programs/active
+ * @route GET /active
+ * @group Program - User program operations
+ * @returns {Object} 200 - User's currently active program
+ * @returns {Object} 404 - No active program found
+ * @returns {Object} 401 - Unauthorized
+ */
+router.get('/active', verifyToken, userProgramController.getActiveProgram);
+
+/**
+ * GET /api/v1/programs/:id
+ * @route GET /:id
+ * @group Program - User program operations
+ * @param {string} id.path.required - Program ID
+ * @returns {Object} 200 - Single program details
+ * @returns {Object} 404 - Program not found
+ * @returns {Object} 401 - Unauthorized
+ * @returns {Object} 403 - Forbidden (not owner)
+ */
+router.get('/:id', verifyToken, userProgramController.getProgramById);
 
 /**
  * POST /api/v1/programs/from-template
@@ -47,7 +53,11 @@ router.get(
  * @returns {Object} 404 - Template not found
  * @returns {Object} 401 - Unauthorized
  */
-router.post('/from-template', async (req, res) => {});
+router.post(
+  '/from-template',
+  verifyToken,
+  userProgramController.createFromTemplate
+);
 
 /**
  * POST /api/v1/programs/custom
@@ -61,37 +71,7 @@ router.post('/from-template', async (req, res) => {});
  * @returns {Object} 400 - Validation error
  * @returns {Object} 401 - Unauthorized
  */
-router.post('/custom', async (req, res) => {});
-
-// ============================================
-// CONVENIENCE ROUTES
-// ============================================
-
-/**
- * GET /api/v1/programs/active
- * @route GET /active
- * @group Program - User program operations
- * @returns {Object} 200 - User's currently active program
- * @returns {Object} 404 - No active program found
- * @returns {Object} 401 - Unauthorized
- */
-router.get('/active', async (req, res) => {});
-
-// ============================================
-// PROGRAM RESOURCE
-// ============================================
-
-/**
- * GET /api/v1/programs/:id
- * @route GET /:id
- * @group Program - User program operations
- * @param {string} id.path.required - Program ID
- * @returns {Object} 200 - Single program details
- * @returns {Object} 404 - Program not found
- * @returns {Object} 401 - Unauthorized
- * @returns {Object} 403 - Forbidden (not owner)
- */
-router.get('/:id', verifyOwnership(UserProgram), async (req, res) => {});
+router.post('/custom', verifyToken, userProgramController.createCustomProgram);
 
 /**
  * PATCH /api/v1/programs/:id
@@ -104,7 +84,7 @@ router.get('/:id', verifyOwnership(UserProgram), async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (not owner)
  */
-router.patch('/:id', verifyOwnership(UserProgram), async (req, res) => {});
+router.patch('/:id', verifyToken, userProgramController.updateProgramById);
 
 /**
  * DELETE /api/v1/programs/:id
@@ -116,6 +96,6 @@ router.patch('/:id', verifyOwnership(UserProgram), async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (not owner)
  */
-router.delete('/:id', verifyOwnership(UserProgram), async (req, res) => {});
+router.delete('/:id', verifyToken, userProgramController.deleteProgramById);
 
 module.exports = router;

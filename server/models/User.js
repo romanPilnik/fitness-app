@@ -100,27 +100,4 @@ userSchema.statics.findActive = function () {
   return this.find({ isActive: true });
 };
 
-userSchema.statics.changePassword = async function (
-  userId,
-  oldPassword,
-  newPassword
-) {
-  const user = await this.findById(userId).select('+password');
-
-  if (!(await user.comparePassword(oldPassword))) {
-    throw new Error('Current password is incorrect');
-  }
-
-  if (!newPassword) {
-    throw new Error('New password is required');
-  }
-
-  if (newPassword === oldPassword) {
-    throw new Error('New password must be different from current password');
-  }
-
-  user.password = newPassword;
-  await user.save();
-};
-
 module.exports = mongoose.model('User', userSchema);

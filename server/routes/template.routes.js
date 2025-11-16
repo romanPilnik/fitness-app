@@ -6,11 +6,9 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/authorize');
+const programTemplateController = require('../controllers/programTemplate.controller');
 
 const router = express.Router();
-
-// TODO: Import controller when created
-// const templateController = require('../controllers/template.controller');
 
 // ============================================
 // TEMPLATE COLLECTION
@@ -29,7 +27,7 @@ const router = express.Router();
  * @param {string} search.query - Search term
  * @returns {Object} 200 - List of templates with pagination
  */
-router.get('/', async (req, res) => {});
+router.get('/', programTemplateController.getProgramTemplates);
 
 /**
  * POST /api/v1/programs/templates
@@ -46,7 +44,12 @@ router.get('/', async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.post('/', verifyToken, requireRole('admin'), async (req, res) => {});
+router.post(
+  '/',
+  verifyToken,
+  requireRole('admin'),
+  programTemplateController.createProgramTemplate
+);
 
 // ============================================
 // TEMPLATE RESOURCE
@@ -60,7 +63,7 @@ router.post('/', verifyToken, requireRole('admin'), async (req, res) => {});
  * @returns {Object} 200 - Single template details
  * @returns {Object} 404 - Template not found
  */
-router.get('/:id', async (req, res) => {});
+router.get('/:id', programTemplateController.getProgramTemplateById);
 
 /**
  * PATCH /api/v1/programs/templates/:id
@@ -73,7 +76,12 @@ router.get('/:id', async (req, res) => {});
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.patch('/:id', verifyToken, requireRole('admin'), async (req, res) => {});
+router.patch(
+  '/:id',
+  verifyToken,
+  requireRole('admin'),
+  programTemplateController.updateProgramTemplate
+);
 
 /**
  * DELETE /api/v1/programs/templates/:id
@@ -89,7 +97,7 @@ router.delete(
   '/:id',
   verifyToken,
   requireRole('admin'),
-  async (req, res) => {}
+  programTemplateController.deleteProgramTemplate
 );
 
 module.exports = router;
