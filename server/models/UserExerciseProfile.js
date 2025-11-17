@@ -148,7 +148,7 @@ const userExerciseProfileSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 userExerciseProfileSchema.index({ userId: 1, exerciseId: 1 }, { unique: true });
@@ -164,10 +164,7 @@ userExerciseProfileSchema.methods.getProgressionRate = function () {
     return 0;
   }
   return Number(
-    (
-      (this.recentProgression.successes / this.recentProgression.attempts) *
-      100
-    ).toFixed(1)
+    ((this.recentProgression.successes / this.recentProgression.attempts) * 100).toFixed(1),
   );
 };
 
@@ -179,12 +176,7 @@ userExerciseProfileSchema.methods.updateLastPerformed = function (sessionData) {
 
   const { weight, reps, sets, rir, date } = sessionData;
 
-  if (
-    weight === undefined ||
-    reps === undefined ||
-    sets === undefined ||
-    rir === undefined
-  ) {
+  if (weight === undefined || reps === undefined || sets === undefined || rir === undefined) {
     throw new Error('Session data must include weight, reps, sets, and rir');
   }
 
@@ -203,9 +195,7 @@ userExerciseProfileSchema.methods.updateLastPerformed = function (sessionData) {
 };
 
 // Update completed workout to last 10 performed
-userExerciseProfileSchema.methods.addSessionToHistory = function (
-  sessionSummary
-) {
+userExerciseProfileSchema.methods.addSessionToHistory = function (sessionSummary) {
   this.recentSessions.unshift(sessionSummary);
 
   if (this.recentSessions.length > MAX_RECENT_SESSIONS) {
@@ -223,10 +213,7 @@ userExerciseProfileSchema.methods.getRecentSessions = function (limit = 5) {
 // === Static methods ===
 
 // Find existing profile or create new one
-userExerciseProfileSchema.statics.getOrCreateProfile = async function (
-  userId,
-  exerciseId
-) {
+userExerciseProfileSchema.statics.getOrCreateProfile = async function (userId, exerciseId) {
   // Validate required parameters
   if (!userId || !exerciseId) {
     throw new Error('userId and exerciseId are required');
@@ -248,9 +235,7 @@ userExerciseProfileSchema.statics.getOrCreateProfile = async function (
 };
 
 // Get all active profiles for a user
-userExerciseProfileSchema.statics.getActiveProfilesForUser = async function (
-  userId
-) {
+userExerciseProfileSchema.statics.getActiveProfilesForUser = async function (userId) {
   if (!userId) {
     throw new Error('userId is required');
   }
@@ -272,14 +257,7 @@ userExerciseProfileSchema.virtual('daysSinceLastPerformed').get(function () {
 });
 
 userExerciseProfileSchema.virtual('volumeLastSession').get(function () {
-  return (
-    this.lastPerformed.weight *
-    this.lastPerformed.reps *
-    this.lastPerformed.sets
-  );
+  return this.lastPerformed.weight * this.lastPerformed.reps * this.lastPerformed.sets;
 });
 
-module.exports = mongoose.model(
-  'UserExerciseProfile',
-  userExerciseProfileSchema
-);
+module.exports = mongoose.model('UserExerciseProfile', userExerciseProfileSchema);

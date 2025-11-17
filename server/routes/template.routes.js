@@ -48,7 +48,7 @@ router.post(
   '/',
   verifyToken,
   requireRole('admin'),
-  programTemplateController.createProgramTemplate
+  programTemplateController.createProgramTemplate,
 );
 
 // ============================================
@@ -80,7 +80,7 @@ router.patch(
   '/:id',
   verifyToken,
   requireRole('admin'),
-  programTemplateController.updateProgramTemplate
+  programTemplateController.updateProgramTemplate,
 );
 
 /**
@@ -97,7 +97,7 @@ router.delete(
   '/:id',
   verifyToken,
   requireRole('admin'),
-  programTemplateController.deleteProgramTemplate
+  programTemplateController.deleteProgramTemplate,
 );
 
 module.exports = router;

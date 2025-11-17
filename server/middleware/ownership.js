@@ -24,7 +24,7 @@ const verifyOwnership = (Model, foreignKey = 'userId') => {
       error.statusCode = 404;
       throw error;
     }
-    // eslint-disable-next-line security/detect-object-injection
+
     const ownerId = resource[foreignKey].toString();
     const userId = req.user._id.toString();
 

@@ -192,8 +192,7 @@ const userProgramSchema = new mongoose.Schema(
               // Each value must be valid RIR
               return arr.every((rir) => rir >= 0 && rir <= 10);
             },
-            message:
-              'RIR progression must match week count and be between 0-10',
+            message: 'RIR progression must match week count and be between 0-10',
           },
         }, // [4,3,3,2,2,1,1,0] for each week
 
@@ -203,10 +202,7 @@ const userProgramSchema = new mongoose.Schema(
           max: [20, 'Deload weeks must be between 4-20'],
           validate: {
             validator: function (value) {
-              if (
-                this.periodization?.config?.weeks &&
-                value > this.periodization.config.weeks
-              ) {
+              if (this.periodization?.config?.weeks && value > this.periodization.config.weeks) {
                 return false;
               }
               return true;
@@ -280,7 +276,7 @@ const userProgramSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // Indexes
@@ -301,7 +297,7 @@ userProgramSchema.methods.getCurrentWeekRIR = function () {
   if (index < 0 || index >= rirArray.length) {
     return null;
   }
-  // eslint-disable-next-line security/detect-object-injection
+
   return rirArray[index];
 };
 

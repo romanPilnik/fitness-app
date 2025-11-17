@@ -1,4 +1,4 @@
-const userProgramService = require(`../services/program/userProgram.service`);
+const userProgramService = require('../services/program/userProgram.service');
 const { sendSuccess } = require('../utils/response');
 
 /**
@@ -12,10 +12,7 @@ const { sendSuccess } = require('../utils/response');
  * @throws  {401} Unauthorized
  */
 const getPrograms = async (req, res) => {
-  const programs = await userProgramService.getUserPrograms(
-    req.user._id,
-    req.query
-  );
+  const programs = await userProgramService.getUserPrograms(req.user._id, req.query);
   return sendSuccess(res, programs, 200, 'Programs retrieved');
 };
 
@@ -93,10 +90,7 @@ const getActiveProgram = async (req, res) => {
  * @throws  {403} Forbidden (not owner)
  */
 const getProgramById = async (req, res) => {
-  const program = await userProgramService.getUserProgramById(
-    req.params.id,
-    req.user._id
-  );
+  const program = await userProgramService.getUserProgramById(req.params.id, req.user._id);
   return sendSuccess(res, program, 200, 'Program retrieved');
 };
 
@@ -119,7 +113,7 @@ const updateProgramById = async (req, res) => {
   const program = await userProgramService.updateUserProgramById(
     req.params.id,
     req.user._id,
-    req.body
+    req.body,
   );
   return sendSuccess(res, program, 200, 'Program updated');
 };

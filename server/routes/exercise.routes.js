@@ -92,7 +92,7 @@ router.post(
   verifyToken,
   requiredRole('admin'),
   validateExercise,
-  exerciseController.createExercise
+  exerciseController.createExercise,
 );
 
 /**
@@ -106,12 +106,7 @@ router.post(
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.patch(
-  '/:id',
-  verifyToken,
-  requiredRole('admin'),
-  exerciseController.updateExercise
-);
+router.patch('/:id', verifyToken, requiredRole('admin'), exerciseController.updateExercise);
 
 /**
  * DELETE /api/v1/exercises/:id
@@ -123,11 +118,6 @@ router.patch(
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.delete(
-  '/:id',
-  verifyToken,
-  requiredRole('admin'),
-  exerciseController.deleteExercise
-);
+router.delete('/:id', verifyToken, requiredRole('admin'), exerciseController.deleteExercise);
 
 module.exports = router;

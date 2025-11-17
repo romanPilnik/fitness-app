@@ -77,17 +77,9 @@ const createExercise = async (req, res) => {
  * @throws  {400} When validation fails
  */
 const updateExercise = async (req, res) => {
-  const updatedExercise = await exerciseService.updateExercise(
-    req.params.id,
-    req.body
-  );
+  const updatedExercise = await exerciseService.updateExercise(req.params.id, req.body);
 
-  return sendSuccess(
-    res,
-    updatedExercise,
-    200,
-    'Exercise updated successfully'
-  );
+  return sendSuccess(res, updatedExercise, 200, 'Exercise updated successfully');
 };
 
 /**

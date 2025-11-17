@@ -22,9 +22,7 @@ const changePassword = async (userId, oldPassword, newPassword) => {
   }
 
   if (newPassword === oldPassword) {
-    const error = new Error(
-      'New password must be different from current password'
-    );
+    const error = new Error('New password must be different from current password');
     error.statusCode = 400;
     throw error;
   }
@@ -54,7 +52,7 @@ const updateCurrentUser = async (userId, updates) => {
   const user = await UserModel.findByIdAndUpdate(
     userId,
     { $set: updates },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   ).select('-password -__v');
   if (!user) {
     const error = new Error('User not found');

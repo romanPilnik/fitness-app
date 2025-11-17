@@ -1,8 +1,5 @@
 const ProgramTemplate = require('../../models/ProgramTemplate');
-const {
-  parsePaginationParams,
-  calculatePagination,
-} = require('../../utils/pagination');
+const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 
 /**
  * Get program templates with optional filters and pagination
@@ -29,10 +26,7 @@ const getProgramTemplates = async (filters = {}, options = {}) => {
 
   const countQuery = ProgramTemplate.countDocuments(query);
 
-  const [templates, count] = await Promise.all([
-    findQuery.exec(),
-    countQuery.exec(),
-  ]);
+  const [templates, count] = await Promise.all([findQuery.exec(), countQuery.exec()]);
   const pagination = calculatePagination(count, page, limit);
 
   return {
@@ -98,18 +92,17 @@ const updateProgramTemplate = async (id, updateData) => {
   ];
 
   const updates = {};
-  /* eslint-disable security/detect-object-injection */
+
   Object.keys(updateData).forEach((key) => {
     if (allowedUpdates.includes(key)) {
       updates[key] = updateData[key];
     }
   });
-  /* eslint-enable security/detect-object-injection */
 
   const template = await ProgramTemplate.findByIdAndUpdate(
     id,
     { $set: updates },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   )
     .select('-__v')
     .lean();
@@ -132,7 +125,7 @@ const deleteProgramTemplate = async (id) => {
   const template = await ProgramTemplate.findByIdAndUpdate(
     id,
     { $set: { isActive: false } },
-    { new: true }
+    { new: true },
   )
     .select('-__v')
     .lean();

@@ -1,8 +1,5 @@
 const UserProgram = require('../../models/UserProgram');
-const {
-  parsePaginationParams,
-  calculatePagination,
-} = require('../../utils/pagination');
+const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 const ProgramTemplateModel = require('../../models/ProgramTemplate');
 
 /**
@@ -86,9 +83,8 @@ const createFromTemplate = async (data) => {
 
   if (customizations?.workouts) {
     programData.workouts = programData.workouts.map((workout, index) => {
-      /* eslint-disable security/detect-object-injection */
       const override = customizations.workouts[index];
-      /* eslint-enable security/detect-object-injection */
+
       return override ? { ...workout, ...override } : workout;
     });
   }
@@ -216,7 +212,7 @@ const updateProgramById = async (programId, userId, updates) => {
   const updatedProgram = await UserProgram.findOneAndUpdate(
     { _id: programId, userId },
     { $set: updates },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
 
   if (!updatedProgram) {
@@ -243,7 +239,7 @@ const deleteProgramById = async (programId, userId) => {
       userId,
     },
     { $set: { isActive: false } },
-    { new: true }
+    { new: true },
   );
   if (!deletedProgram) {
     const error = new Error('Program not found');

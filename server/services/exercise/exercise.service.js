@@ -1,8 +1,5 @@
 const ExerciseModel = require('../../models/Exercise');
-const {
-  parsePaginationParams,
-  calculatePagination,
-} = require('../../utils/pagination');
+const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 
 /**
  * Get exercises with optional filters and pagination
@@ -20,15 +17,10 @@ const getExercises = async (filters = {}, options = {}) => {
   };
 
   const { page, limit, skip } = parsePaginationParams(options || {});
-  const textFilter =
-    options && options.q ? { $text: { $search: options.q } } : {};
+  const textFilter = options && options.q ? { $text: { $search: options.q } } : {};
   const query = { ...queryFilters, ...textFilter };
 
-  const exercises = await ExerciseModel.find(query)
-    .select('-__v')
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  const exercises = await ExerciseModel.find(query).select('-__v').skip(skip).limit(limit).lean();
 
   const count = await ExerciseModel.countDocuments(query);
 
@@ -100,7 +92,7 @@ const updateExercise = async (id, updatedFields) => {
   const updatedExercise = await ExerciseModel.findByIdAndUpdate(
     id,
     { $set: updatedFields },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
   if (!updatedExercise) {
     const error = new Error('Exercise not found');
@@ -120,7 +112,7 @@ const deleteExercise = async (id) => {
   const deletedExercise = await ExerciseModel.findByIdAndUpdate(
     id,
     { $set: { isActive: false } },
-    { new: true }
+    { new: true },
   );
   if (!deletedExercise) {
     const error = new Error('Exercise not found');

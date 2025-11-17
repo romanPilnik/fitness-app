@@ -31,7 +31,7 @@ const registerUser = async (req, res) => {
       },
     },
     201,
-    'User created successfully'
+    'User created successfully',
   );
 };
 
@@ -63,7 +63,7 @@ const loginUser = async (req, res) => {
       },
     },
     200,
-    'User logged in successfully'
+    'User logged in successfully',
   );
 };
 

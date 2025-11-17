@@ -40,12 +40,7 @@ const errorHandler = (err, _req, res, _next) => {
 
   // === CAST ERROR ===
   else if (err.name === 'CastError') {
-    return sendError(
-      res,
-      400,
-      `Invalid ${err.path}: ${err.value}`,
-      'CAST_ERROR'
-    );
+    return sendError(res, 400, `Invalid ${err.path}: ${err.value}`, 'CAST_ERROR');
   }
 
   // === JsonWebTokenError ===
@@ -62,12 +57,7 @@ const errorHandler = (err, _req, res, _next) => {
   else if (err.code === 11000) {
     const field = Object.keys(err.keyPattern)[0];
 
-    return sendError(
-      res,
-      409,
-      `Duplicate value for field: ${field}`,
-      'DUPLICATE_VALUE'
-    );
+    return sendError(res, 409, `Duplicate value for field: ${field}`, 'DUPLICATE_VALUE');
   }
 
   // === DEFAULT ERROR ===

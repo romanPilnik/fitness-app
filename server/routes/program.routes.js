@@ -53,11 +53,7 @@ router.get('/:id', verifyToken, userProgramController.getProgramById);
  * @returns {Object} 404 - Template not found
  * @returns {Object} 401 - Unauthorized
  */
-router.post(
-  '/from-template',
-  verifyToken,
-  userProgramController.createFromTemplate
-);
+router.post('/from-template', verifyToken, userProgramController.createFromTemplate);
 
 /**
  * POST /api/v1/programs/custom

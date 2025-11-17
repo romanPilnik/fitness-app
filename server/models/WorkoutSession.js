@@ -53,8 +53,7 @@ const workoutSessionSchema = new mongoose.Schema(
             type: String,
             enum: {
               values: ['completed', 'partially', 'skipped'],
-              message:
-                '{VALUE} is not valid. Use completed, partially or skipped',
+              message: '{VALUE} is not valid. Use completed, partially or skipped',
             },
             default: 'completed',
           },
@@ -186,7 +185,7 @@ const workoutSessionSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // === INDEXES FOR QUERY PERFORMANCE ===
@@ -211,10 +210,7 @@ workoutSessionSchema.methods.calculateTotalVolume = function () {
 // === Static methods ===
 
 // Get recent workouts performed
-workoutSessionSchema.statics.getRecentSessions = async function (
-  userId,
-  limit = 10
-) {
+workoutSessionSchema.statics.getRecentSessions = async function (userId, limit = 10) {
   if (!userId) {
     throw new Error('userId is required');
   }
@@ -225,11 +221,7 @@ workoutSessionSchema.statics.getRecentSessions = async function (
 };
 
 // Get all workouts where user performed a specific exercise
-workoutSessionSchema.statics.getExerciseHistory = async function (
-  userId,
-  exerciseId,
-  limit = 20
-) {
+workoutSessionSchema.statics.getExerciseHistory = async function (userId, exerciseId, limit = 20) {
   if (!userId || !exerciseId) {
     throw new Error('userId and exerciseId required');
   }
@@ -252,7 +244,4 @@ workoutSessionSchema.pre('save', async function () {
   }
 });
 
-workoutSessionSchema.module.exports = mongoose.model(
-  'WorkoutSession',
-  workoutSessionSchema
-);
+workoutSessionSchema.module.exports = mongoose.model('WorkoutSession', workoutSessionSchema);

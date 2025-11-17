@@ -89,10 +89,7 @@ const programTemplateSchema = new mongoose.Schema({
         max: [20, 'Deload weeks must be between 4-20'],
         validate: {
           validator: function (value) {
-            if (
-              this.periodization?.config?.weeks &&
-              value > this.periodization.config.weeks
-            ) {
+            if (this.periodization?.config?.weeks && value > this.periodization.config.weeks) {
               return false;
             }
             return true;

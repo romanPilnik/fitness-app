@@ -34,13 +34,7 @@ const sendSuccess = (res, data, statusCode = 200, message = null) => {
  * @param {String} code - Machine-readable error code (default: "ERROR")
  * @param {Object} details - Additional error details (validation errors, etc.)
  */
-const sendError = (
-  res,
-  statusCode = 500,
-  message = null,
-  code = 'ERROR',
-  details = null
-) => {
+const sendError = (res, statusCode = 500, message = null, code = 'ERROR', details = null) => {
   const response = {
     success: false,
     error: {

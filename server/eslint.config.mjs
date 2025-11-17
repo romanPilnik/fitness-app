@@ -1,56 +1,60 @@
+// @ts-check
+
 import js from '@eslint/js';
-import globals from 'globals';
-import eslintConfigPrettier from 'eslint-config-prettier';
-import pluginSecurity from 'eslint-plugin-security';
+import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
+import { defineConfig } from 'eslint/config';
 
-export default [
-  // Global ignores
+export default defineConfig([
   {
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      '*.config.js',
-    ],
-  },
+    files: ['**/*.{js,ts}'],
+    ignores: ['node_modules/**', 'dist/**', 'build/**'],
 
-  // Base config for all JS files
-  {
-    files: ['**/*.js'],
     languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: 'module',
+      ecmaVersion: 2021,
+      sourceType: 'commonjs',
+
       globals: {
-        ...globals.node,
-        ...globals.es2021,
+        module: 'readonly',
+        require: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        process: 'readonly',
       },
     },
-    plugins: {
-      security: pluginSecurity,
-    },
-    rules: {
-      ...js.configs.recommended.rules,
-      ...pluginSecurity.configs.recommended.rules,
-
-      // Customize rules for Node.js/Express
-      'no-console': 'off', // Console is fine in Node.js
-      'no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_|next|req|res|err',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      'no-param-reassign': [
-        'error',
-        {
-          props: false, // Allow param reassignment (common in Express middleware)
-        },
-      ],
-    },
   },
 
-  // Prettier must be last to override formatting rules
+  js.configs.recommended,
+
+  // typescript-eslint recommended configs → applied to JS & TS files
+  ...tseslint.configs.recommended.map((config) => ({
+    ...config,
+    files: ['**/*.{js,ts}'],
+  })),
+
   eslintConfigPrettier,
-];
+
+  {
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+      security: {},
+    },
+
+    rules: {
+      // Allow require/module.exports (important for JS)
+      '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      'security/detect-object-injection': 'off',
+
+      // Ignore unused req/res/next in Express
+      'no-unused-vars': ['warn', { argsIgnorePattern: 'req|res|next|_' }],
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: 'req|res|next|_' }],
+
+      // Style rules (Google-ish)
+      quotes: ['error', 'single', { avoidEscape: true }],
+      semi: ['error', 'always'],
+      'comma-dangle': ['error', 'always-multiline'],
+      'max-len': ['error', { code: 100, ignoreComments: true, ignoreUrls: true }],
+    },
+  },
+]);

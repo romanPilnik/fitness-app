@@ -22,20 +22,14 @@ const getCurrentUser = (req, res) => {
  * @throws  {400} Validation error
  */
 const updateCurrentUser = async (req, res) => {
-  const allowedUpdates = [
-    'name',
-    'preferences.units',
-    'preferences.weekStartsOn',
-  ];
+  const allowedUpdates = ['name', 'preferences.units', 'preferences.weekStartsOn'];
   const updates = {};
 
-  /* eslint-disable security/detect-object-injection */
   Object.keys(req.body).forEach((key) => {
     if (allowedUpdates.includes(key)) {
       updates[key] = req.body[key];
     }
   });
-  /* eslint-enable security/detect-object-injection */
 
   const user = await userService.updateCurrentUser(req.user._id, updates);
   return sendSuccess(res, user, 200, 'User updated');
