@@ -1,4 +1,4 @@
-const ExerciseModel = require('../../models/Exercise');
+const Exercise = require('../../models/Exercise');
 const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 
 /**
@@ -20,9 +20,9 @@ const getExercises = async (filters = {}, options = {}) => {
   const textFilter = options && options.q ? { $text: { $search: options.q } } : {};
   const query = { ...queryFilters, ...textFilter };
 
-  const exercises = await ExerciseModel.find(query).select('-__v').skip(skip).limit(limit).lean();
+  const exercises = await Exercise.find(query).select('-__v').skip(skip).limit(limit).lean();
 
-  const count = await ExerciseModel.countDocuments(query);
+  const count = await Exercise.countDocuments(query);
 
   return {
     exercises,
@@ -38,7 +38,7 @@ const getExercises = async (filters = {}, options = {}) => {
  * @throws {Error} When exercise not found or invalid ID
  */
 const getExerciseById = async (id) => {
-  const exercise = await ExerciseModel.findById(id);
+  const exercise = await Exercise.findById(id);
   if (!exercise) {
     const error = new Error('Exercise not found');
     error.statusCode = 404;
@@ -60,7 +60,7 @@ const getExerciseById = async (id) => {
  * @throws {Error} On validation failure or duplicate name
  */
 const createExercise = async (exerciseData) => {
-  const existing = await ExerciseModel.findOne({
+  const existing = await Exercise.findOne({
     name: exerciseData.name,
     isActive: true,
   });
@@ -69,7 +69,7 @@ const createExercise = async (exerciseData) => {
     error.statusCode = 409;
     throw error;
   }
-  const exercise = new ExerciseModel(exerciseData);
+  const exercise = new Exercise(exerciseData);
   await exercise.validate();
   await exercise.save();
   return exercise;
@@ -89,7 +89,7 @@ const createExercise = async (exerciseData) => {
  * @throws {Error} When exercise not found or validation fails
  */
 const updateExercise = async (id, updatedFields) => {
-  const updatedExercise = await ExerciseModel.findByIdAndUpdate(
+  const updatedExercise = await Exercise.findByIdAndUpdate(
     id,
     { $set: updatedFields },
     { new: true, runValidators: true },
@@ -109,7 +109,7 @@ const updateExercise = async (id, updatedFields) => {
  * @throws {Error} When exercise not found
  */
 const deleteExercise = async (id) => {
-  const deletedExercise = await ExerciseModel.findByIdAndUpdate(
+  const deletedExercise = await Exercise.findByIdAndUpdate(
     id,
     { $set: { isActive: false } },
     { new: true },

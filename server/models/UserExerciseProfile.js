@@ -16,7 +16,6 @@ const userExerciseProfileSchema = new mongoose.Schema(
       ref: 'Exercise',
       required: true,
     },
-
     // === LAST PERFORMANCE ===
 
     lastPerformed: {
@@ -122,26 +121,24 @@ const userExerciseProfileSchema = new mongoose.Schema(
     },
 
     // === USER NOTES & FEEDBACK ===
-    userInsights: {
-      difficultyRating: { type: Number, min: 1, max: 5 }, // User's perceived difficulty
-      enjoymentRating: { type: Number, min: 1, max: 5 }, // Adherence predictor
-      formNotes: {
-        type: String,
-        maxlength: [500, 'Notes cannot exceed 500 characters'],
-      },
-      injuryNotes: {
-        type: String,
-        maxlength: [500, 'Notes cannot exceed 500 characters'],
-      },
+
+    difficultyRating: { type: Number, min: 1, max: 5 }, // User's perceived difficulty
+    enjoymentRating: { type: Number, min: 1, max: 5 }, // Adherence predictor
+    formNotes: {
+      type: String,
+      maxlength: [500, 'Notes cannot exceed 500 characters'],
+    },
+    injuryNotes: {
+      type: String,
+      maxlength: [500, 'Notes cannot exceed 500 characters'],
     },
 
     // === STATUS FLAGS ===
-    status: {
-      isActive: { type: Boolean, default: true },
-      isFavorite: { type: Boolean, default: false },
-      needsFormCheck: { type: Boolean, default: false },
-      isInjuryModified: { type: Boolean, default: false },
-    },
+
+    isActive: { type: Boolean, default: true },
+    isFavorite: { type: Boolean, default: false },
+    needsFormCheck: { type: Boolean, default: false },
+    isInjuryModified: { type: Boolean, default: false },
   },
 
   {
@@ -219,7 +216,6 @@ userExerciseProfileSchema.statics.getOrCreateProfile = async function (userId, e
     throw new Error('userId and exerciseId are required');
   }
 
-  // Try to find existing profile
   let profile = await this.findOne({ userId, exerciseId });
 
   // If doesn't exist, create with defaults
@@ -227,7 +223,6 @@ userExerciseProfileSchema.statics.getOrCreateProfile = async function (userId, e
     profile = await this.create({
       userId,
       exerciseId,
-      // All other fields use schema defaults
     });
   }
 
