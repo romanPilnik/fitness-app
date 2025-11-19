@@ -9,11 +9,6 @@ const getExerciseProfiles = async (userId, filters = {}, options = {}) => {
     'status.isActive': true,
   };
 
-  ALLOWED_FILTERS.forEach((key) => {
-    if (filters[key] !== undefined) {
-      query[key] = filters[key];
-    }
-  });
   Object.keys(filters).forEach((key) => {
     if (ALLOWED_FILTERS.includes(key)) {
       query[key] = filters[key];

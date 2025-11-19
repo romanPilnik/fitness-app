@@ -180,6 +180,7 @@ const workoutSessionSchema = new mongoose.Schema(
       version: String,
       decisions: mongoose.Schema.Types.Mixed,
     },
+    isActive: { type: Boolean, default: true },
   },
   {
     timestamps: true,
