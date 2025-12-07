@@ -3,3 +3,12 @@
 .kiro
 .vscode
 .github
+
+# dependencies
+node_modules
+client/node_modules
+server/node_modules
+
+#environment variables
+.env
+.env.*

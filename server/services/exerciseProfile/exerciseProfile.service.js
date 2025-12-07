@@ -84,8 +84,75 @@ const updateExerciseProfile = async (exerciseId, userId, updateData) => {
   return profile;
 };
 
+const updateFromSession = async (userId, session) => {
+  for (const exercise of session.exercises) {
+    const profile = await ExerciseProfile.getOrCreateProfile(userId, exercise.exerciseId);
+
+    _updateRecentSessions(profile, exercise, session._id);
+    _updateLastPerformed(profile, exercise);
+    _updatePersonalRecord(profile, exercise);
+    await profile.save();
+  }
+
+  // TODO: when algorithm is clear update progression related fields
+};
+
+const _updateRecentSessions = (profile, exercise, sessionId) => {
+  const topSet = _findTopSet(exercise.sets);
+
+  const sessionSummary = {
+    date: Date.now(),
+    topSetWeight: topSet.weight,
+    topSetReps: topSet.reps,
+    totalSets: exercise.sets.length,
+    sessionId: sessionId,
+  };
+
+  profile.recentSessions.unshift(sessionSummary);
+  if (profile.recentSessions.length > 10) {
+    profile.recentSessions.pop();
+  }
+};
+const _updateLastPerformed = (profile, exercise) => {
+  const topSet = _findTopSet(exercise.sets);
+
+  profile.lastPerformed = {
+    date: Date.now(),
+    weight: topSet.weight,
+    reps: topSet.reps,
+    sets: exercise.sets.length,
+  };
+};
+const _updatePersonalRecord = (profile, exercise) => {
+  const topSet = _findTopSet(exercise.sets);
+
+  if (
+    profile.personalRecord.weight === 0 ||
+    topSet.weight > profile.personalRecord.weight ||
+    (topSet.weight === profile.personalRecord.weight && topSet.reps > profile.personalRecord.reps)
+  )
+    profile.personalRecord = {
+      date: Date.now(),
+      weight: topSet.weight,
+      reps: topSet.reps,
+    };
+};
+
+const _findTopSet = (sets) => {
+  let topSet = sets[0];
+
+  for (const set of sets) {
+    if (set.weight > topSet.weight || (set.weight === topSet.weight && set.reps > topSet.reps)) {
+      topSet = set;
+    }
+  }
+
+  return topSet;
+};
+
 module.exports = {
   getExerciseProfiles,
   getExerciseProfileById,
   updateExerciseProfile,
+  updateFromSession,
 };

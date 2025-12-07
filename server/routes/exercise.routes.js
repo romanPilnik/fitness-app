@@ -39,7 +39,7 @@ const validateExercise = [
   },
 ];
 
-const router = express.Router();
+const exerciseRouter = express.Router();
 
 // ============================================
 // PUBLIC ROUTES
@@ -57,7 +57,7 @@ const router = express.Router();
  * @param {string} search.query - Search term
  * @returns {Object} 200 - List of exercises with pagination
  */
-router.get('/', exerciseController.getExercises);
+exerciseRouter.get('/', exerciseController.getExercises);
 
 /**
  * GET /api/v1/exercises/:id
@@ -67,7 +67,7 @@ router.get('/', exerciseController.getExercises);
  * @returns {Object} 200 - Single exercise details
  * @returns {Object} 404 - Exercise not found
  */
-router.get('/:id', exerciseController.getExerciseById);
+exerciseRouter.get('/:id', exerciseController.getExerciseById);
 
 // ============================================
 // PROTECTED ROUTES
@@ -87,7 +87,7 @@ router.get('/:id', exerciseController.getExerciseById);
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.post(
+exerciseRouter.post(
   '/',
   verifyToken,
   requiredRole('admin'),
@@ -106,7 +106,7 @@ router.post(
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.patch('/:id', verifyToken, requiredRole('admin'), exerciseController.updateExercise);
+exerciseRouter.patch('/:id', verifyToken, requiredRole('admin'), exerciseController.updateExercise);
 
 /**
  * DELETE /api/v1/exercises/:id
@@ -118,6 +118,11 @@ router.patch('/:id', verifyToken, requiredRole('admin'), exerciseController.upda
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.delete('/:id', verifyToken, requiredRole('admin'), exerciseController.deleteExercise);
+exerciseRouter.delete(
+  '/:id',
+  verifyToken,
+  requiredRole('admin'),
+  exerciseController.deleteExercise,
+);
 
-module.exports = router;
+module.exports = exerciseRouter;

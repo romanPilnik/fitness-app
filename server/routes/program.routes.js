@@ -7,7 +7,7 @@ const express = require('express');
 const { verifyToken } = require('../middleware/auth');
 const userProgramController = require('../controllers/userProgram.controller');
 
-const router = express.Router();
+const userProgramRouter = express.Router();
 
 /**
  * GET /api/v1/programs
@@ -19,7 +19,7 @@ const router = express.Router();
  * @returns {Object} 200 - List of user's programs
  * @returns {Object} 401 - Unauthorized
  */
-router.get('/', verifyToken, userProgramController.getPrograms);
+userProgramRouter.get('/', verifyToken, userProgramController.getPrograms);
 
 /**
  * GET /api/v1/programs/active
@@ -29,7 +29,7 @@ router.get('/', verifyToken, userProgramController.getPrograms);
  * @returns {Object} 404 - No active program found
  * @returns {Object} 401 - Unauthorized
  */
-router.get('/active', verifyToken, userProgramController.getActiveProgram);
+userProgramRouter.get('/active', verifyToken, userProgramController.getActiveProgram);
 
 /**
  * GET /api/v1/programs/:id
@@ -41,7 +41,7 @@ router.get('/active', verifyToken, userProgramController.getActiveProgram);
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (not owner)
  */
-router.get('/:id', verifyToken, userProgramController.getProgramById);
+userProgramRouter.get('/:id', verifyToken, userProgramController.getProgramById);
 
 /**
  * POST /api/v1/programs/from-template
@@ -53,7 +53,7 @@ router.get('/:id', verifyToken, userProgramController.getProgramById);
  * @returns {Object} 404 - Template not found
  * @returns {Object} 401 - Unauthorized
  */
-router.post('/from-template', verifyToken, userProgramController.createFromTemplate);
+userProgramRouter.post('/from-template', verifyToken, userProgramController.createFromTemplate);
 
 /**
  * POST /api/v1/programs/custom
@@ -67,7 +67,7 @@ router.post('/from-template', verifyToken, userProgramController.createFromTempl
  * @returns {Object} 400 - Validation error
  * @returns {Object} 401 - Unauthorized
  */
-router.post('/custom', verifyToken, userProgramController.createCustomProgram);
+userProgramRouter.post('/custom', verifyToken, userProgramController.createCustomProgram);
 
 /**
  * PATCH /api/v1/programs/:id
@@ -80,7 +80,7 @@ router.post('/custom', verifyToken, userProgramController.createCustomProgram);
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (not owner)
  */
-router.patch('/:id', verifyToken, userProgramController.updateProgramById);
+userProgramRouter.patch('/:id', verifyToken, userProgramController.updateProgramById);
 
 /**
  * DELETE /api/v1/programs/:id
@@ -92,6 +92,6 @@ router.patch('/:id', verifyToken, userProgramController.updateProgramById);
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (not owner)
  */
-router.delete('/:id', verifyToken, userProgramController.deleteProgramById);
+userProgramRouter.delete('/:id', verifyToken, userProgramController.deleteProgramById);
 
-module.exports = router;
+module.exports = userProgramRouter;

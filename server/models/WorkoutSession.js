@@ -107,9 +107,8 @@ const workoutSessionSchema = new mongoose.Schema(
             },
           },
 
-          // User feedback (for SFR calculation later)
+          // User feedback
           feedback: {
-            // Stimulus indicators
             reportedMMC: {
               type: Number,
               min: 1,
@@ -129,7 +128,6 @@ const workoutSessionSchema = new mongoose.Schema(
               required: false,
             },
 
-            // Fatigue indicators
             reportedCardioFatigue: {
               type: Number,
               min: 1,

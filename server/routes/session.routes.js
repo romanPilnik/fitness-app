@@ -1,15 +1,19 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/auth');
+const sessionController = require('../controllers/session.controller');
 
-const router = express.Router();
+const sessionRouter = express.Router();
 
 // GET api/v1/sessions/
-router.get('/', verifyToken, async (req, res) => {});
+sessionRouter.get('/', verifyToken, sessionController.getSessions);
 
 // GET api/v1/sessions/:sessionId
-router.get('/:sessionId', verifyToken, async (req, res) => {});
+sessionRouter.get('/:sessionId', verifyToken, sessionController.getSessionById);
+
+// POST api/v1/sessions/create
+sessionRouter.post('/create', verifyToken, sessionController.createSession);
 
 // DELETE api/v1/sessions/:sessionId
-router.delete('/:sessionId', verifyToken, async (req, res) => {});
+sessionRouter.delete('/:sessionId', verifyToken, sessionController.deleteSession);
 
-module.exports = router;
+module.exports = sessionRouter;

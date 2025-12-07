@@ -8,7 +8,7 @@ const { verifyToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/authorize');
 const programTemplateController = require('../controllers/programTemplate.controller');
 
-const router = express.Router();
+const templateRouter = express.Router();
 
 // ============================================
 // TEMPLATE COLLECTION
@@ -27,7 +27,7 @@ const router = express.Router();
  * @param {string} search.query - Search term
  * @returns {Object} 200 - List of templates with pagination
  */
-router.get('/', programTemplateController.getProgramTemplates);
+templateRouter.get('/', programTemplateController.getProgramTemplates);
 
 /**
  * POST /api/v1/programs/templates
@@ -44,7 +44,7 @@ router.get('/', programTemplateController.getProgramTemplates);
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.post(
+templateRouter.post(
   '/',
   verifyToken,
   requireRole('admin'),
@@ -63,7 +63,7 @@ router.post(
  * @returns {Object} 200 - Single template details
  * @returns {Object} 404 - Template not found
  */
-router.get('/:id', programTemplateController.getProgramTemplateById);
+templateRouter.get('/:id', programTemplateController.getProgramTemplateById);
 
 /**
  * PATCH /api/v1/programs/templates/:id
@@ -76,7 +76,7 @@ router.get('/:id', programTemplateController.getProgramTemplateById);
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.patch(
+templateRouter.patch(
   '/:id',
   verifyToken,
   requireRole('admin'),
@@ -93,11 +93,11 @@ router.patch(
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-router.delete(
+templateRouter.delete(
   '/:id',
   verifyToken,
   requireRole('admin'),
   programTemplateController.deleteProgramTemplate,
 );
 
-module.exports = router;
+module.exports = templateRouter;

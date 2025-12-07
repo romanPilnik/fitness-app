@@ -1,4 +1,6 @@
 const WorkoutSession = require('../../models/WorkoutSession');
+const UserExerciseProfile = require('../../models/UserExerciseProfile');
+const UserProgram = require('../../models/UserProgram');
 const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 
 // GET api/v1/sessions/
@@ -30,9 +32,32 @@ const getSessionById = async (sessionId) => {
   return session;
 };
 
-// === WILL BE ADDED LATER ===
-// PATCH api/v1/sessions/:sessionId
-// const updateSession = async (sessionId, updatedFields) => {};
+// POST api/v1/sessions/create
+const createSession = async (userId, sessionData) => {
+  const { programId, workoutName, dayNumber, sessionStatus, exercises, sessionDuration, notes } =
+    sessionData;
+  // Call to DB to log workout
+  const session = await WorkoutSession.create({
+    userId,
+    programId,
+    workoutName,
+    dayNumber,
+    sessionStatus,
+    exercises,
+    sessionDuration,
+    notes,
+    datePerformed: Date.now(),
+  });
+
+  // Call service to update exerciseProfiles
+  await UserExerciseProfile.updateFromSession(userId, session);
+
+  // Call to service to updateProgress
+  await UserProgram.updateProgress(userId);
+  // Later on, call to progression service to generate next workout
+
+  return session;
+};
 
 // DELETE api/v1/sessions/:sessionId
 const deleteSession = async (sessionId) => {
@@ -51,5 +76,6 @@ const deleteSession = async (sessionId) => {
 module.exports = {
   getSessions,
   getSessionById,
+  createSession,
   deleteSession,
 };

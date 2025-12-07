@@ -23,7 +23,7 @@ const userExerciseProfileSchema = new mongoose.Schema(
 
       weight: {
         type: Number,
-        min: [0, 'Weight must be at least bodyweight'],
+        min: [0, 'Weight must be at least 0'],
         max: [999, 'Weight cannot exceed 999 kg'],
       },
 
@@ -38,20 +38,22 @@ const userExerciseProfileSchema = new mongoose.Schema(
         min: [1, 'Sets must be at least 1'],
         max: [20, 'Sets cannot exceed 20'],
       },
-
-      rir: {
-        type: Number,
-        min: [0, 'Rir cannot be lower than 0'],
-        max: [10, 'Rir cannot be higher than 10'],
-      },
     },
 
     // === PERSONAL RECORDS ===
-    personalRecords: {
-      // Might adjust
-      weight: { value: Number, date: Date }, /// should be validated already
-      reps: { value: Number, date: Date },
-      volume: { value: Number, date: Date },
+    personalRecord: {
+      weight: {
+        type: Number,
+        min: [0, 'Weight must be at least 0'],
+        max: [999, 'Weight cannot exceed 999 kg'],
+        default: 0,
+      },
+      reps: {
+        type: Number,
+        min: [1, 'Reps must be at least 1'],
+        max: [50, 'Reps cannot exceed 50'],
+      },
+      date: Date,
     },
 
     // === PROGRESSION TRACKING ===
@@ -86,13 +88,6 @@ const userExerciseProfileSchema = new mongoose.Schema(
           min: [1, 'Sets must be at least 1'],
           max: [50, 'Sets cannot exceed 50'],
         },
-
-        topSetRir: {
-          type: Number,
-          min: [0, 'Rir cannot be lower than 0'],
-          max: [10, 'Rir cannot be higher than 10'],
-        },
-
         sessionId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'WorkoutSession',
@@ -122,8 +117,8 @@ const userExerciseProfileSchema = new mongoose.Schema(
 
     // === USER NOTES & FEEDBACK ===
 
-    difficultyRating: { type: Number, min: 1, max: 5 }, // User's perceived difficulty
-    enjoymentRating: { type: Number, min: 1, max: 5 }, // Adherence predictor
+    difficultyRating: { type: Number, min: 1, max: 5 },
+    enjoymentRating: { type: Number, min: 1, max: 5 },
     formNotes: {
       type: String,
       maxlength: [500, 'Notes cannot exceed 500 characters'],

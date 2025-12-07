@@ -13,7 +13,11 @@ const getSessionById = async (req, res) => {
   return sendSuccess(res, session, 200, 'Session retrieved');
 };
 
-// PATCH api/v1/sessions/:sessionId
+// POST api/v1/sessions/create
+const createSession = async (req, res) => {
+  const session = await sessionService.createSession(req.user._id, req.body);
+  return sendSuccess(res, session, 201, 'Session logged');
+};
 
 // DELETE api/v1/sessions/:sessionId
 const deleteSession = async (req, res) => {
@@ -24,5 +28,6 @@ const deleteSession = async (req, res) => {
 module.exports = {
   getSessions,
   getSessionById,
+  createSession,
   deleteSession,
 };
