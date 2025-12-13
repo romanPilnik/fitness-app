@@ -248,6 +248,33 @@ const deleteProgramById = async (programId, userId) => {
   }
 };
 
+const updateProgress = async (userId, session) => {
+  const program = await UserProgram.findActiveProgram();
+  if (!program) {
+    const error = new Error('Program not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  program.nextWorkoutIndex++;
+
+  if (program.nextWorkoutIndex >= program.workouts.length) {
+    program.nextWorkoutIndex = 0;
+    program.currentWeek++;
+  }
+
+  program.lastCompletedWorkoutDate = Date.now();
+
+  if (program.isComplete) {
+    program.status = 'completed';
+  }
+
+  if (program.periodization.config.deloadWeek && program.isDeloadWeek()) {
+    // Deload logic to be added
+  }
+  await program.save();
+};
+
 module.exports = {
   getPrograms,
   createFromTemplate,
@@ -256,4 +283,5 @@ module.exports = {
   getProgramById,
   updateProgramById,
   deleteProgramById,
+  updateProgress,
 };

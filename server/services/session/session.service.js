@@ -1,6 +1,6 @@
 const WorkoutSession = require('../../models/WorkoutSession');
-const UserExerciseProfile = require('../../models/UserExerciseProfile');
-const UserProgram = require('../../models/UserProgram');
+const ExerciseProfileService = require('../../services/exerciseProfile/exerciseProfile.service');
+const UserProgramService = require('../../services/program/userProgram.service');
 const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 
 // GET api/v1/sessions/
@@ -50,10 +50,11 @@ const createSession = async (userId, sessionData) => {
   });
 
   // Call service to update exerciseProfiles
-  await UserExerciseProfile.updateFromSession(userId, session);
+  await ExerciseProfileService.updateFromSession(userId, session);
 
   // Call to service to updateProgress
-  await UserProgram.updateProgress(userId);
+  await UserProgramService.updateProgress(userId, session);
+
   // Later on, call to progression service to generate next workout
 
   return session;
