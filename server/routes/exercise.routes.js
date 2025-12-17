@@ -7,37 +7,6 @@ const express = require('express');
 const { verifyToken } = require('../middleware/auth');
 const requiredRole = require('../middleware/authorize');
 const exerciseController = require('../controllers/exercise.controller');
-const { body, validationResult } = require('express-validator');
-
-// Simple request validator for creating exercises
-const validateExercise = [
-  body('name')
-    .isString()
-    .trim()
-    .isLength({ min: 1, max: 50 })
-    .withMessage('name is required and must be <= 50 chars'),
-  body('primaryMuscle')
-    .isString()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('primaryMuscle is required'),
-  body('category')
-    .isIn(['compound', 'isolation'])
-    .withMessage("category must be 'compound' or 'isolation'"),
-  body('movementPattern')
-    .isString()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('movementPattern is required'),
-  // validation result handler
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
-    }
-    next();
-  },
-];
 
 const exerciseRouter = express.Router();
 
@@ -87,13 +56,7 @@ exerciseRouter.get('/:id', exerciseController.getExerciseById);
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-exerciseRouter.post(
-  '/',
-  verifyToken,
-  requiredRole('admin'),
-  validateExercise,
-  exerciseController.createExercise,
-);
+exerciseRouter.post('/', verifyToken, requiredRole('admin'), exerciseController.createExercise);
 
 /**
  * PATCH /api/v1/exercises/:id

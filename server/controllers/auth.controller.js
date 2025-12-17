@@ -11,7 +11,6 @@ const tokenService = require('../services/auth/token.service');
  * @param {string} req.body.password - User's password
  * @param {string} req.body.name - User's full name
  * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  * @returns {Promise<void>} Sends JSON response with token and user data
  * @description Creates a new user account and returns JWT token
  */
@@ -43,7 +42,6 @@ const registerUser = async (req, res) => {
  * @param {string} req.body.email - User's email address
  * @param {string} req.body.password - User's password
  * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
  * @returns {Promise<void>} Sends JSON response with token and user data
  * @description Authenticates user and returns JWT token
  */

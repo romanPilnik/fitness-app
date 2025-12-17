@@ -29,7 +29,12 @@ const { sendError } = require('../utils/response');
 const errorHandler = (err, _req, res, _next) => {
   console.log(err);
 
-  // === VALIDATION ERROR ===
+  // === JOI VALIDATION ERROR ===
+  if (err.code === 'VALIDATION_ERROR' && err.details) {
+    return sendError(res, 400, err.message, 'VALIDATION_ERROR', err.details);
+  }
+
+  // === MONGOOSE VALIDATION ERROR ===
   if (err.name === 'ValidationError') {
     const errors = Object.values(err.errors).map((e) => ({
       field: e.path,
