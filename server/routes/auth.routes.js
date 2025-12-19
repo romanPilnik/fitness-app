@@ -5,6 +5,8 @@
 
 const express = require('express');
 const authController = require('../controllers/auth.controller');
+const validate = require('../middlewares/validate');
+const authValidation = require('../validations/auth.validation');
 
 const authRouter = express.Router();
 
@@ -19,7 +21,7 @@ const authRouter = express.Router();
  * @returns {Object} 409 - User already exists
  * @returns {Object} 400 - Validation error
  */
-authRouter.post('/register', authController.registerUser);
+authRouter.post('/register', validate(authValidation.registerUser), authController.registerUser);
 
 /**
  * POST /api/auth/login
@@ -30,6 +32,6 @@ authRouter.post('/register', authController.registerUser);
  * @returns {Object} 200 - Login successful with JWT token
  * @returns {Object} 401 - Invalid credentials
  */
-authRouter.post('/login', authController.loginUser);
+authRouter.post('/login', validate(authValidation.loginUser), authController.loginUser);
 
 module.exports = authRouter;

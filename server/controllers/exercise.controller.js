@@ -7,7 +7,7 @@ const { sendSuccess } = require('../utils/response');
  * @access  Public
  * @query   {number} page - Page number
  * @query   {number} limit - Items per page
- * @query   {string} muscle - Filter by primary muscle
+ * @query   {string} primaryMuscle - Filter by primary muscle
  * @query   {string} equipment - Filter by equipment type
  * @query   {string} category - Filter by category (compound/isolation)
  * @returns {Object} { success, count, data: exercises[], pagination }

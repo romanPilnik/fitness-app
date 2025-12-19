@@ -175,4 +175,8 @@ exerciseSchema.index({ primaryMuscle: 1 });
 exerciseSchema.index({ equipment: 1 });
 exerciseSchema.index({ name: 'text' });
 
-module.exports = mongoose.model('Exercise', exerciseSchema);
+module.exports = {
+  Exercise: mongoose.model('Exercise', exerciseSchema),
+  MUSCLE_GROUPS,
+  MOVEMENT_PATTERNS,
+};

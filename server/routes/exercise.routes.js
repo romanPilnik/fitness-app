@@ -10,10 +10,6 @@ const exerciseController = require('../controllers/exercise.controller');
 
 const exerciseRouter = express.Router();
 
-// ============================================
-// PUBLIC ROUTES
-// ============================================
-
 /**
  * GET /api/v1/exercises
  * @route GET /
@@ -37,10 +33,6 @@ exerciseRouter.get('/', exerciseController.getExercises);
  * @returns {Object} 404 - Exercise not found
  */
 exerciseRouter.get('/:id', exerciseController.getExerciseById);
-
-// ============================================
-// PROTECTED ROUTES
-// ============================================
 
 /**
  * POST /api/v1/exercises

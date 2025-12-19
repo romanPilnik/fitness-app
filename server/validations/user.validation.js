@@ -1,9 +1,6 @@
 const Joi = require('joi');
 
-/**
- * Validation schema for updating current user
- * PATCH /api/users/me
- */
+// PATCH /api/users/me
 const updateUser = {
   body: Joi.object()
     .keys({
@@ -17,10 +14,7 @@ const updateUser = {
     .min(1),
 };
 
-/**
- * Validation schema for changing password
- * POST /api/users/change-password
- */
+// POST /api/users/change-password
 const changePassword = {
   body: Joi.object().keys({
     oldPassword: Joi.string().required(),
