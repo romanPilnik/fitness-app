@@ -7,6 +7,8 @@ const express = require('express');
 const { verifyToken } = require('../middleware/auth');
 const requiredRole = require('../middleware/authorize');
 const exerciseController = require('../controllers/exercise.controller');
+const validate = require('../middlewares/validate');
+const exerciseValidation = require('../validations/exercise.validation');
 
 const exerciseRouter = express.Router();
 
@@ -22,7 +24,7 @@ const exerciseRouter = express.Router();
  * @param {string} search.query - Search term
  * @returns {Object} 200 - List of exercises with pagination
  */
-exerciseRouter.get('/', exerciseController.getExercises);
+exerciseRouter.get('/', validate(exerciseValidation.getExercises), exerciseController.getExercises);
 
 /**
  * GET /api/v1/exercises/:id
@@ -32,7 +34,11 @@ exerciseRouter.get('/', exerciseController.getExercises);
  * @returns {Object} 200 - Single exercise details
  * @returns {Object} 404 - Exercise not found
  */
-exerciseRouter.get('/:id', exerciseController.getExerciseById);
+exerciseRouter.get(
+  '/:id',
+  validate(exerciseValidation.getExerciseById),
+  exerciseController.getExerciseById,
+);
 
 /**
  * POST /api/v1/exercises
@@ -48,7 +54,13 @@ exerciseRouter.get('/:id', exerciseController.getExerciseById);
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-exerciseRouter.post('/', verifyToken, requiredRole('admin'), exerciseController.createExercise);
+exerciseRouter.post(
+  '/',
+  verifyToken,
+  requiredRole('admin'),
+  validate(exerciseValidation.createExercise),
+  exerciseController.createExercise,
+);
 
 /**
  * PATCH /api/v1/exercises/:id
@@ -61,7 +73,13 @@ exerciseRouter.post('/', verifyToken, requiredRole('admin'), exerciseController.
  * @returns {Object} 401 - Unauthorized
  * @returns {Object} 403 - Forbidden (admin only)
  */
-exerciseRouter.patch('/:id', verifyToken, requiredRole('admin'), exerciseController.updateExercise);
+exerciseRouter.patch(
+  '/:id',
+  verifyToken,
+  requiredRole('admin'),
+  validate(exerciseValidation.updateExercise),
+  exerciseController.updateExercise,
+);
 
 /**
  * DELETE /api/v1/exercises/:id
@@ -77,6 +95,7 @@ exerciseRouter.delete(
   '/:id',
   verifyToken,
   requiredRole('admin'),
+  validate(exerciseValidation.deleteExercise),
   exerciseController.deleteExercise,
 );
 

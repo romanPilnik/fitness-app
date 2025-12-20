@@ -7,6 +7,8 @@ const express = require('express');
 const { verifyToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/authorize');
 const programTemplateController = require('../controllers/programTemplate.controller');
+const validate = require('../middlewares/validate');
+const templateValidation = require('../validations/template.validation');
 
 const templateRouter = express.Router();
 
@@ -27,7 +29,11 @@ const templateRouter = express.Router();
  * @param {string} search.query - Search term
  * @returns {Object} 200 - List of templates with pagination
  */
-templateRouter.get('/', programTemplateController.getProgramTemplates);
+templateRouter.get(
+  '/',
+  validate(templateValidation.getProgramTemplates),
+  programTemplateController.getProgramTemplates,
+);
 
 /**
  * POST /api/v1/programs/templates
@@ -48,6 +54,7 @@ templateRouter.post(
   '/',
   verifyToken,
   requireRole('admin'),
+  validate(templateValidation.createProgramTemplate),
   programTemplateController.createProgramTemplate,
 );
 
@@ -63,7 +70,11 @@ templateRouter.post(
  * @returns {Object} 200 - Single template details
  * @returns {Object} 404 - Template not found
  */
-templateRouter.get('/:id', programTemplateController.getProgramTemplateById);
+templateRouter.get(
+  '/:id',
+  validate(templateValidation.getProgramTemplateById),
+  programTemplateController.getProgramTemplateById,
+);
 
 /**
  * PATCH /api/v1/programs/templates/:id
@@ -80,6 +91,7 @@ templateRouter.patch(
   '/:id',
   verifyToken,
   requireRole('admin'),
+  validate(templateValidation.updateProgramTemplate),
   programTemplateController.updateProgramTemplate,
 );
 
@@ -97,6 +109,7 @@ templateRouter.delete(
   '/:id',
   verifyToken,
   requireRole('admin'),
+  validate(templateValidation.deleteProgramTemplate),
   programTemplateController.deleteProgramTemplate,
 );
 
