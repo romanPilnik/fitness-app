@@ -1,4 +1,5 @@
 import axios from "axios";
+import { tokenStorage } from "../utils/storage";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
@@ -7,7 +8,7 @@ export const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = tokenStorage.get();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,7 +25,7 @@ api.interceptors.response.use(
       error.message ||
       "An unexpected error occurred.";
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
+      tokenStorage.remove();
       window.location.href = "/login";
     }
     return Promise.reject(new Error(message));

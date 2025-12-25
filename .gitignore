@@ -3,6 +3,7 @@
 .kiro
 .vscode
 .github
+CLAUDE.md
 
 # dependencies
 node_modules
