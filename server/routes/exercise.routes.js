@@ -4,8 +4,8 @@
  */
 
 const express = require('express');
-const { verifyToken } = require('../middleware/auth');
-const requiredRole = require('../middleware/authorize');
+const { verifyToken } = require('../middlewares/auth');
+const {requireRole} = require('../middlewares/authorize');
 const exerciseController = require('../controllers/exercise.controller');
 const validate = require('../middlewares/validate');
 const exerciseValidation = require('../validations/exercise.validation');
@@ -57,7 +57,7 @@ exerciseRouter.get(
 exerciseRouter.post(
   '/',
   verifyToken,
-  requiredRole('admin'),
+  requireRole('admin'),
   validate(exerciseValidation.createExercise),
   exerciseController.createExercise,
 );
@@ -76,7 +76,7 @@ exerciseRouter.post(
 exerciseRouter.patch(
   '/:id',
   verifyToken,
-  requiredRole('admin'),
+  requireRole('admin'),
   validate(exerciseValidation.updateExercise),
   exerciseController.updateExercise,
 );
@@ -94,7 +94,7 @@ exerciseRouter.patch(
 exerciseRouter.delete(
   '/:id',
   verifyToken,
-  requiredRole('admin'),
+  requireRole('admin'),
   validate(exerciseValidation.deleteExercise),
   exerciseController.deleteExercise,
 );

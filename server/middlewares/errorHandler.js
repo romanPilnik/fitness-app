@@ -73,4 +73,4 @@ const errorHandler = (err, _req, res, _next) => {
   return sendError(res, statusCode, message, code);
 };
 
-module.exports = errorHandler;
+module.exports = {errorHandler};

@@ -1,4 +1,4 @@
-const exerciseProfileService = require('../exerciseProfile/exerciseProfile.service');
+const exerciseProfileService = require('../services/exerciseProfile/exerciseProfile.service');
 const { sendSuccess } = require('../utils/response');
 
 // GET /api/v1/profile/exercises

@@ -1,5 +1,11 @@
+import {AuthProvider} from '../src/features/auth/context/AuthContext';
+
 function App() {
-  return <div>App</div>;
+  return (
+    <AuthProvider>
+      App
+    </AuthProvider>
+  );
 }
 
 export default App;

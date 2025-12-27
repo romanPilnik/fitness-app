@@ -4,8 +4,8 @@
  */
 
 const express = require('express');
-const { verifyToken } = require('../middleware/auth');
-const { requireRole } = require('../middleware/authorize');
+const { verifyToken } = require('../middlewares/auth');
+const { requireRole } = require('../middlewares/authorize');
 const programTemplateController = require('../controllers/programTemplate.controller');
 const validate = require('../middlewares/validate');
 const templateValidation = require('../validations/template.validation');

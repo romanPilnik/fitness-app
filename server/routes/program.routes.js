@@ -4,7 +4,7 @@
  */
 
 const express = require('express');
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken } = require('../middlewares/auth');
 const userProgramController = require('../controllers/userProgram.controller');
 const validate = require('../middlewares/validate');
 const programValidation = require('../validations/program.validation');

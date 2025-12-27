@@ -243,4 +243,4 @@ workoutSessionSchema.pre('save', async function () {
   }
 });
 
-workoutSessionSchema.module.exports = mongoose.model('WorkoutSession', workoutSessionSchema);
+module.exports = mongoose.model('WorkoutSession', workoutSessionSchema);

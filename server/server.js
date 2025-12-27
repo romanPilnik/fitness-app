@@ -11,7 +11,7 @@ const templateRoutes = require('./routes/template.routes');
 const programRoutes = require('./routes/program.routes');
 const sessionRoutes = require('./routes/session.routes');
 
-const { errorHandler } = require('./middleware/errorHandler');
+const { errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
 
