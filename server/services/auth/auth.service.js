@@ -13,7 +13,7 @@ const registerUser = async (email, password, name) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
-    const error = new Error('User already exists');
+    const error = new Error('Email is taken');
     error.statusCode = 409;
     throw error;
   }

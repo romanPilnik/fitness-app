@@ -4,6 +4,7 @@
 .vscode
 .github
 CLAUDE.md
+.DS_Store
 
 # dependencies
 node_modules

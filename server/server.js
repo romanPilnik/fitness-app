@@ -19,7 +19,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/v1/exercises', exerciseRoutes);
 app.use('/api/v1/profile/exercises', exerciseProfileRoutes);
 app.use('/api/v1/templates', templateRoutes);

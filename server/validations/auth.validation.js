@@ -10,7 +10,7 @@ const loginUser = {
 const registerUser = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
-    passwrod: Joi.string()
+    password: Joi.string()
       .min(8)
       .max(128)
       .pattern(/^(?=.*[A-Za-z])(?=.*\d)/)
