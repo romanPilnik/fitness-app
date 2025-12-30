@@ -18,7 +18,6 @@ const registerUser = async (req, res) => {
   const { email, password, name } = req.body;
   const user = await authService.registerUser(email, password, name);
   const token = tokenService.generateAuthToken(user._id);
-
   return sendSuccess(
     res,
     {

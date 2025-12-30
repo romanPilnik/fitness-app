@@ -1,34 +1,36 @@
 // imports
 import { useAuth } from '../features/auth/context/AuthContext';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // component function
-const LoginPage = () => {
+function LoginPage() {
   // context/hooks
   const { login, isAuthenticated } = useAuth();
-
+  const navigate = useNavigate();
   // state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
 
   // event handlers
-  const handleEmailChange = (e) => {
+  function handleEmailChange(e) {
     setEmail(e.target.value);
-  };
-  const handlePasswordChange = (e) => {
+  }
+  function handlePasswordChange(e) {
     setPassword(e.target.value);
-  };
-  const handleSubmit = async (e) => {
+  }
+  async function handleSubmit(e) {
     e.preventDefault();
 
     setError(null);
     try {
       await login(email, password);
+      navigate('/dashboard');
     } catch (error) {
       setError(error.message);
     }
-  };
+  }
 
   // effects
   useEffect(() => {
@@ -50,6 +52,6 @@ const LoginPage = () => {
       </form>
     </div>
   );
-};
+}
 
 export default LoginPage;

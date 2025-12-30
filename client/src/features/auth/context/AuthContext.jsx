@@ -18,7 +18,7 @@ const initialState = {
   isLoading: true,
 };
 
-const AuthReducer = (state, action) => {
+function AuthReducer(state, action) {
   switch (action.type) {
     case actions.loginSuccess:
     case actions.registerSuccess:
@@ -42,13 +42,13 @@ const AuthReducer = (state, action) => {
     default:
       return state;
   }
-};
+}
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(AuthReducer, initialState);
 
   useEffect(() => {
-    const initializeAuth = async () => {
+    async function initializeAuth() {
       const token = tokenStorage.get();
       if (token) {
         try {
@@ -61,26 +61,28 @@ export const AuthProvider = ({ children }) => {
       } else {
         dispatch({ type: 'SET_LOADING' });
       }
-    };
+    }
     initializeAuth();
   }, []);
 
-  const login = async (email, password) => {
+  async function login(email, password) {
     const responseData = await AuthApi.login(email, password);
     tokenStorage.set(responseData.token);
-    dispatch({ type: 'LOGIN_SUCCESS', payload: responseData.user });
-  };
 
-  const register = async (email, password, name) => {
+    dispatch({ type: 'LOGIN_SUCCESS', payload: responseData.user });
+  }
+
+  async function register(email, password, name) {
     const responseData = await AuthApi.register(email, password, name);
     tokenStorage.set(responseData.token);
-    dispatch({ type: 'REGISTER_SUCCESS', payload: responseData.user });
-  };
 
-  const logout = async () => {
+    dispatch({ type: 'REGISTER_SUCCESS', payload: responseData.user });
+  }
+
+  async function logout() {
     tokenStorage.remove();
     dispatch({ type: 'LOGOUT' });
-  };
+  }
 
   const value = {
     ...state,
@@ -90,9 +92,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
@@ -100,4 +102,4 @@ export const useAuth = () => {
   }
 
   return context;
-};
+}
