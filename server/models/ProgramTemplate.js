@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 const programTemplateSchema = new mongoose.Schema({
   // === PROGRAM METADATA ===
@@ -236,5 +237,7 @@ const programTemplateSchema = new mongoose.Schema({
     default: true,
   },
 });
+
+programTemplateSchema.plugin(mongoosePaginate);
 
 module.exports = mongoose.model('ProgramTemplate', programTemplateSchema);

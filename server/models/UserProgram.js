@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 const userProgramSchema = new mongoose.Schema(
   {
@@ -339,5 +340,7 @@ userProgramSchema.virtual('weeksRemaining').get(function () {
 userProgramSchema.virtual('isComplete').get(function () {
   return this.currentWeek > this.periodization.config.weeks;
 });
+
+userProgramSchema.plugin(mongoosePaginate);
 
 module.exports = mongoose.model('UserProgram', userProgramSchema);

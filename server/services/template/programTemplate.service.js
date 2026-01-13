@@ -1,11 +1,10 @@
 const ProgramTemplate = require('../../models/ProgramTemplate');
-const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 
 /**
  * Get program templates with optional filters and pagination
  * @param {Object} filters - Query filters
  * @param {Object} options - Query options including pagination
- * @returns {Promise<{templates: Array, count: number, pagination: Object}>}
+ * @returns {Promise<Object>} Paginated results with templates
  */
 const getProgramTemplates = async (filters = {}, options = {}) => {
   const queryFilters = {
@@ -13,27 +12,18 @@ const getProgramTemplates = async (filters = {}, options = {}) => {
     ...filters,
   };
 
-  const { page, limit, skip } = parsePaginationParams(options);
   const textFilter = options.q ? { $text: { $search: options.q } } : {};
   const query = { ...queryFilters, ...textFilter };
 
-  const findQuery = ProgramTemplate.find(query)
-    .select('-__v')
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 })
-    .lean();
-
-  const countQuery = ProgramTemplate.countDocuments(query);
-
-  const [templates, count] = await Promise.all([findQuery.exec(), countQuery.exec()]);
-  const pagination = calculatePagination(count, page, limit);
-
-  return {
-    templates,
-    count,
-    pagination,
+  const paginateOptions = {
+    page: parseInt(options.page) || 1,
+    limit: parseInt(options.limit) || 20,
+    select: '-__v',
+    sort: { createdAt: -1 },
+    lean: true,
   };
+
+  return await ProgramTemplate.paginate(query, paginateOptions);
 };
 
 /**
@@ -42,7 +32,10 @@ const getProgramTemplates = async (filters = {}, options = {}) => {
  * @returns {Promise<Object>}
  */
 const getProgramTemplateById = async (id) => {
-  const template = await ProgramTemplate.findById(id).select('-__v').lean();
+  const template = await ProgramTemplate.findById(id)
+  .populate('workouts.exercises.exerciseId','name')
+  .select('-__v')
+  .lean();
   if (!template) {
     const error = new Error('Program template not found');
     error.statusCode = 404;

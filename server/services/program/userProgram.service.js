@@ -1,5 +1,4 @@
 const UserProgram = require('../../models/UserProgram');
-const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 const ProgramTemplateModel = require('../../models/ProgramTemplate');
 
 /**
@@ -8,13 +7,13 @@ const ProgramTemplateModel = require('../../models/ProgramTemplate');
  * @param {string} [options.status] - Filter by status (active, paused, completed)
  * @param {number} [options.page] - Page number for pagination
  * @param {number} [options.limit] - Items per page
- * @returns {Promise<{programs: Array, count: number, pagination: Object}>} List of user programs with pagination info
+ * @returns {Promise<Object>} Paginated results with programs
  * @throws {Error} 400 - Invalid status provided
  */
 const getPrograms = async (userId, options = {}) => {
   const allowedStatuses = ['active', 'paused', 'completed'];
 
-  const filters = { userId };
+  const query = { userId };
 
   if (options.status) {
     if (!allowedStatuses.includes(options.status)) {
@@ -22,26 +21,18 @@ const getPrograms = async (userId, options = {}) => {
       error.statusCode = 400;
       throw error;
     }
-    filters.status = options.status;
+    query.status = options.status;
   }
 
-  const { page, limit, skip } = parsePaginationParams(options);
-
-  const programs = await UserProgram.find(filters)
-    .select('-__v')
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 })
-    .lean();
-
-  const count = await UserProgram.countDocuments(filters);
-  const pagination = calculatePagination(count, page, limit);
-
-  return {
-    programs,
-    count,
-    pagination,
+  const paginateOptions = {
+    page: parseInt(options.page) || 1,
+    limit: parseInt(options.limit) || 20,
+    select: '-__v',
+    sort: { createdAt: -1 },
+    lean: true,
   };
+
+  return await UserProgram.paginate(query, paginateOptions);
 };
 
 /**

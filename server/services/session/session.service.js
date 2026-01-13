@@ -1,24 +1,20 @@
 const WorkoutSession = require('../../models/WorkoutSession');
 const ExerciseProfileService = require('../../services/exerciseProfile/exerciseProfile.service');
 const UserProgramService = require('../../services/program/userProgram.service');
-const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 
 // GET api/v1/sessions/
 const getSessions = async (userId, options = {}) => {
-  const { page, limit, skip } = parsePaginationParams(options || {});
-  const sessions = await WorkoutSession.find({ userId })
-    .select('-__v')
-    .skip(skip)
-    .limit(limit)
-    .sort({ datePerformed: -1 })
-    .lean();
-  const count = await WorkoutSession.countDocuments({ userId });
+  const query = { userId };
 
-  return {
-    sessions,
-    count,
-    pagination: calculatePagination(page, limit, count),
+  const paginateOptions = {
+    page: parseInt(options.page) || 1,
+    limit: parseInt(options.limit) || 20,
+    select: '-__v',
+    sort: { datePerformed: -1 },
+    lean: true,
   };
+
+  return await WorkoutSession.paginate(query, paginateOptions);
 };
 
 // GET api/v1/sessions/:sessionId

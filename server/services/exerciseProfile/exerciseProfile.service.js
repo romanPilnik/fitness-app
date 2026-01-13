@@ -15,24 +15,15 @@ const getExerciseProfiles = async (userId, filters = {}, options = {}) => {
     }
   });
 
-  const { page, limit, skip } = parsePaginationParams(options);
-  const findQuery = ExerciseProfile.find(query)
-    .populate('exerciseId', 'name primaryMuscle equipment')
-    .select('-__v')
-    .skip(skip)
-    .limit(limit)
-    .lean();
-
-  const countQuery = ExerciseProfile.countDocuments(query);
-  const [exerciseProfiles, totalCount] = await Promise.all([findQuery.exec(), countQuery.exec()]);
-
-  const pagination = calculatePagination(totalCount, page, limit);
-
-  return {
-    exerciseProfiles,
-    totalCount,
-    pagination,
+  const paginateOptions = {
+    page: parseInt(options.page) || 1,
+    limit: parseInt(options.limit) || 20,
+    select: '-__v',
+    populate: { path: 'exerciseId', select: 'name primaryMuscle equipment' },
+    lean: true,
   };
+
+  return await ExerciseProfile.paginate(query, paginateOptions);
 };
 
 // GET /api/v1/profile/exercises/:exerciseId

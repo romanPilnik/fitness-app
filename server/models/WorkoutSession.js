@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 const workoutSessionSchema = new mongoose.Schema(
   {
@@ -242,5 +243,7 @@ workoutSessionSchema.pre('save', async function () {
     this.lastModified = Date.now();
   }
 });
+
+workoutSessionSchema.plugin(mongoosePaginate);
 
 module.exports = mongoose.model('WorkoutSession', workoutSessionSchema);

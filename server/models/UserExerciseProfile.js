@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 const MAX_RECENT_SESSIONS = 10;
 
 const userExerciseProfileSchema = new mongoose.Schema(
@@ -249,5 +250,7 @@ userExerciseProfileSchema.virtual('daysSinceLastPerformed').get(function () {
 userExerciseProfileSchema.virtual('volumeLastSession').get(function () {
   return this.lastPerformed.weight * this.lastPerformed.reps * this.lastPerformed.sets;
 });
+
+userExerciseProfileSchema.plugin(mongoosePaginate);
 
 module.exports = mongoose.model('UserExerciseProfile', userExerciseProfileSchema);

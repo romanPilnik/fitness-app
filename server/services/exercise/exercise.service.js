@@ -1,5 +1,4 @@
 const Exercise = require('../../models/Exercise');
-const { parsePaginationParams, calculatePagination } = require('../../utils/pagination');
 
 /**
  * Get exercises with optional filters and pagination
@@ -8,7 +7,7 @@ const { parsePaginationParams, calculatePagination } = require('../../utils/pagi
  * @param {number} [options.page] - Page number for pagination
  * @param {number} [options.limit] - Items per page
  * @param {string} [options.q] - Search query string
- * @returns {Promise<{exercises: Array, count: number, pagination: Object}>}
+ * @returns {Promise<Object>} Paginated results with exercises
  */
 const getExercises = async (filters = {}, options = {}) => {
   const queryFilters = {
@@ -16,19 +15,17 @@ const getExercises = async (filters = {}, options = {}) => {
     ...filters,
   };
 
-  const { page, limit, skip } = parsePaginationParams(options || {});
   const textFilter = options && options.q ? { $text: { $search: options.q } } : {};
   const query = { ...queryFilters, ...textFilter };
 
-  const exercises = await Exercise.find(query).select('-__v').skip(skip).limit(limit).lean();
-
-  const count = await Exercise.countDocuments(query);
-
-  return {
-    exercises,
-    count,
-    pagination: calculatePagination(page, limit, count),
+  const paginateOptions = {
+    page: parseInt(options.page) || 1,
+    limit: parseInt(options.limit) || 20,
+    select: '-__v',
+    lean: true,
   };
+
+  return await Exercise.paginate(query, paginateOptions);
 };
 
 /**

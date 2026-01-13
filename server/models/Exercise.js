@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 const MUSCLE_GROUPS = [
   'chest',
@@ -174,6 +175,8 @@ const exerciseSchema = new mongoose.Schema(
 exerciseSchema.index({ primaryMuscle: 1 });
 exerciseSchema.index({ equipment: 1 });
 exerciseSchema.index({ name: 'text' });
+
+exerciseSchema.plugin(mongoosePaginate);
 
 module.exports = {
   Exercise: mongoose.model('Exercise', exerciseSchema),
