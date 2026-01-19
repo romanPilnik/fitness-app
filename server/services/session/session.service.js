@@ -4,17 +4,20 @@ const UserProgramService = require('../../services/program/userProgram.service')
 
 // GET api/v1/sessions/
 const getSessions = async (userId, options = {}) => {
-  const query = { userId };
+  const { page, limit, skip } = parsePaginationParams(options || {});
+  const sessions = await WorkoutSession.find({ userId })
+    .select('-__v')
+    .skip(skip)
+    .limit(limit)
+    .sort({ datePerformed: -1 })
+    .lean();
+  const count = await WorkoutSession.countDocuments({ userId });
 
-  const paginateOptions = {
-    page: parseInt(options.page) || 1,
-    limit: parseInt(options.limit) || 20,
-    select: '-__v',
-    sort: { datePerformed: -1 },
-    lean: true,
+  return {
+    sessions,
+    count,
+    pagination: calculatePagination(page, limit, count),
   };
-
-  return await WorkoutSession.paginate(query, paginateOptions);
 };
 
 // GET api/v1/sessions/:sessionId
