@@ -1,69 +1,404 @@
+/* 
+ * Tailwind CSS v4 Configuration
+ * Main stylesheet with design tokens defined using @theme directive
+ * Place this in src/index.css or src/App.css
+ */
+
 @import 'tailwindcss';
+
+/* 
+ ---break---
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* ========================================================================
+   * COLORS - Primary Violet Scale
+   * ======================================================================== */
+
+  --color-primary-50: #faf5ff;
+  --color-primary-100: #f3e8ff;
+  --color-primary-200: #e9d5ff;
+  --color-primary-300: #d8b4fe;
+  --color-primary-400: #c084fc;
+  --color-primary-500: #a855f7; /* Main primary color */
+  --color-primary-600: #9333ea;
+  --color-primary-700: #7e22ce;
+  --color-primary-800: #6b21a8;
+  --color-primary-900: #581c87;
+
+  /* Accent Cyan Scale */
+  --color-accent-400: #22d3ee;
+  --color-accent-500: #06b6d4; /* Main accent */
+  --color-accent-600: #0891b2;
+
+  /* Success Green Scale */
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e; /* Main success */
+  --color-success-600: #16a34a;
+
+  /* Warning Amber Scale */
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b; /* Main warning */
+  --color-warning-600: #d97706;
+
+  /* Error Red Scale */
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444; /* Main error */
+  --color-error-600: #dc2626;
+
+  /* Neutral Grays Scale (MOST USED in dark theme) */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  /* ========================================================================
+   * SEMANTIC COLOR MAPPINGS
+   * Use these in your components instead of raw colors
+   * ======================================================================== */
+
+  /* Backgrounds */
+  --color-background-primary: #0a0a0a; /* Main app background */
+  --color-background-secondary: #171717; /* Slightly elevated */
+  --color-background-tertiary: #262626; /* Cards, modals */
+  --color-background-elevated: #404040; /* Dropdowns, tooltips */
+
+  /* Text */
+  --color-text-primary: #fafafa; /* Main text */
+  --color-text-secondary: #a3a3a3; /* Less important text */
+  --color-text-tertiary: #737373; /* Muted text */
+  --color-text-disabled: #525252; /* Disabled state */
+  --color-text-inverse: #0a0a0a; /* Text on light backgrounds */
+
+  /* Borders */
+  --color-border-primary: #404040; /* Main borders */
+  --color-border-secondary: #262626; /* Subtle borders */
+  --color-border-focus: #a855f7; /* Focus rings */
+
+  /* Surface States */
+  --color-surface-base: #262626; /* Default card/surface */
+  --color-surface-hover: #404040; /* Hover state */
+  --color-surface-active: #525252; /* Active/pressed state */
+
+  /* ========================================================================
+   * SPACING SCALE
+   * ======================================================================== */
+
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px; /* MOST COMMON - default gap, card padding */
+  --spacing-5: 20px;
+  --spacing-6: 24px; /* Large gaps - section spacing */
+  --spacing-8: 32px; /* Extra large - page margins */
+  --spacing-10: 40px;
+  --spacing-12: 48px; /* Huge spacing - major sections */
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* ========================================================================
+   * TYPOGRAPHY
+   * ======================================================================== */
+
+  /* Font Families */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Fira Code', 'Courier New', monospace;
+
+  /* Font Sizes */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px; /* DEFAULT - body text */
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-5xl: 48px;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
+
+  /* ========================================================================
+   * BORDER RADIUS
+   * ======================================================================== */
+
+  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 8px; /* MOST COMMON - cards, inputs, buttons */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px; /* Pills, circular avatars */
+
+  /* ========================================================================
+   * SHADOWS
+   * ======================================================================== */
+
+  --shadow-none: none;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4); /* Cards */
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5); /* Modals, dropdowns */
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+
+  /* Colored Glow (for primary actions, highlights) */
+  --shadow-glow: 0 0 20px rgba(168, 85, 247, 0.4); /* Primary glow (violet) */
+  --shadow-glow-strong: 0 0 30px rgba(168, 85, 247, 0.6);
+
+  /* ========================================================================
+   * BREAKPOINTS (Responsive)
+   * ======================================================================== */
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* ============================================================================
+ * GLOBAL BASE STYLES
+ * ============================================================================ */
+
+@layer base {
+  * {
+    @apply border-border-primary;
+  }
+
+  body {
+    @apply bg-background-primary text-text-primary font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold text-text-primary;
+  }
+
+  a {
+    @apply text-primary-500 hover:text-primary-400 transition-colors duration-150;
+  }
+}
+
+/* ============================================================================
+ * USAGE EXAMPLES (DELETE THESE AFTER READING)
+ * ============================================================================ */
+
+/*
+
+COLORS:
+-------
+bg-primary-500              → Purple button background
+bg-background-tertiary      → Card background
+text-text-primary           → Main text color
+text-text-secondary         → Muted text
+border-border-primary       → Borders
+
+SPACING:
+--------
+p-4                         → Padding 16px
+px-6 py-3                   → Padding horizontal 24px, vertical 12px
+gap-6                       → Grid gap 24px
+m-8                         → Margin 32px
+
+TYPOGRAPHY:
+-----------
+text-2xl                    → Font size 24px
+font-semibold               → Font weight 600
+leading-normal              → Line height 1.5
+
+RADIUS:
+-------
+rounded-md                  → Border radius 8px
+rounded-lg                  → Border radius 12px
+rounded-full                → Circular
+
+SHADOWS:
+--------
+shadow-md                   → Card shadow
+shadow-glow                 → Violet glow effect
+
+COMPLETE COMPONENT EXAMPLES:
+-----------------------------
+
+PRIMARY BUTTON:
+<button class="bg-primary-500 hover:bg-primary-600 text-text-primary px-6 py-3 rounded-md font-semibold shadow-md hover:shadow-glow transition-all duration-150">
+  Start Workout
+</button>
+
+CARD:
+<div class="bg-background-tertiary p-6 rounded-lg border border-border-secondary shadow-md">
+  <h3 class="text-2xl font-bold mb-4">Card Title</h3>
+  <p class="text-text-secondary">Card content</p>
+</div>
+
+INPUT:
+<input 
+  type="text"
+  class="bg-surface-base border border-border-primary focus:border-border-focus rounded-md px-4 py-3 text-text-primary placeholder:text-text-tertiary"
+  placeholder="Enter text..."
+/>
+
+GRID LAYOUT:
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <!-- Cards -->
+</div>
+
+*/
+
+/* 
+ ---break---
+ */
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --background: oklch(0.9730 0.0133 286.1503);
+  --foreground: oklch(0.3015 0.0572 282.4176);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.3015 0.0572 282.4176);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.3015 0.0572 282.4176);
+  --primary: oklch(0.5417 0.1790 288.0332);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.9174 0.0435 292.6901);
+  --secondary-foreground: oklch(0.4143 0.1039 288.1742);
+  --muted: oklch(0.9580 0.0133 286.1454);
+  --muted-foreground: oklch(0.5426 0.0465 284.7435);
+  --accent: oklch(0.9221 0.0373 262.1410);
+  --accent-foreground: oklch(0.3015 0.0572 282.4176);
+  --destructive: oklch(0.6861 0.2061 14.9941);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.9115 0.0216 285.9625);
+  --input: oklch(0.9115 0.0216 285.9625);
+  --ring: oklch(0.5417 0.1790 288.0332);
+  --chart-1: oklch(0.5417 0.1790 288.0332);
+  --chart-2: oklch(0.7042 0.1602 288.9880);
+  --chart-3: oklch(0.5679 0.2113 276.7065);
+  --chart-4: oklch(0.6356 0.1922 281.8054);
+  --chart-5: oklch(0.4509 0.1758 279.3838);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.9580 0.0133 286.1454);
+  --sidebar-foreground: oklch(0.3015 0.0572 282.4176);
+  --sidebar-primary: oklch(0.5417 0.1790 288.0332);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.9221 0.0373 262.1410);
+  --sidebar-accent-foreground: oklch(0.3015 0.0572 282.4176);
+  --sidebar-border: oklch(0.9115 0.0216 285.9625);
+  --sidebar-ring: oklch(0.5417 0.1790 288.0332);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.dark {
+  --background: oklch(0.1743 0.0227 283.7998);
+  --foreground: oklch(0.9185 0.0257 285.8834);
+  --card: oklch(0.2284 0.0384 282.9324);
+  --card-foreground: oklch(0.9185 0.0257 285.8834);
+  --popover: oklch(0.2284 0.0384 282.9324);
+  --popover-foreground: oklch(0.9185 0.0257 285.8834);
+  --primary: oklch(0.7162 0.1597 290.3962);
+  --primary-foreground: oklch(0.1743 0.0227 283.7998);
+  --secondary: oklch(0.3139 0.0736 283.4591);
+  --secondary-foreground: oklch(0.8367 0.0849 285.9111);
+  --muted: oklch(0.2710 0.0621 281.4377);
+  --muted-foreground: oklch(0.7166 0.0462 285.1741);
+  --accent: oklch(0.3354 0.0828 280.9705);
+  --accent-foreground: oklch(0.9185 0.0257 285.8834);
+  --destructive: oklch(0.6861 0.2061 14.9941);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.3261 0.0597 282.5832);
+  --input: oklch(0.3261 0.0597 282.5832);
+  --ring: oklch(0.7162 0.1597 290.3962);
+  --chart-1: oklch(0.7162 0.1597 290.3962);
+  --chart-2: oklch(0.6382 0.1047 274.9117);
+  --chart-3: oklch(0.7482 0.1235 244.7492);
+  --chart-4: oklch(0.7124 0.0977 186.6761);
+  --chart-5: oklch(0.7546 0.1831 346.8124);
+  --sidebar: oklch(0.2284 0.0384 282.9324);
+  --sidebar-foreground: oklch(0.9185 0.0257 285.8834);
+  --sidebar-primary: oklch(0.7162 0.1597 290.3962);
+  --sidebar-primary-foreground: oklch(0.1743 0.0227 283.7998);
+  --sidebar-accent: oklch(0.3354 0.0828 280.9705);
+  --sidebar-accent-foreground: oklch(0.9185 0.0257 285.8834);
+  --sidebar-border: oklch(0.3261 0.0597 282.5832);
+  --sidebar-ring: oklch(0.7162 0.1597 290.3962);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@theme inline {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Fira Code', 'Courier New', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* 
+ ---break---
+ */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+  body {
+    @apply bg-background text-foreground;
   }
 }

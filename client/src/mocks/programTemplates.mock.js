@@ -4,7 +4,7 @@ export const programTemplatesMock = {
   data: {
     docs: [
       {
-        _id: 'pt_1',
+        _id: '64b7f9a2e4f1a9c1d2e3f455',
         name: 'Upper / Lower Strength',
         description: 'A 4-day upper/lower strength-focused program',
         splitType: 'upper_lower',
@@ -44,7 +44,7 @@ export const programTemplatesMock = {
         ],
       },
       {
-        _id: 'pt_2',
+        _id: '64b7f9a2e4f1a9c1d2e3f456',
         name: 'Push Pull Legs',
         description: 'A classic 3-day push/pull/legs template',
         splitType: 'ppl',
@@ -59,7 +59,11 @@ export const programTemplatesMock = {
             name: 'Push',
             exercises: [
               { exerciseId: { _id: 'ex_4', name: 'Overhead Press' }, targetSets: 3, targetReps: 8 },
-              { exerciseId: { _id: 'ex_5', name: 'Incline Dumbbell Press' }, targetSets: 3, targetReps: 10 },
+              {
+                exerciseId: { _id: 'ex_5', name: 'Incline Dumbbell Press' },
+                targetSets: 3,
+                targetReps: 10,
+              },
             ],
           },
         ],

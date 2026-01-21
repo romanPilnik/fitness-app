@@ -1,9 +1,7 @@
 import { useParams } from 'react-router-dom';
-import { api } from '../../../api/client';
 import { useEffect, useState } from 'react';
-import { programTemplatesMock } from '../../../mocks/programTemplates.mock';
-
-const USE_MOCK = true;
+import { useNavigate } from 'react-router-dom';
+import { templateService, programService } from '@/services';
 
 export default function TemplateDetailsPage() {
   const { id } = useParams();
@@ -13,28 +11,31 @@ export default function TemplateDetailsPage() {
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
+  const navigate = useNavigate();
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const program = await programService.createFromTemplate(template._id, startDate, {
+        name: programName,
+      });
+      navigate(`/programs/${program._id}`);
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
   useEffect(() => {
     async function fetchTemplate() {
       try {
-        const response = USE_MOCK
-          ? (() => {
-              // 🔧 CHANGE: select a single template from the list mock by ID
-              const found = programTemplatesMock.data.docs.find(
-                (t) => t._id === id
-              );
-
-              // 🔧 CHANGE: simulate backend 404 behavior
-              if (!found) {
-                throw new Error('Program template not found');
-              }
-
-              // 🔧 CHANGE: shape mock response to match interceptor contract
-              return { data: found };
-            })()
-          : await api.get(`/api/v1/programs/templates/${id}`);
-
-        setTemplate(response.data);
+        setError(null);
+        const template = await templateService.getById(id);
+        setTemplate(template);
       } catch (err) {
         setError(err);
       } finally {
@@ -64,7 +65,7 @@ export default function TemplateDetailsPage() {
               Day: {workout.dayNumber} - {workout.name}
             </h4>
             {workout.exercises.map((exercise) => (
-              <ul key={exercise.exerciseId}>
+              <ul key={exercise.exerciseId._id}>
                 {exercise.exerciseId.name} {exercise.targetSets}X{exercise.targetReps}
               </ul>
             ))}
@@ -83,7 +84,10 @@ export default function TemplateDetailsPage() {
             onChange={(e) => setProgramName(e.target.value)}
           />
           <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          <button>Create Program</button>
+          <button disabled={submitting} onClick={handleSubmit}>
+            {submitting ? 'Creating...' : 'Create'}
+          </button>
+          {submitError && <div className="error">{submitError}</div>}
           <button onClick={() => setIsCreating(false)}>Cancel</button>
         </div>
       ) : (

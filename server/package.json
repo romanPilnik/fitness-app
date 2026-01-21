@@ -11,7 +11,8 @@
     "lint:fix": "eslint . --fix",
     "lint:types": "tsc --noEmit",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "seed": "node scripts/seed.js"
   },
   "keywords": [],
   "author": "",

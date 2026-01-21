@@ -22,7 +22,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/v1/exercises', exerciseRoutes);
 app.use('/api/v1/profile/exercises', exerciseProfileRoutes);
-app.use('/api/v1/templates', templateRoutes);
+app.use('/api/v1/programs/templates', templateRoutes);
 app.use('/api/v1/programs', programRoutes);
 app.use('/api/v1/sessions', sessionRoutes);
 

@@ -43,7 +43,6 @@ const userProgramSchema = new mongoose.Schema(
         values: ['beginner', 'intermediate', 'advanced'],
         message: '{VALUE} is not valid, must be difficulty',
       },
-      required: true,
       lowercase: true,
     },
     goals: {

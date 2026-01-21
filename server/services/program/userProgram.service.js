@@ -174,6 +174,7 @@ const getProgramById = async (programId, userId) => {
     _id: programId,
     userId,
   })
+    .populate('workouts.exercises.exerciseId', 'name')
     .select('-__v')
     .lean();
 
@@ -239,7 +240,7 @@ const deleteProgramById = async (programId, userId) => {
   }
 };
 
-const updateProgress = async (userId, session) => {
+const updateProgress = async (_userId, _session) => {
   const program = await UserProgram.findActiveProgram();
   if (!program) {
     const error = new Error('Program not found');

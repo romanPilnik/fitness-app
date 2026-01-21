@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../../api/client';
 import { Link } from 'react-router-dom';
-import { programTemplatesMock } from '../../../mocks/programTemplates.mock';
-
-const USE_MOCK = true;
+import { templateService } from '@/services';
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState([]);
@@ -14,13 +11,8 @@ export default function TemplatesPage() {
     async function fetchTemplates() {
       try {
         setError(null);
-
-        const response = USE_MOCK
-          ? programTemplatesMock
-          : (await api.get('/api/v1/templates')).data;
-
-
-        setTemplates(response.data.docs || []);
+        const templates = await templateService.getAll();
+        setTemplates(templates);
       } catch (err) {
         setError(err);
       } finally {

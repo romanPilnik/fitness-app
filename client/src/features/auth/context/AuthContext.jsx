@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { tokenStorage } from '../../../utils/storage';
+import { tokenStorage } from '@/lib/storage';
 import { AuthApi } from '../api/AuthApi';
 
 const AuthContext = createContext();

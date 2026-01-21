@@ -12,7 +12,7 @@ const { sendSuccess } = require('../utils/response');
  * @throws  {401} Unauthorized
  */
 const getPrograms = async (req, res) => {
-  const programs = await userProgramService.getUserPrograms(req.user._id, req.query);
+  const programs = await userProgramService.getPrograms(req.user._id, req.query);
   return sendSuccess(res, programs, 200, 'Programs retrieved');
 };
 
@@ -76,7 +76,7 @@ const createCustomProgram = async (req, res) => {
  * @throws  {404} No active program found
  */
 const getActiveProgram = async (req, res) => {
-  const program = await userProgramService.getActiveUserProgram(req.user._id);
+  const program = await userProgramService.getActiveProgram(req.user._id);
   return sendSuccess(res, program, 200, 'Active program retrieved');
 };
 
@@ -90,7 +90,7 @@ const getActiveProgram = async (req, res) => {
  * @throws  {403} Forbidden (not owner)
  */
 const getProgramById = async (req, res) => {
-  const program = await userProgramService.getUserProgramById(req.params.id, req.user._id);
+  const program = await userProgramService.getProgramById(req.params.id, req.user._id);
   return sendSuccess(res, program, 200, 'Program retrieved');
 };
 
@@ -110,11 +110,7 @@ const getProgramById = async (req, res) => {
  * @throws  {400} Validation error
  */
 const updateProgramById = async (req, res) => {
-  const program = await userProgramService.updateUserProgramById(
-    req.params.id,
-    req.user._id,
-    req.body,
-  );
+  const program = await userProgramService.updateProgramById(req.params.id, req.user._id, req.body);
   return sendSuccess(res, program, 200, 'Program updated');
 };
 
@@ -128,7 +124,7 @@ const updateProgramById = async (req, res) => {
  * @throws  {403} Forbidden (not owner)
  */
 const deleteProgramById = async (req, res) => {
-  await userProgramService.deleteUserProgramById(req.params.id, req.user._id);
+  await userProgramService.deleteProgramById(req.params.id, req.user._id);
   return sendSuccess(res, null, 204);
 };
 
