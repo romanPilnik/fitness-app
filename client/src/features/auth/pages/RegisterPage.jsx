@@ -1,87 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { RegisterForm } from '../components/RegisterForm';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-function RegisterPage() {
-  const { register } = useAuth();
+export default function RegisterPage() {
+  const { register, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [error, setError] = useState(null);
+  const [serverError, setServerError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleEmailChange(e) {
-    setEmail(e.target.value);
-  }
+  const from = location.state?.from?.pathname || '/dashboard';
 
-  function handlePasswordChange(e) {
-    setPassword(e.target.value);
-    if (error) setError('');
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
 
-  function handleConfirmPasswordChange(e) {
-    setConfirmPassword(e.target.value);
-    if (error) setError('');
-  }
+  async function handleRegister(data) {
+    setServerError(null);
+    setIsLoading(true);
 
-  function handleUsernameChange(e) {
-    setUsername(e.target.value);
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError(null);
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-    } else {
-      try {
-        await register(email, password, username);
-      } catch (error) {
-        setError(error.message);
-      }
+    try {
+      await register(data.email, data.password, data.username);
+      navigate(from, { replace: true });
+    } catch (error) {
+      const errorMessage = error.message || 'Unexpected error occurred';
+      setServerError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   }
+
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
-    <div>
-      {error && <div>{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          onChange={handleEmailChange}
-          value={email}
-          placeholder="Email"
-          required
-        />
-
-        <input
-          type="text"
-          onChange={handleUsernameChange}
-          value={username}
-          placeholder="Username"
-          required
-        />
-
-        <input
-          type="password"
-          onChange={handlePasswordChange}
-          value={password}
-          placeholder="Password"
-          required
-        />
-
-        <input
-          type="password"
-          onChange={handleConfirmPasswordChange}
-          value={confirmPassword}
-          placeholder="Confirm Password"
-          required
-        />
-
-        <button type="submit">Register</button>
-      </form>
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
+          <CardDescription>Enter your details to create an account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RegisterForm onSubmit={handleRegister} isLoading={isLoading} serverError={serverError} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
-export default RegisterPage;
