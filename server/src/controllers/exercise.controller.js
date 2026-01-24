@@ -1,4 +1,4 @@
-const exerciseService = require('../services/exercise/exercise.service');
+const ExerciseService = require('../services/exercise/exercise.service');
 const { sendSuccess } = require('../utils/response');
 
 /**
@@ -28,7 +28,7 @@ const getExercises = async (req, res) => {
     filters.movementPattern = req.query.movementPattern;
   }
 
-  const result = await exerciseService.getExercises(filters, req.query);
+  const result = await ExerciseService.getExercises(filters, req.query);
   return sendSuccess(res, result, 200, 'Exercises retrieved successfully');
 };
 
@@ -42,7 +42,7 @@ const getExercises = async (req, res) => {
  * @throws  {400} When ID format is invalid
  */
 const getExerciseById = async (req, res) => {
-  const exercise = await exerciseService.getExerciseById(req.params.id);
+  const exercise = await ExerciseService.getExerciseById(req.params.id);
 
   return sendSuccess(res, exercise, 200, 'Exercise retrieved successfully');
 };
@@ -65,7 +65,7 @@ const getExerciseById = async (req, res) => {
  * @throws  {400} When validation fails
  */
 const createExercise = async (req, res) => {
-  const newExercise = await exerciseService.createExercise(req.body);
+  const newExercise = await ExerciseService.createExercise(req.body);
 
   return sendSuccess(res, newExercise, 201, 'Exercise created successfully');
 };
@@ -81,7 +81,7 @@ const createExercise = async (req, res) => {
  * @throws  {400} When validation fails
  */
 const updateExercise = async (req, res) => {
-  const updatedExercise = await exerciseService.updateExercise(req.params.id, req.body);
+  const updatedExercise = await ExerciseService.updateExercise(req.params.id, req.body);
 
   return sendSuccess(res, updatedExercise, 200, 'Exercise updated successfully');
 };
@@ -95,7 +95,7 @@ const updateExercise = async (req, res) => {
  * @throws  {404} When exercise not found
  */
 const deleteExercise = async (req, res) => {
-  await exerciseService.deleteExercise(req.params.id);
+  await ExerciseService.deleteExercise(req.params.id);
 
   return sendSuccess(res, null, 204);
 };

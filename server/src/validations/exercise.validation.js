@@ -29,7 +29,7 @@ const getExercises = {
 
 const getExerciseById = {
   params: Joi.object().keys({
-    exerciseId: Joi.string().required(),
+    id: Joi.string().required(),
   }),
 };
 
@@ -108,7 +108,7 @@ const updateExercise = {
 
 const deleteExercise = {
   params: Joi.object().keys({
-    exerciseId: Joi.string().required(),
+    id: Joi.string().required(),
   }),
 };
 

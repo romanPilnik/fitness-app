@@ -4,6 +4,7 @@
 .vscode
 .github
 CLAUDE.md
+AGENTS.md
 .DS_Store
 
 # dependencies

@@ -1,11 +1,16 @@
-import type { PaginatedResponse, PaginationQuery } from '../../types/api.types.js';
+import type { PaginationQuery } from '../../types/api.types.js';
 import type { ExerciseFilters } from './types.js';
-import type { Exercise } from '../../models/Exercise/Exercise.types.js';
+import { ExerciseModel } from '../../models/Exercise.model.js';
+import { PaginateResult } from 'mongoose';
+import { AppError } from '../../errors/AppError.js';
+import { ERROR_CODES } from '../../types/error.types.js';
+import type { CreateExerciseInputDTO, UpdateExerciseInputDTO, ExerciseDTO } from './mappers.js';
+import { mapPaginatedExercises, toExerciseDTO } from './mappers.js';
 
 async function getExercises(
   filters: ExerciseFilters = {},
   options: PaginationQuery & ExerciseFilters = {},
-): Promise<PaginatedResponse<Exercise>> {
+): Promise<PaginateResult<ExerciseDTO>> {
   const queryFilters = {
     isActive: true,
     ...filters,
@@ -21,63 +26,56 @@ async function getExercises(
     lean: true,
   };
 
-  return await Exercise.paginate(query, paginateOptions);
+  const result = await ExerciseModel.paginate(query, paginateOptions);
+  return mapPaginatedExercises(result);
 }
 
-const getExerciseById = async (id) => {
-  const exercise = await Exercise.findById(id);
+async function getExerciseById(id: string): Promise<ExerciseDTO> {
+  const exercise = await ExerciseModel.findById(id);
   if (!exercise) {
-    const error = new Error('Exercise not found');
-    error.statusCode = 404;
-    throw error;
+    throw new AppError('Exercise not found', 404, ERROR_CODES.NOT_FOUND);
   }
-  return exercise;
-};
+  return toExerciseDTO(exercise);
+}
 
-const createExercise = async (exerciseData) => {
-  const existing = await Exercise.findOne({
+async function createExercise(exerciseData: CreateExerciseInputDTO): Promise<ExerciseDTO> {
+  const existing = await ExerciseModel.findOne({
     name: exerciseData.name,
     isActive: true,
   });
   if (existing) {
-    const error = new Error('Exercise with this name already exists');
-    error.statusCode = 409;
-    throw error;
+    throw new AppError('Exercise with this name already exists', 400, ERROR_CODES.DUPLICATE_VALUE);
   }
-  const exercise = new Exercise(exerciseData);
+  const exercise = new ExerciseModel(exerciseData);
   await exercise.validate();
   await exercise.save();
-  return exercise;
-};
+  return toExerciseDTO(exercise);
+}
 
-const updateExercise = async (id, updatedFields) => {
-  const updatedExercise = await Exercise.findByIdAndUpdate(
+async function updateExercise(id: string, updatedFields: UpdateExerciseInputDTO) {
+  const updatedExercise = await ExerciseModel.findByIdAndUpdate(
     id,
     { $set: updatedFields },
     { new: true, runValidators: true },
   );
   if (!updatedExercise) {
-    const error = new Error('Exercise not found');
-    error.statusCode = 404;
-    throw error;
+    throw new AppError('Exercise not found', 404, ERROR_CODES.NOT_FOUND);
   }
-  return updatedExercise;
-};
+  return toExerciseDTO(updatedExercise);
+}
 
-const deleteExercise = async (id) => {
-  const deletedExercise = await Exercise.findByIdAndUpdate(
+async function deleteExercise(id: string): Promise<void> {
+  const deletedExercise = await ExerciseModel.findByIdAndUpdate(
     id,
     { $set: { isActive: false } },
     { new: true },
   );
   if (!deletedExercise) {
-    const error = new Error('Exercise not found');
-    error.statusCode = 404;
-    throw error;
+    throw new AppError('Exercise not found', 404, ERROR_CODES.NOT_FOUND);
   }
-};
+}
 
-module.exports = {
+export const ExerciseService = {
   getExercises,
   getExerciseById,
   createExercise,
