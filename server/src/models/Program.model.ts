@@ -9,7 +9,7 @@ import {
   VOLUME_PROGRESSIONS,
   PROGRAM_STATUSES,
   PROGRAM_SOURCES,
-} from '../../types/enums.types.js';
+} from '../types/enums.types.js';
 
 interface IProgramMethods {
   isDeloadWeek(): boolean;

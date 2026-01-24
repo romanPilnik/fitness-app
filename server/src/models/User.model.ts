@@ -8,13 +8,13 @@ import type {
 import mongoosePaginate from 'mongoose-paginate-v2';
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
-import { USER_ROLES, UNITS, WEEK_STARTS_ON } from '../../types/enums.types.js';
+import { USER_ROLES, UNITS, WEEK_STARTS_ON } from '../types/enums.types.js';
 
 interface IUserMethods {
   comparePassword(_candidatePassword: string): Promise<boolean>;
 }
 
-interface IUserModel extends Model<IUser, object, IUserMethods> {
+interface IUserModel extends Model<User, object, IUserMethods> {
   findActive(): ReturnType<typeof mongoose.Model.find>;
 }
 
@@ -110,9 +110,6 @@ userSchema.statics.findActive = function () {
 
 userSchema.plugin(mongoosePaginate);
 
-export type IUser = InferSchemaType<typeof userSchema>;
+export type User = InferSchemaType<typeof userSchema>;
 
-export const UserModel = mongoose.model<IUser, IUserModel & PaginateModel<IUser>>(
-  'User',
-  userSchema,
-);
+export const UserModel = mongoose.model<User, IUserModel & PaginateModel<User>>('User', userSchema);

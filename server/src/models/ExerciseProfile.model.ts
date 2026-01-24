@@ -1,7 +1,7 @@
 import mongoose, { Schema, Types } from 'mongoose';
 import type { InferSchemaType, PaginateModel, Model, HydratedDocument } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
-import { REP_RANGES } from '../../types/enums.types.js';
+import { REP_RANGES } from '../types/enums.types.js';
 
 interface SessionData {
   weight: number;

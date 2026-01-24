@@ -7,7 +7,7 @@ import {
   GOALS,
   PERIODIZATION_TYPES,
   VOLUME_PROGRESSIONS,
-} from '../../types/enums.types.js';
+} from '../types/enums.types.js';
 
 const programTemplateSchema = new Schema(
   {
@@ -87,10 +87,7 @@ const programTemplateSchema = new Schema(
               this: { periodization?: { config?: { weeks?: number } } },
               value: number,
             ) {
-              if (
-                this.periodization?.config?.weeks != null &&
-                value > this.periodization.config.weeks
-              ) {
+              if (this.periodization?.config?.weeks && value > this.periodization.config.weeks) {
                 return false;
               }
               return true;

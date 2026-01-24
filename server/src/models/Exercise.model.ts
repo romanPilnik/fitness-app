@@ -6,7 +6,7 @@ import {
   EQUIPMENT,
   EXERCISE_CATEGORIES,
   PROGRESSION_TYPES,
-} from '../../types/enums.types.js';
+} from '../types/enums.types.js';
 import mongoosePaginate from 'mongoose-paginate-v2';
 
 const exerciseSchema = new Schema(

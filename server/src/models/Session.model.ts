@@ -1,7 +1,7 @@
 import mongoose, { Schema, Types } from 'mongoose';
 import type { PaginateModel, InferSchemaType, Model, HydratedDocument } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
-import { SESSION_COMPLETION_STATUSES, SET_TYPES } from '../../types/enums.types.js';
+import { SESSION_COMPLETION_STATUSES, SET_TYPES } from '../types/enums.types.js';
 
 interface ISessionMethods {
   calculateTotalVolume(): number;
