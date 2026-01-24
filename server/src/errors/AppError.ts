@@ -5,12 +5,7 @@ export class AppError extends Error {
   public readonly code: ErrorCode;
   public readonly isOperational: boolean;
 
-  constructor(
-    message: string,
-    statusCode: number,
-    code: ErrorCode,
-    isOperational = true,
-  ) {
+  constructor(message: string, statusCode: number, code: ErrorCode, isOperational = true) {
     super(message);
 
     if (Error.captureStackTrace) {

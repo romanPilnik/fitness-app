@@ -5,7 +5,7 @@
 
 const express = require('express');
 const { verifyToken } = require('../middlewares/auth');
-const {requireRole} = require('../middlewares/authorize');
+const { requireRole } = require('../middlewares/authorize');
 const exerciseController = require('../controllers/exercise.controller');
 const validate = require('../middlewares/validate');
 const exerciseValidation = require('../validations/exercise.validation');

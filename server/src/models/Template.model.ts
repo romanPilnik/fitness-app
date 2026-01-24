@@ -232,7 +232,7 @@ programTemplateSchema.plugin(mongoosePaginate);
 
 export type ProgramTemplate = InferSchemaType<typeof programTemplateSchema>;
 
-export const ProgramTemplateModel = mongoose.model<
-  ProgramTemplate,
-  PaginateModel<ProgramTemplate>
->('ProgramTemplate', programTemplateSchema);
+export const ProgramTemplateModel = mongoose.model<ProgramTemplate, PaginateModel<ProgramTemplate>>(
+  'ProgramTemplate',
+  programTemplateSchema,
+);

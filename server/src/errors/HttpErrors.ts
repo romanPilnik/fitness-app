@@ -1,9 +1,5 @@
 import { AppError } from './AppError.js';
-import {
-  ERROR_CODES,
-  type ErrorCode,
-  type ValidationErrorDetail,
-} from '../types/error.types.js';
+import { ERROR_CODES, type ErrorCode, type ValidationErrorDetail } from '../types/error.types.js';
 
 export class ValidationError extends AppError {
   public readonly details?: ValidationErrorDetail[];

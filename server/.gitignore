@@ -23,6 +23,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Agent files
+CLAUDE.md
+
 # Build/dist
 dist/
 build/

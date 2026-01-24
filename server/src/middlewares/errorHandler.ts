@@ -93,36 +93,21 @@ export const errorHandler = (
     );
     const serialized = castError.serialize(isDevelopment());
 
-    return sendError(
-      res,
-      serialized.statusCode,
-      serialized.message,
-      serialized.code,
-    );
+    return sendError(res, serialized.statusCode, serialized.message, serialized.code);
   }
 
   if (err.name === 'JsonWebTokenError') {
     const authError = new AuthenticationError('Invalid token', ERROR_CODES.INVALID_TOKEN);
     const serialized = authError.serialize(isDevelopment());
 
-    return sendError(
-      res,
-      serialized.statusCode,
-      serialized.message,
-      serialized.code,
-    );
+    return sendError(res, serialized.statusCode, serialized.message, serialized.code);
   }
 
   if (err.name === 'TokenExpiredError') {
     const authError = new AuthenticationError('Token has expired', ERROR_CODES.TOKEN_EXPIRED);
     const serialized = authError.serialize(isDevelopment());
 
-    return sendError(
-      res,
-      serialized.statusCode,
-      serialized.message,
-      serialized.code,
-    );
+    return sendError(res, serialized.statusCode, serialized.message, serialized.code);
   }
 
   if (isMongoDBDuplicateError(err)) {
@@ -133,12 +118,7 @@ export const errorHandler = (
     );
     const serialized = conflictError.serialize(isDevelopment());
 
-    return sendError(
-      res,
-      serialized.statusCode,
-      serialized.message,
-      serialized.code,
-    );
+    return sendError(res, serialized.statusCode, serialized.message, serialized.code);
   }
 
   if (isJoiValidationError(err)) {

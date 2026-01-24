@@ -43,8 +43,7 @@ interface AuthenticatedRequestWithBody<B> extends Request {
   body: B;
 }
 
-interface AuthenticatedRequestWithParams<P extends Record<string, string>>
-  extends Request {
+interface AuthenticatedRequestWithParams<P extends Record<string, string>> extends Request {
   user: RequestUser;
   params: P;
 }
@@ -55,10 +54,8 @@ interface AuthenticatedRequestWithQuery<Q extends Record<string, string | string
   query: PaginationQuery & Q;
 }
 
-interface AuthenticatedRequestWithParamsAndBody<
-  P extends Record<string, string>,
-  B,
-> extends Request {
+interface AuthenticatedRequestWithParamsAndBody<P extends Record<string, string>, B>
+  extends Request {
   user: RequestUser;
   params: P;
   body: B;
