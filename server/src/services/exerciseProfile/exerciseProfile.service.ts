@@ -1,48 +1,65 @@
-const ExerciseProfile = require('../models/UserExerciseProfile');
+import { ExerciseProfileModel } from '../../models/ExerciseProfile.model.js';
+import type { PaginateResult } from 'mongoose';
+import type {
+  GetExerciseProfilesInputDTO,
+  GetExerciseProfileByIdInputDTO,
+  UpdateExerciseProfileInputDTO,
+  ExerciseProfileDTO,
+} from './exerciseProfile.dto.js';
+import { mapPaginatedExerciseProfiles,toExerciseProfileDTO } from './exerciseProfile.mapper.js';
+import { AppError } from '../../errors/AppError.js';
+import { ERROR_CODES } from '../../types/error.types.js';
 
-// GET /api/v1/profile/exercises
-const getExerciseProfiles = async (userId, filters = {}, options = {}) => {
-  const ALLOWED_FILTERS = ['isFavorite', 'needsFormCheck', 'isInjuryModified'];
+// Add better filtering, sorting by exercise fields
+async function getExerciseProfiles(
+  input: GetExerciseProfilesInputDTO,
+): Promise<PaginateResult<ExerciseProfileDTO>> {
+  const { userId, filters = {}, pagination = {} } = input;
 
-  const query = {
+  const queryOptions: Record<string, unknown> = {
     userId,
-    'status.isActive': true,
+    isActive: true,
   };
 
-  Object.keys(filters).forEach((key) => {
-    if (ALLOWED_FILTERS.includes(key)) {
-      query[key] = filters[key];
-    }
-  });
+  if (filters.isFavorite !== undefined) queryOptions.isFavorite = filters.isFavorite;
+  if (filters.needsFormCheck !== undefined) queryOptions.needsFormCheck = filters.needsFormCheck;
+  if (filters.isInjuryModified !== undefined) queryOptions.isInjuryModified = filters.isInjuryModified;
 
-  const paginateOptions = {
-    page: parseInt(options.page) || 1,
-    limit: parseInt(options.limit) || 20,
+  const paginationOptions = {
+    page: pagination.page || 1,
+    limit: pagination.limit || 20,
     select: '-__v',
     populate: { path: 'exerciseId', select: 'name primaryMuscle equipment' },
     lean: true,
   };
 
-  return await ExerciseProfile.paginate(query, paginateOptions);
-};
+  const result = await ExerciseProfileModel.paginate(queryOptions, paginationOptions);
+  // Cast needed: paginate + populate + lean doesn't preserve populated types
+  return mapPaginatedExerciseProfiles(
+    result as unknown as Parameters<typeof mapPaginatedExerciseProfiles>[0],
+  );
+}
 
 // GET /api/v1/profile/exercises/:exerciseId
-const getExerciseProfileById = async (exerciseId, userId) => {
-  const profile = await ExerciseProfile.findOne({
+async function getExerciseProfileById(input: GetExerciseProfileByIdInputDTO): Promise<ExerciseProfileDTO> {
+  const { exerciseId, userId } = input;
+  const profile = await ExerciseProfileModel.findOne({
     userId,
     exerciseId,
   }).lean();
   if (!profile) {
-    const error = new Error('Exercise profile not found');
-    error.statusCode = 404;
-    throw error;
+    throw new AppError('Exercise profile not found', 404, ERROR_CODES.NOT_FOUND);
   }
-  return profile;
+  return toExerciseProfileDTO(profile);
 };
 
 // PATCH /api/v1/profile/exercises/:exerciseId
-const updateExerciseProfile = async (exerciseId, userId, updateData) => {
-  const ALLOWED_UPDATES = [
+async function updateExerciseProfile(input: UpdateExerciseProfileInputDTO): Promise<ExerciseProfileDTO> {
+
+ 
+
+  const { exerciseId, userId, updates } = input;
+    const ALLOWED_UPDATES = [
     'isFavorite',
     'needsFormCheck',
     'isInjuryModified',
@@ -51,30 +68,29 @@ const updateExerciseProfile = async (exerciseId, userId, updateData) => {
     'formNotes',
     'injuryNotes',
   ];
-
-  const updates = {};
-  Object.keys(updateData).forEach((key) => {
+ 
+  const sanitizedUpdates : Record<string, unknown> = {};
+  Object.keys(updates).forEach((key) => {
     if (ALLOWED_UPDATES.includes(key)) {
-      updates[key] = updateData[key];
+      sanitizedUpdates[key] = updates[key as keyof typeof updates];
     }
   });
-  const profile = await ExerciseProfile.findOneAndUpdate(
+  const profile = await ExerciseProfileModel.findOneAndUpdate(
     { exerciseId, userId },
-    { $set: updates },
+    { $set: sanitizedUpdates },
     { new: true, runValidators: true },
   )
     .select('-__v')
     .lean();
 
   if (!profile) {
-    const error = new Error('Exercise profile not found');
-    error.statusCode = 404;
-    throw error;
+    throw new AppError('Exercise profile not found', 404, ERROR_CODES.NOT_FOUND);
   }
 
-  return profile;
+  return toExerciseProfileDTO(profile);
 };
 
+// fix when session dto structure is finalized
 const updateFromSession = async (userId, session) => {
   for (const exercise of session.exercises) {
     const profile = await ExerciseProfile.getOrCreateProfile(userId, exercise.exerciseId);

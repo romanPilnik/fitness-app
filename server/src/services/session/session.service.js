@@ -1,6 +1,6 @@
 const WorkoutSession = require('../models/WorkoutSession');
 const ExerciseProfileService = require('./exerciseProfile.service');
-const UserProgramService = require('./userProgram.service');
+const UserProgramService = require('../program/userProgram.service');
 
 // GET api/v1/sessions/
 const getSessions = async (userId, options = {}) => {
