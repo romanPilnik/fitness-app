@@ -8,6 +8,7 @@ const userService = require('../services/user/user.service');
  * @param   {Object} req.user - Authenticated user object
  * @returns {Object} { success, message, data: user }
  */
+// Doesnt use DTO, consider changing in the future
 const getCurrentUser = (req, res) => {
   return sendSuccess(res, req.user, 200, 'User retrieved');
 };

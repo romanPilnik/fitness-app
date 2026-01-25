@@ -67,7 +67,7 @@ const userSchema = new Schema(
       weekStartsOn: {
         type: String,
         enum: WEEK_STARTS_ON,
-        default: 'monday',
+        default: 'sunday',
       },
     },
 

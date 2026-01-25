@@ -1,25 +1,7 @@
-import type { UserRole, WeekStartsOn, Units } from '../../types/enums.types';
 import type { User } from '../../models/User.model.js';
+import type { AuthUserDTO } from './auth.dto.js';
 
-export type RegisterInputDTO = {
-  email: string;
-  password: string;
-  name: string;
-};
-
-export type UserDTO = {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  isActive: boolean;
-  preferences: {
-    units: Units;
-    weekStartsOn: WeekStartsOn;
-  };
-};
-
-export function toUserDTO(user: User): UserDTO {
+export function toAuthUserDTO(user: User): AuthUserDTO {
   const rawId = (user as { _id?: { toString(): string } })._id;
   return {
     id: rawId ? rawId.toString() : '',

@@ -1,10 +1,12 @@
-import { UserModel } from '../../models/User.model';
+import { UserModel } from '../../models/User.model.js';
 import { AppError } from '../../errors/AppError.js';
-import { ERROR_CODES } from '../../errors';
-import { toUserDTO } from './mappers';
+import { ERROR_CODES } from '../../errors/index.js';
+import type { RegisterInputDTO, LoginInputDTO, AuthUserDTO } from './auth.dto.js';
+import { toAuthUserDTO } from './auth.mapper.js';
 
-// Consider using single object parameter for inputs if more fields are added in future
-async function registerUser(email: string, password: string, name: string) {
+async function register(input: RegisterInputDTO): Promise<AuthUserDTO> {
+  const { email, password, name } = input;
+
   const existingUser = await UserModel.findOne({ email });
 
   if (existingUser) {
@@ -17,10 +19,12 @@ async function registerUser(email: string, password: string, name: string) {
     name,
   });
   const savedUser = await newUser.save();
-  return toUserDTO(savedUser);
+  return toAuthUserDTO(savedUser);
 }
 
-async function loginUser(email: string, password: string) {
+async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
+  const { email, password } = input;
+
   const user = await UserModel.findOne({ email }).select('+password');
 
   if (!user) {
@@ -31,17 +35,11 @@ async function loginUser(email: string, password: string) {
   if (!isMatch) {
     throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIALS);
   }
-  return toUserDTO(user);
+
+  return toAuthUserDTO(user);
 }
 
-/*
-const generateAuthToken = (userId: string) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
-  });
-};
-*/
 export const AuthService = {
-  registerUser,
-  loginUser,
+  register,
+  login,
 };

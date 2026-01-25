@@ -1,52 +1,6 @@
 import type { Exercise } from '../../models/Exercise.model.js';
 import type { PaginateResult } from 'mongoose';
-import type {
-  Equipment,
-  ExerciseCategory,
-  MovementPattern,
-  MuscleGroup,
-  ProgressionType,
-} from '../../types/enums.types.js';
-
-export type CreateExerciseInputDTO = {
-  name: string;
-  equipment: Equipment;
-  primaryMuscle: MuscleGroup;
-  secondaryMuscles?: MuscleGroup[];
-  category: ExerciseCategory;
-  movementPattern: MovementPattern;
-  typicalRepRange?: {
-    min?: number;
-    max?: number;
-  };
-  rirBoundaries?: {
-    min?: number;
-    max?: number;
-  };
-  instructions?: string;
-};
-
-export type UpdateExerciseInputDTO = Partial<CreateExerciseInputDTO>;
-
-export type ExerciseDTO = {
-  id: string;
-  name: string;
-  equipment: Equipment;
-  primaryMuscle: MuscleGroup;
-  secondaryMuscles: MuscleGroup[];
-  category: ExerciseCategory;
-  movementPattern: MovementPattern;
-  typicalRepRange: {
-    min: number;
-    max: number;
-  };
-  rirBoundaries: {
-    min: number;
-    max: number;
-  };
-  progressionType: ProgressionType;
-  instructions?: string;
-};
+import type { ExerciseDTO } from './exercise.dto.js';
 
 export function toExerciseDTO(exercise: Exercise): ExerciseDTO {
   const rawId = (exercise as { _id?: { toString(): string } })._id;
