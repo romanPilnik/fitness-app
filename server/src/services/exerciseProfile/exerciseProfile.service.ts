@@ -1,12 +1,14 @@
 import { ExerciseProfileModel } from '../../models/ExerciseProfile.model.js';
-import type { PaginateResult } from 'mongoose';
+import { Types, type PaginateResult } from 'mongoose';
 import type {
   GetExerciseProfilesInputDTO,
   GetExerciseProfileByIdInputDTO,
   UpdateExerciseProfileInputDTO,
   ExerciseProfileDTO,
+  updateFromSessionInputDTO,
 } from './exerciseProfile.dto.js';
-import { mapPaginatedExerciseProfiles,toExerciseProfileDTO } from './exerciseProfile.mapper.js';
+import type { SetDTO } from '../session/session.dto.js';
+import { mapPaginatedExerciseProfiles, toExerciseProfileDTO } from './exerciseProfile.mapper.js';
 import { AppError } from '../../errors/AppError.js';
 import { ERROR_CODES } from '../../types/error.types.js';
 
@@ -90,62 +92,36 @@ async function updateExerciseProfile(input: UpdateExerciseProfileInputDTO): Prom
   return toExerciseProfileDTO(profile);
 };
 
-// fix when session dto structure is finalized
-const updateFromSession = async (userId, session) => {
-  for (const exercise of session.exercises) {
-    const profile = await ExerciseProfile.getOrCreateProfile(userId, exercise.exerciseId);
+async function updateFromSession(input: updateFromSessionInputDTO): Promise<void> {
+  const { userId, session } = input;
 
-    _updateRecentSessions(profile, exercise, session._id);
-    _updateLastPerformed(profile, exercise);
-    _updatePersonalRecord(profile, exercise);
+  for (const exercise of session.exercises) {
+    const profile = await ExerciseProfileModel.getOrCreateProfile(userId, exercise.exerciseId);
+    const topSet = findTopSet(exercise.sets);
+
+    profile
+      .addSessionToHistory({
+        date: new Date(),
+        topSetWeight: topSet.weight,
+        topSetReps: topSet.reps,
+        totalSets: exercise.sets.length,
+        sessionId: new Types.ObjectId(session.id),
+      })
+      .updateLastPerformed({
+        weight: topSet.weight,
+        reps: topSet.reps,
+        sets: exercise.sets.length,
+      })
+      .updatePersonalRecord({
+        weight: topSet.weight,
+        reps: topSet.reps,
+      });
+
     await profile.save();
   }
+}
 
-  // TODO: when algorithm is clear update progression related fields
-};
-
-const _updateRecentSessions = (profile, exercise, sessionId) => {
-  const topSet = _findTopSet(exercise.sets);
-
-  const sessionSummary = {
-    date: Date.now(),
-    topSetWeight: topSet.weight,
-    topSetReps: topSet.reps,
-    totalSets: exercise.sets.length,
-    sessionId: sessionId,
-  };
-
-  profile.recentSessions.unshift(sessionSummary);
-  if (profile.recentSessions.length > 10) {
-    profile.recentSessions.pop();
-  }
-};
-const _updateLastPerformed = (profile, exercise) => {
-  const topSet = _findTopSet(exercise.sets);
-
-  profile.lastPerformed = {
-    date: Date.now(),
-    weight: topSet.weight,
-    reps: topSet.reps,
-    sets: exercise.sets.length,
-  };
-};
-const _updatePersonalRecord = (profile, exercise) => {
-  const topSet = _findTopSet(exercise.sets);
-
-  if (
-    profile.personalRecord.weight === 0 ||
-    topSet.weight > profile.personalRecord.weight ||
-    (topSet.weight === profile.personalRecord.weight && topSet.reps > profile.personalRecord.reps)
-  )
-    profile.personalRecord = {
-      date: Date.now(),
-      weight: topSet.weight,
-      reps: topSet.reps,
-    };
-};
-
-const _findTopSet = (sets) => {
+function findTopSet(sets: SetDTO[]): SetDTO {
   let topSet = sets[0];
 
   for (const set of sets) {
@@ -155,9 +131,9 @@ const _findTopSet = (sets) => {
   }
 
   return topSet;
-};
+}
 
-module.exports = {
+export const ExerciseProfileService = {
   getExerciseProfiles,
   getExerciseProfileById,
   updateExerciseProfile,

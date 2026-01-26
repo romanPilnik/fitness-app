@@ -11,7 +11,7 @@ export function toAuthUserDTO(user: User): AuthUserDTO {
     isActive: user.isActive,
     preferences: {
       units: user.preferences?.units ?? 'metric',
-      weekStartsOn: user.preferences?.weekStartsOn ?? 'monday',
+      weekStartsOn: user.preferences?.weekStartsOn ?? 'sunday',
     },
   };
 }

@@ -8,8 +8,17 @@ type PopulatedExercise = {
   equipment: string;
 };
 
+type RecentSession = {
+  date?: Date;
+  topSetWeight?: number;
+  topSetReps?: number;
+  totalSets?: number;
+  sessionId?: { toString(): string };
+};
+
 type PopulatedExerciseProfile = {
   _id?: { toString(): string };
+  userId?: { toString(): string };
   exerciseId: PopulatedExercise;
   lastPerformed?: {
     date?: Date;
@@ -22,6 +31,7 @@ type PopulatedExerciseProfile = {
     reps?: number;
     date?: Date;
   };
+  recentSessions?: RecentSession[];
   metrics?: {
     totalSessions?: number;
     avgDaysBetweenSessions?: number;
@@ -41,8 +51,9 @@ export function toExerciseProfileDTO(profile: PopulatedExerciseProfile): Exercis
 
   return {
     id: rawId ? rawId.toString() : '',
+    userId: profile.userId ? profile.userId.toString() : '',
+    exerciseId: exercise._id ? exercise._id.toString() : '',
     exercise: {
-      id: exercise._id ? exercise._id.toString() : '',
       name: exercise.name,
       primaryMuscle: exercise.primaryMuscle as ExerciseProfileDTO['exercise']['primaryMuscle'],
       equipment: exercise.equipment as ExerciseProfileDTO['exercise']['equipment'],
@@ -62,6 +73,13 @@ export function toExerciseProfileDTO(profile: PopulatedExerciseProfile): Exercis
           date: profile.personalRecord.date,
         }
       : undefined,
+    recentSessions: (profile.recentSessions ?? []).map((session) => ({
+      date: session.date ?? new Date(),
+      topSetWeight: session.topSetWeight ?? 0,
+      topSetReps: session.topSetReps ?? 0,
+      totalSets: session.totalSets ?? 0,
+      sessionId: session.sessionId ? session.sessionId.toString() : '',
+    })),
     metrics: {
       totalSessions: profile.metrics?.totalSessions ?? 0,
       avgDaysBetweenSessions: profile.metrics?.avgDaysBetweenSessions,

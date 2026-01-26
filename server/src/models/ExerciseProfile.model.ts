@@ -7,8 +7,12 @@ interface SessionData {
   weight: number;
   reps: number;
   sets: number;
-  rir: number;
   date?: Date;
+}
+
+interface PersonalRecordData {
+  weight: number;
+  reps: number;
 }
 
 interface SessionSummary {
@@ -24,8 +28,9 @@ const MAX_RECENT_SESSIONS = 10;
 interface IExerciseProfileMethods {
   getProgressionRate(): number;
   getRecentSessions(_limit?: number): ExerciseProfile['recentSessions'];
-  updateLastPerformed(_sessionData: SessionData): unknown;
-  addSessionToHistory(_sessionSummary: SessionSummary): unknown;
+  updateLastPerformed(_sessionData: SessionData): this;
+  addSessionToHistory(_sessionSummary: SessionSummary): this;
+  updatePersonalRecord(_data: PersonalRecordData): this;
 }
 
 interface IExerciseProfileModel extends Model<ExerciseProfile, object, IExerciseProfileMethods> {
@@ -180,10 +185,10 @@ exerciseProfileSchema.methods.updateLastPerformed = function (sessionData: Sessi
     throw new Error('Session data is required and must be an object');
   }
 
-  const { weight, reps, sets, rir, date } = sessionData;
+  const { weight, reps, sets, date } = sessionData;
 
-  if (weight === undefined || reps === undefined || sets === undefined || rir === undefined) {
-    throw new Error('Session data must include weight, reps, sets, and rir');
+  if (weight === undefined || reps === undefined || sets === undefined) {
+    throw new Error('Session data must include weight, reps, and sets');
   }
 
   this.lastPerformed = {
@@ -194,7 +199,6 @@ exerciseProfileSchema.methods.updateLastPerformed = function (sessionData: Sessi
   };
 
   this.metrics.totalSessions = (this.metrics.totalSessions || 0) + 1;
-  this.recentProgression.lastProgressionDate = this.lastPerformed.date;
 
   return this;
 };
@@ -204,6 +208,27 @@ exerciseProfileSchema.methods.addSessionToHistory = function (sessionSummary: Se
 
   if (this.recentSessions.length > MAX_RECENT_SESSIONS) {
     this.recentSessions = this.recentSessions.slice(0, MAX_RECENT_SESSIONS);
+  }
+
+  return this;
+};
+
+exerciseProfileSchema.methods.updatePersonalRecord = function (data: PersonalRecordData) {
+  const { weight, reps } = data;
+  const currentWeight = this.personalRecord?.weight ?? 0;
+  const currentReps = this.personalRecord?.reps ?? 0;
+
+  const isNewRecord =
+    currentWeight === 0 ||
+    weight > currentWeight ||
+    (weight === currentWeight && reps > currentReps);
+
+  if (isNewRecord) {
+    this.personalRecord = {
+      weight: Number(weight),
+      reps: Number(reps),
+      date: new Date(),
+    };
   }
 
   return this;

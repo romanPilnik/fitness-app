@@ -1,5 +1,6 @@
 import type { PaginationQuery } from '../../types/api.types.js';
 import type { Equipment, MuscleGroup } from '../../types/enums.types.js';
+import { SessionDTO } from '../session/session.dto.js';
 
 export type GetExerciseProfilesInputDTO = {
   userId: string;
@@ -30,10 +31,24 @@ export type UpdateExerciseProfileInputDTO = {
   };
 };
 
+export type updateFromSessionInputDTO = {
+  userId: string;
+  session: SessionDTO;
+};
+
+export type RecentSessionDTO = {
+  date: Date;
+  topSetWeight: number;
+  topSetReps: number;
+  totalSets: number;
+  sessionId: string;
+};
+
 export type ExerciseProfileDTO = {
   id: string;
+  userId: string;
+  exerciseId: string;
   exercise: {
-    id: string;
     name: string;
     primaryMuscle: MuscleGroup;
     equipment: Equipment;
@@ -49,6 +64,7 @@ export type ExerciseProfileDTO = {
     reps: number;
     date: Date;
   };
+  recentSessions: RecentSessionDTO[];
   metrics: {
     totalSessions: number;
     avgDaysBetweenSessions?: number;
