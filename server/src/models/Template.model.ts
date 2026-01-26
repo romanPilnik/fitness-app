@@ -9,7 +9,7 @@ import {
   VOLUME_PROGRESSIONS,
 } from '../types/enums.types.js';
 
-const programTemplateSchema = new Schema(
+const templateSchema = new Schema(
   {
     name: {
       type: String,
@@ -225,11 +225,11 @@ const programTemplateSchema = new Schema(
   },
 );
 
-programTemplateSchema.plugin(mongoosePaginate);
+templateSchema.plugin(mongoosePaginate);
 
-export type ProgramTemplate = InferSchemaType<typeof programTemplateSchema>;
+export type Template = InferSchemaType<typeof templateSchema>;
 
-export const ProgramTemplateModel = mongoose.model<ProgramTemplate, PaginateModel<ProgramTemplate>>(
-  'ProgramTemplate',
-  programTemplateSchema,
+export const TemplateModel = mongoose.model<Template, PaginateModel<Template>>(
+  'Template',
+  templateSchema,
 );
