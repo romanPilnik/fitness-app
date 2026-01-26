@@ -1,15 +1,14 @@
-import mongoose, { Schema } from 'mongoose';
-import type { PaginateModel, InferSchemaType } from 'mongoose';
+import { Schema, model, HydratedDocument, PaginateModel } from 'mongoose';
 import {
   MUSCLE_GROUPS,
   MOVEMENT_PATTERNS,
   EQUIPMENT,
   EXERCISE_CATEGORIES,
-  PROGRESSION_TYPES,
 } from '../types/enums.types.js';
+import { IExercise } from '../interfaces';
 import mongoosePaginate from 'mongoose-paginate-v2';
 
-const exerciseSchema = new Schema(
+const exerciseSchema = new Schema<IExercise>(
   {
     name: {
       type: String,
@@ -18,6 +17,7 @@ const exerciseSchema = new Schema(
       trim: true,
       maxlength: [50, 'Name cannot exceed 50 characters'],
     },
+    
     equipment: {
       type: String,
       enum: EQUIPMENT,
@@ -57,23 +57,6 @@ const exerciseSchema = new Schema(
       lowercase: true,
     },
 
-    typicalRepRange: {
-      min: { type: Number, default: 5 },
-      max: { type: Number, default: 30 },
-    },
-
-    rirBoundaries: {
-      min: { type: Number, default: 0 },
-      max: { type: Number, default: 5 },
-    },
-
-    progressionType: {
-      type: String,
-      enum: PROGRESSION_TYPES,
-      default: 'weight',
-      lowercase: true,
-    },
-
     instructions: {
       type: String,
       maxlength: [500, 'Instructions cannot exceed 500 characters'],
@@ -95,9 +78,9 @@ exerciseSchema.index({ name: 'text' });
 
 exerciseSchema.plugin(mongoosePaginate);
 
-export type Exercise = InferSchemaType<typeof exerciseSchema>;
+export type ExerciseDocument = HydratedDocument<IExercise>;
 
-export const ExerciseModel = mongoose.model<Exercise, PaginateModel<Exercise>>(
-  'Exercise',
-  exerciseSchema,
-);
+interface ExerciseModelType extends PaginateModel<ExerciseDocument> {}
+
+export const ExerciseModel = model<IExercise,ExerciseModelType>('Exercise', exerciseSchema);
+

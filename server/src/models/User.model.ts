@@ -1,24 +1,22 @@
-import mongoose, { Schema } from 'mongoose';
-import type {
-  InferSchemaType,
-  Model,
-  CallbackWithoutResultAndOptionalError,
-  PaginateModel,
-} from 'mongoose';
+import { Schema,model,HydratedDocument,PaginateModel, CallbackError } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
+import { IUser } from '../interfaces';
 import { USER_ROLES, UNITS, WEEK_STARTS_ON } from '../types/enums.types.js';
+import { Document } from 'mongodb';
 
 interface IUserMethods {
-  comparePassword(_candidatePassword: string): Promise<boolean>;
+  comparePassword(candidatePassword: string): Promise<boolean>
 }
 
-interface IUserModel extends Model<User, object, IUserMethods> {
-  findActive(): ReturnType<typeof mongoose.Model.find>;
+interface UserModelType extends PaginateModel<UserDocument>{
+  findActive(): Promise<UserDocument[]>;
 }
 
-const userSchema = new Schema(
+export type UserDocument = HydratedDocument<IUser, IUserMethods>;
+
+const userSchema = new Schema<IUser>(
   {
     email: {
       type: String,
@@ -39,7 +37,7 @@ const userSchema = new Schema(
       maxlength: [128, 'Password length cannot exceed 128 characters'],
       select: false,
       validate: {
-        validator: function (this: { isModified: (_path: string) => boolean }, password: string) {
+        validator: function (this: Document, password: string) {
           if (!this.isModified('password')) {
             return true;
           }
@@ -91,13 +89,19 @@ const userSchema = new Schema(
 
 userSchema.index({ createdAt: -1 });
 
-userSchema.pre('save', async function (next: CallbackWithoutResultAndOptionalError) {
+userSchema.pre('save', async function (this:UserDocument, next:(err?:CallbackError)=>void) {
   if (!this.isModified('password')) {
     return next();
   }
-
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  try{
+    if(this.password){
+      this.password = await bcrypt.hash(this.password, 12);
+    }
+    next();
+  }catch(error){
+    next(error as CallbackError);
+  }
+ 
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
@@ -110,6 +114,4 @@ userSchema.statics.findActive = function () {
 
 userSchema.plugin(mongoosePaginate);
 
-export type User = InferSchemaType<typeof userSchema>;
-
-export const UserModel = mongoose.model<User, IUserModel & PaginateModel<User>>('User', userSchema);
+export const UserModel = model<IUser,UserModelType>('User', userSchema);
