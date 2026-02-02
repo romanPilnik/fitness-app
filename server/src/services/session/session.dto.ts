@@ -1,4 +1,4 @@
-import type { SessionCompletionStatus, SetType } from '../../types/enums.types.js';
+import type { SessionStatus, SetType } from '../../types/enums.types.js';
 import type { PaginationQuery } from '../../types/api.types.js';
 
 export type SetInputDTO = {
@@ -57,7 +57,7 @@ export type CreateSessionInputDTO = {
     programId: string;
     workoutName: string;
     dayNumber?: number;
-    sessionStatus: SessionCompletionStatus;
+    sessionStatus: SessionStatus;
     exercises: SessionExerciseInputDTO[];
     sessionDuration?: number;
     notes?: string;
@@ -75,7 +75,7 @@ export type SessionDTO = {
   programId: string;
   workoutName: string;
   dayNumber?: number;
-  sessionStatus: SessionCompletionStatus;
+  sessionStatus: SessionStatus;
   exercises: SessionExerciseDTO[];
   datePerformed: Date;
   sessionDuration?: number;
@@ -87,7 +87,7 @@ export type SessionDTO = {
 export type SessionSummaryDTO = {
   id: string;
   workoutName: string;
-  sessionStatus: SessionCompletionStatus;
+  sessionStatus: SessionStatus;
   datePerformed: Date;
   sessionDuration?: number;
   exerciseCount: number;

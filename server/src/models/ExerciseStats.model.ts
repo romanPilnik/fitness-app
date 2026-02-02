@@ -22,9 +22,9 @@ interface SessionSummary {
 }
 
 interface IExerciseStatsMethods {
-  updateLastPerformed(sessionData: SessionData): IExerciseStats;
-  addSessionToHistory(sessionSummary: SessionSummary): IExerciseStats;
-  updatePersonalRecord(data: PersonalRecordData) :IExerciseStats;
+  updateLastPerformed(sessionData: SessionData): this;
+  addSessionToHistory(sessionSummary: SessionSummary): this;
+  updatePersonalRecord(data: PersonalRecordData) :this;
   getRecentSessions(): IExerciseStats['recentSessions'];
 }
 

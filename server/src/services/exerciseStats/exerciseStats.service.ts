@@ -1,21 +1,21 @@
 import { ExerciseStatsModel } from '../../models/ExerciseStats.model.js';
 import { Types, type PaginateResult } from 'mongoose';
 import type {
-  GetExerciseProfilesInputDTO,
-  GetExerciseProfileByIdInputDTO,
-  UpdateExerciseProfileInputDTO,
-  ExerciseProfileDTO,
-  updateFromSessionInputDTO,
-} from './exerciseProfile.dto.js';
+  GetExerciseStatsListInputDTO,
+  GetExerciseStatsByIdInputDTO,
+  UpdateExerciseStatsInputDTO,
+  ExerciseStatsDTO,
+  UpdateFromSessionInputDTO,
+} from './exerciseStats.dto.js';
 import type { SetDTO } from '../session/session.dto.js';
-import { mapPaginatedExerciseProfiles, toExerciseProfileDTO } from './exerciseProfile.mapper.js';
+import { mapPaginatedExerciseStats, toExerciseStatsDTO } from './exerciseStats.mapper.js';
 import { AppError } from '../../errors/AppError.js';
 import { ERROR_CODES } from '../../types/error.types.js';
 
 // Add better filtering, sorting by exercise fields
-async function getExerciseProfiles(
-  input: GetExerciseProfilesInputDTO,
-): Promise<PaginateResult<ExerciseProfileDTO>> {
+async function getExerciseStatsList(
+  input: GetExerciseStatsListInputDTO,
+): Promise<PaginateResult<ExerciseStatsDTO>> {
   const { userId, filters = {}, pagination = {} } = input;
 
   const queryOptions: Record<string, unknown> = {
@@ -24,8 +24,6 @@ async function getExerciseProfiles(
   };
 
   if (filters.isFavorite !== undefined) queryOptions.isFavorite = filters.isFavorite;
-  if (filters.needsFormCheck !== undefined) queryOptions.needsFormCheck = filters.needsFormCheck;
-  if (filters.isInjuryModified !== undefined) queryOptions.isInjuryModified = filters.isInjuryModified;
 
   const paginationOptions = {
     page: pagination.page || 1,
@@ -35,33 +33,27 @@ async function getExerciseProfiles(
     lean: true,
   };
 
-  const result = await ExerciseProfileModel.paginate(queryOptions, paginationOptions);
-  // Cast needed: paginate + populate + lean doesn't preserve populated types
-  return mapPaginatedExerciseProfiles(
-    result as unknown as Parameters<typeof mapPaginatedExerciseProfiles>[0],
+  const result = await ExerciseStatsModel.paginate(queryOptions, paginationOptions);
+  return mapPaginatedExerciseStats(
+    result as unknown as Parameters<typeof mapPaginatedExerciseStats>[0],
   );
 }
 
-// GET /api/v1/profile/exercises/:exerciseId
-async function getExerciseProfileById(input: GetExerciseProfileByIdInputDTO): Promise<ExerciseProfileDTO> {
+async function getExerciseStatsById(input: GetExerciseStatsByIdInputDTO): Promise<ExerciseStatsDTO> {
   const { exerciseId, userId } = input;
-  const profile = await ExerciseProfileModel.findOne({
+  const stats = await ExerciseStatsModel.findOne({
     userId,
     exerciseId,
-  }).lean();
-  if (!profile) {
-    throw new AppError('Exercise profile not found', 404, ERROR_CODES.NOT_FOUND);
+  }).populate('exerciseId', 'name primaryMuscle equipment').lean();
+  if (!stats) {
+    throw new AppError('Exercise stats not found', 404, ERROR_CODES.NOT_FOUND);
   }
-  return toExerciseProfileDTO(profile);
-};
+  return toExerciseStatsDTO(stats as unknown as Parameters<typeof toExerciseStatsDTO>[0]);
+}
 
-// PATCH /api/v1/profile/exercises/:exerciseId
-async function updateExerciseProfile(input: UpdateExerciseProfileInputDTO): Promise<ExerciseProfileDTO> {
-
- 
-
+async function updateExerciseStats(input: UpdateExerciseStatsInputDTO): Promise<ExerciseStatsDTO> {
   const { exerciseId, userId, updates } = input;
-    const ALLOWED_UPDATES = [
+  const ALLOWED_UPDATES = [
     'isFavorite',
     'needsFormCheck',
     'isInjuryModified',
@@ -70,36 +62,37 @@ async function updateExerciseProfile(input: UpdateExerciseProfileInputDTO): Prom
     'formNotes',
     'injuryNotes',
   ];
- 
-  const sanitizedUpdates : Record<string, unknown> = {};
+
+  const sanitizedUpdates: Record<string, unknown> = {};
   Object.keys(updates).forEach((key) => {
     if (ALLOWED_UPDATES.includes(key)) {
       sanitizedUpdates[key] = updates[key as keyof typeof updates];
     }
   });
-  const profile = await ExerciseProfileModel.findOneAndUpdate(
+  const stats = await ExerciseStatsModel.findOneAndUpdate(
     { exerciseId, userId },
     { $set: sanitizedUpdates },
     { new: true, runValidators: true },
   )
     .select('-__v')
+    .populate('exerciseId', 'name primaryMuscle equipment')
     .lean();
 
-  if (!profile) {
-    throw new AppError('Exercise profile not found', 404, ERROR_CODES.NOT_FOUND);
+  if (!stats) {
+    throw new AppError('Exercise stats not found', 404, ERROR_CODES.NOT_FOUND);
   }
 
-  return toExerciseProfileDTO(profile);
-};
+  return toExerciseStatsDTO(stats as unknown as Parameters<typeof toExerciseStatsDTO>[0]);
+}
 
-async function updateFromSession(input: updateFromSessionInputDTO): Promise<void> {
+async function updateFromSession(input: UpdateFromSessionInputDTO): Promise<void> {
   const { userId, session } = input;
 
   for (const exercise of session.exercises) {
-    const profile = await ExerciseProfileModel.getOrCreateProfile(userId, exercise.exerciseId);
+    const stats = await ExerciseStatsModel.getOrCreateProfile(userId, exercise.exerciseId);
     const topSet = findTopSet(exercise.sets);
 
-    profile
+    stats
       .addSessionToHistory({
         date: new Date(),
         topSetWeight: topSet.weight,
@@ -117,7 +110,7 @@ async function updateFromSession(input: updateFromSessionInputDTO): Promise<void
         reps: topSet.reps,
       });
 
-    await profile.save();
+    await stats.save();
   }
 }
 
@@ -133,9 +126,9 @@ function findTopSet(sets: SetDTO[]): SetDTO {
   return topSet;
 }
 
-export const ExerciseProfileService = {
-  getExerciseProfiles,
-  getExerciseProfileById,
-  updateExerciseProfile,
+export const ExerciseStatsService = {
+  getExerciseStatsList,
+  getExerciseStatsById,
+  updateExerciseStats,
   updateFromSession,
 };

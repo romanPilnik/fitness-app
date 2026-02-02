@@ -1,5 +1,5 @@
 import type { PaginateResult } from 'mongoose';
-import type { Session } from '../../models/Session.model.js';
+import type { ISession } from '../../interfaces';
 import type {
   SessionDTO,
   SessionSummaryDTO,
@@ -33,7 +33,7 @@ type PopulatedSessionExercise = {
   notes?: string;
 };
 
-type PopulatedSession = Session & {
+type PopulatedSession = ISession & {
   _id?: { toString(): string };
   userId?: { toString(): string };
   programId?: { toString(): string };

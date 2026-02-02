@@ -1,8 +1,8 @@
-import type { Exercise } from '../../models/Exercise.model.js';
+import type { IExercise } from '../../interfaces';
 import type { PaginateResult } from 'mongoose';
 import type { ExerciseDTO } from './exercise.dto.js';
 
-export function toExerciseDTO(exercise: Exercise): ExerciseDTO {
+export function toExerciseDTO(exercise: IExercise): ExerciseDTO {
   const rawId = (exercise as { _id?: { toString(): string } })._id;
   return {
     id: rawId ? rawId.toString() : '',
@@ -12,21 +12,12 @@ export function toExerciseDTO(exercise: Exercise): ExerciseDTO {
     secondaryMuscles: exercise.secondaryMuscles ?? [],
     category: exercise.category,
     movementPattern: exercise.movementPattern,
-    typicalRepRange: {
-      min: exercise.typicalRepRange?.min ?? 5,
-      max: exercise.typicalRepRange?.max ?? 30,
-    },
-    rirBoundaries: {
-      min: exercise.rirBoundaries?.min ?? 0,
-      max: exercise.rirBoundaries?.max ?? 5,
-    },
-    progressionType: exercise.progressionType,
     instructions: exercise.instructions ?? undefined,
   };
 }
 
 export function mapPaginatedExercises(
-  result: PaginateResult<Exercise>,
+  result: PaginateResult<IExercise>,
 ): PaginateResult<ExerciseDTO> {
   return {
     ...result,

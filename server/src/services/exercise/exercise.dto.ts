@@ -56,14 +56,5 @@ export type ExerciseDTO = {
   secondaryMuscles: MuscleGroup[];
   category: ExerciseCategory;
   movementPattern: MovementPattern;
-  typicalRepRange: {
-    min: number;
-    max: number;
-  };
-  rirBoundaries: {
-    min: number;
-    max: number;
-  };
-  progressionType: ProgressionType;
   instructions?: string;
 };

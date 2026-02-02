@@ -1,7 +1,7 @@
-import type { User } from '../../models/User.model.js';
+import type { IUser } from '../../interfaces';
 import type { AuthUserDTO } from './auth.dto.js';
 
-export function toAuthUserDTO(user: User): AuthUserDTO {
+export function toAuthUserDTO(user: IUser): AuthUserDTO {
   const rawId = (user as { _id?: { toString(): string } })._id;
   return {
     id: rawId ? rawId.toString() : '',

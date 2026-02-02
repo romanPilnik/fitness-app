@@ -1,5 +1,5 @@
 import type { PaginateResult } from 'mongoose';
-import type { Program } from '../../models/Program.model.js';
+import type { IProgram } from '../../interfaces';
 import type {
   ProgramDTO,
   ProgramSummaryDTO,
@@ -27,7 +27,7 @@ type PopulatedWorkout = {
   exercises?: PopulatedProgramExercise[];
 };
 
-type PopulatedProgram = Program & {
+type PopulatedProgram = IProgram & {
   _id?: { toString(): string };
   userId?: { toString(): string };
   sourceTemplateId?: { toString(): string } | null;
@@ -88,7 +88,6 @@ export function toProgramDTO(program: PopulatedProgram): ProgramDTO {
     nextWorkoutIndex: program.nextWorkoutIndex ?? 0,
     lastCompletedWorkoutDate: program.lastCompletedWorkoutDate ?? undefined,
     hasBeenModified: program.hasBeenModified ?? false,
-    lastModified: program.lastModified ?? undefined,
     createdAt: program.createdAt ?? new Date(),
     updatedAt: program.updatedAt ?? new Date(),
   };

@@ -1,23 +1,21 @@
 import type { PaginationQuery } from '../../types/api.types.js';
 import type { Equipment, MuscleGroup } from '../../types/enums.types.js';
-import { SessionDTO } from '../session/session.dto.js';
+import type { SessionDTO } from '../session/session.dto.js';
 
-export type GetExerciseProfilesInputDTO = {
+export type GetExerciseStatsListInputDTO = {
   userId: string;
   filters?: {
     isFavorite?: boolean;
-    needsFormCheck?: boolean;
-    isInjuryModified?: boolean;
   };
   pagination?: PaginationQuery;
 };
 
-export type GetExerciseProfileByIdInputDTO = {
+export type GetExerciseStatsByIdInputDTO = {
   exerciseId: string;
   userId: string;
 };
 
-export type UpdateExerciseProfileInputDTO = {
+export type UpdateExerciseStatsInputDTO = {
   exerciseId: string;
   userId: string;
   updates: {
@@ -31,7 +29,7 @@ export type UpdateExerciseProfileInputDTO = {
   };
 };
 
-export type updateFromSessionInputDTO = {
+export type UpdateFromSessionInputDTO = {
   userId: string;
   session: SessionDTO;
 };
@@ -44,7 +42,7 @@ export type RecentSessionDTO = {
   sessionId: string;
 };
 
-export type ExerciseProfileDTO = {
+export type ExerciseStatsDTO = {
   id: string;
   userId: string;
   exerciseId: string;
@@ -74,6 +72,4 @@ export type ExerciseProfileDTO = {
   formNotes?: string;
   injuryNotes?: string;
   isFavorite: boolean;
-  needsFormCheck: boolean;
-  isInjuryModified: boolean;
 };

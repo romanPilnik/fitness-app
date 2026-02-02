@@ -112,7 +112,6 @@ export type ProgramDTO = {
   nextWorkoutIndex: number;
   lastCompletedWorkoutDate?: Date;
   hasBeenModified: boolean;
-  lastModified?: Date;
   createdAt: Date;
   updatedAt: Date;
 };

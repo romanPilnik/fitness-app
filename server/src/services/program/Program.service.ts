@@ -1,8 +1,8 @@
 import { PaginateResult } from "mongoose";
 import { AppError, ERROR_CODES } from "../../errors";
-import { ProgramModel } from "../../models/Program.model";
-import { TemplateModel } from "../../models/Template.model";
-import { CreateCustomProgramInputDTO, CreateFromTemplateInputDTO, GetActiveProgramInputDTO, GetProgramByIdInputDTO, GetProgramsInputDTO, ProgramDTO, ProgramSummaryDTO } from "./program.dto";
+import { ProgramModel } from "../../models/Program.model.js";
+import { TemplateModel } from "../../models/Template.model.js";
+import { CreateCustomProgramInputDTO, CreateFromTemplateInputDTO, DeleteProgramInputDTO, GetActiveProgramInputDTO, GetProgramByIdInputDTO, GetProgramsInputDTO, ProgramDTO, ProgramSummaryDTO, UpdateProgramInputDTO } from "./program.dto";
 import { mapPaginatedPrograms, toProgramDTO } from "./program.mapper";
 
 async function getPrograms(input: GetProgramsInputDTO):Promise<PaginateResult<ProgramSummaryDTO>> {
@@ -51,7 +51,6 @@ async function createFromTemplate(input: CreateFromTemplateInputDTO) {
     daysPerWeek: template.daysPerWeek,
     startDate: startDate || new Date(),
     workouts,
-    periodization: template.periodization,
     status: 'active',
   };
 
@@ -66,7 +65,7 @@ async function createFromTemplate(input: CreateFromTemplateInputDTO) {
 
   const program = new ProgramModel(programData);
   const saved = await program.save();
-  return saved;
+  return toProgramDTO(saved);
 };
 
 async function createCustomProgram(input: CreateCustomProgramInputDTO){
@@ -89,7 +88,7 @@ async function createCustomProgram(input: CreateCustomProgramInputDTO){
   const program = new ProgramModel(data);
   const saved = await program.save();
 
-  return saved;
+  return toProgramDTO(saved);
 };
 
 async function getActiveProgram(input: GetActiveProgramInputDTO) {
@@ -104,17 +103,8 @@ async function getActiveProgram(input: GetActiveProgramInputDTO) {
   if (!program) {
     throw new AppError('No active program found for user', 404, ERROR_CODES.NOT_FOUND);
   }
-  return program;
+  return toProgramDTO(program);
 };
-
-/**
- * Get a user program by ID
- * @param {string} programId - Program ID
- * @param {string} userId - User ID
- * @returns {Promise<Object>} User program object
- * @throws {Error} 404 - Program not found
- * @throws {Error} 400 - Invalid program ID format
- */
 
 async function getProgramById(input: GetProgramByIdInputDTO): Promise<ProgramDTO> {
   const { programId, userId } = input;
@@ -132,46 +122,24 @@ async function getProgramById(input: GetProgramByIdInputDTO): Promise<ProgramDTO
   return toProgramDTO(program);
 };
 
-/**
- * Update a user program
- * @param {string} programId - Program ID
- * @param {Object} updates - Fields to update
- * @param {string} [updates.name] - Updated program name
- * @param {string} [updates.description] - Updated program description
- * @param {Date} [updates.startDate] - Updated start date
- * @param {string} [updates.status] - Updated program status
- * @param {Array} [updates.workouts] - Updated workout definitions
- * @returns {Promise<Object>} Updated user program object
- * @throws {Error} 404 - Program not found
- * @throws {Error} 400 - Validation error or invalid program ID
- */
-
-const updateProgramById = async (programId, userId, updates) => {
-  const updatedProgram = await UserProgram.findOneAndUpdate(
+async function updateProgramById(input: UpdateProgramInputDTO):Promise<ProgramDTO>{
+  const { programId, userId, updates } = input;
+  const updatedProgram = await ProgramModel.findOneAndUpdate(
     { _id: programId, userId },
     { $set: updates },
     { new: true, runValidators: true },
   );
 
   if (!updatedProgram) {
-    const error = new Error('Program not found');
-    error.statusCode = 404;
-    throw error;
+    throw new AppError('Program not found', 404, ERROR_CODES.NOT_FOUND);
   }
 
   return updatedProgram;
 };
 
-/**
- * Delete a user program
- * @param {string} programId - Program ID
- * @returns {Promise<void>}
- * @throws {Error} 404 - Program not found
- * @throws {Error} 400 - Invalid program ID format
- */
-
-const deleteProgramById = async (programId, userId) => {
-  const deletedProgram = await UserProgram.findOneAndUpdate(
+async function deleteProgramById(input: DeleteProgramInputDTO) {
+  const { programId, userId } = input;
+  const deletedProgram = await ProgramModel.findOneAndUpdate(
     {
       _id: programId,
       userId,
@@ -180,18 +148,14 @@ const deleteProgramById = async (programId, userId) => {
     { new: true },
   );
   if (!deletedProgram) {
-    const error = new Error('Program not found');
-    error.statusCode = 404;
-    throw error;
+    throw new AppError('Program not found', 404, ERROR_CODES.NOT_FOUND);
   }
 };
 
-const updateProgress = async (_userId, _session) => {
-  const program = await UserProgram.findActiveProgram();
+async function updateProgress(){
+  const program = ProgramModel.findActiveProgram();
   if (!program) {
-    const error = new Error('Program not found');
-    error.statusCode = 404;
-    throw error;
+    throw new AppError('Program not found', 404, ERROR_CODES.NOT_FOUND);
   }
 
   program.nextWorkoutIndex++;
@@ -201,19 +165,15 @@ const updateProgress = async (_userId, _session) => {
     program.currentWeek++;
   }
 
-  program.lastCompletedWorkoutDate = Date.now();
+  program.lastCompletedWorkoutDate = new Date();
 
   if (program.isComplete) {
     program.status = 'completed';
   }
-
-  if (program.periodization.config.deloadWeek && program.isDeloadWeek()) {
-    // Deload logic to be added
-  }
   await program.save();
 };
 
-module.exports = {
+export const ProgramService = {
   getPrograms,
   createFromTemplate,
   createCustomProgram,

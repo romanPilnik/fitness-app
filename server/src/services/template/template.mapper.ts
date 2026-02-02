@@ -1,5 +1,5 @@
 import type { PaginateResult } from 'mongoose';
-import type { ProgramTemplate } from '../../models/Template.model.js';
+import type { ITemplate } from '../../interfaces';
 import type {
   ProgramTemplateDTO,
   ProgramTemplateSummaryDTO,
@@ -27,7 +27,7 @@ type PopulatedTemplateWorkout = {
   exercises?: PopulatedTemplateExercise[];
 };
 
-type PopulatedTemplate = ProgramTemplate & {
+type PopulatedTemplate = ITemplate & {
   _id?: { toString(): string };
   workouts?: PopulatedTemplateWorkout[];
   createdAt?: Date;
