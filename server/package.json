@@ -13,7 +13,6 @@
     "clean": "gts clean",
     "compile": "tsc",
     "fix": "gts fix",
-    
     "posttest": "npm run lint"
   },
   "keywords": [],

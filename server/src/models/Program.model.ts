@@ -1,37 +1,33 @@
-import mongoose, { Schema, Types } from 'mongoose';
-import type { InferSchemaType, PaginateModel, Model, HydratedDocument } from 'mongoose';
+import {Types,Schema,model, HydratedDocument, PaginateModel, } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
 import {
   SPLIT_TYPES,
   DIFFICULTIES,
   GOALS,
-  PERIODIZATION_TYPES,
-  VOLUME_PROGRESSIONS,
   PROGRAM_STATUSES,
   PROGRAM_SOURCES,
 } from '../types/enums.types.js';
+import {IProgram} from '../interfaces';
 
 interface IProgramMethods {
-  isDeloadWeek(): boolean;
-  getCurrentWeekRIR(): number | null;
-  getNextWorkout(): Program['workouts'][number] | null;
+  getNextWorkout(): IProgram['workouts'][number] | null;
 }
 
-interface IProgramModel extends Model<Program, object, IProgramMethods> {
-  findActiveProgram(
-    _userId: Types.ObjectId | string,
-  ): Promise<HydratedDocument<Program, IProgramMethods> | null>;
+interface ProgramModelType extends PaginateModel<ProgramDocument>{
+  findActiveProgram(userId: Types.ObjectId | string): Promise<HydratedDocument<IProgram, IProgramMethods> | null>;
 }
 
-const programSchema = new Schema(
+export type ProgramDocument = HydratedDocument<IProgram,IProgramMethods>;
+
+const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
     sourceTemplateId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'ProgramTemplate',
       default: null,
     },
@@ -108,7 +104,7 @@ const programSchema = new Schema(
             type: [
               {
                 exerciseId: {
-                  type: mongoose.Schema.Types.ObjectId,
+                  type: Schema.Types.ObjectId,
                   ref: 'Exercise',
                   required: true,
                 },
@@ -158,7 +154,7 @@ const programSchema = new Schema(
       },
     },
 
-    periodization: {
+    /* periodization: {
       type: {
         type: String,
         enum: PERIODIZATION_TYPES,
@@ -241,7 +237,7 @@ const programSchema = new Schema(
           lowercase: true,
         },
       },
-    },
+    }, */
 
     status: {
       type: String,
@@ -265,7 +261,6 @@ const programSchema = new Schema(
     lastCompletedWorkoutDate: Date,
 
     hasBeenModified: { type: Boolean, default: false },
-    lastModified: Date,
   },
   {
     timestamps: true,
@@ -276,22 +271,7 @@ const programSchema = new Schema(
 
 programSchema.index({ userId: 1, status: 1 });
 
-programSchema.methods.isDeloadWeek = function (): boolean {
-  return this.currentWeek === this.periodization.config.deloadWeek;
-};
-
-programSchema.methods.getCurrentWeekRIR = function (): number | null {
-  const index = this.currentWeek - 1;
-  const rirArray = this.periodization.config.rirProgression;
-
-  if (index < 0 || index >= rirArray.length) {
-    return null;
-  }
-
-  return rirArray[index];
-};
-
-programSchema.methods.getNextWorkout = function (): Program['workouts'][number] | null {
+programSchema.methods.getNextWorkout = function (): IProgram['workouts'][number] | null {
   if (!this.workouts || this.workouts.length === 0) {
     return null;
   }
@@ -303,7 +283,7 @@ programSchema.methods.getNextWorkout = function (): Program['workouts'][number] 
 
 programSchema.statics.findActiveProgram = async function (
   userId: Types.ObjectId | string,
-): Promise<HydratedDocument<Program, IProgramMethods> | null> {
+): Promise<HydratedDocument<IProgram, IProgramMethods> | null> {
   if (!userId) {
     throw new Error('userId is required');
   }
@@ -314,7 +294,7 @@ programSchema.statics.findActiveProgram = async function (
   });
 };
 
-programSchema.virtual('progressPercentage').get(function () {
+/* programSchema.virtual('progressPercentage').get(function () {
   if (this.periodization?.config?.weeks != null && this.currentWeek != null) {
     return (this.currentWeek / this.periodization.config.weeks) * 100;
   }
@@ -329,13 +309,12 @@ programSchema.virtual('weeksRemaining').get(function () {
 programSchema.virtual('isComplete').get(function () {
   if (this.periodization?.config?.weeks) return this.currentWeek > this.periodization.config.weeks;
   return false;
-});
+}); */
 
-programSchema.plugin(mongoosePaginate);
+programSchema.plugin(mongoosePaginate as any);
 
-export type Program = InferSchemaType<typeof programSchema>;
 
-export const ProgramModel = mongoose.model<Program, IProgramModel & PaginateModel<Program>>(
+export const ProgramModel = model<IProgram, ProgramModelType>(
   'Program',
   programSchema,
 );

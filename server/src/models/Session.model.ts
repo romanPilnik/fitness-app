@@ -1,33 +1,35 @@
-import mongoose, { Schema, Types } from 'mongoose';
-import type { PaginateModel, InferSchemaType, Model, HydratedDocument } from 'mongoose';
+import { Schema, Types, model, HydratedDocument,PaginateModel } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
-import { SESSION_COMPLETION_STATUSES, SET_TYPES } from '../types/enums.types.js';
+import { SESSION_STATUSES, SET_TYPES } from '../types/enums.types.js';
+import { ISession } from '../interfaces';
 
 interface ISessionMethods {
   calculateTotalVolume(): number;
 }
 
-interface ISessionModel extends Model<Session, object, ISessionMethods> {
+interface SessionModelType extends PaginateModel<SessionDocument> {
   getRecentSessions(
     _userId: Types.ObjectId | string,
     _limit?: number,
-  ): Promise<HydratedDocument<Session, ISessionMethods>[]>;
+  ): Promise<HydratedDocument<ISession, ISessionMethods>[]>;
   getExerciseHistory(
     _userId: Types.ObjectId | string,
     _exerciseId: Types.ObjectId | string,
     _limit?: number,
-  ): Promise<HydratedDocument<Session, ISessionMethods>[]>;
+  ): Promise<HydratedDocument<ISession, ISessionMethods>[]>;
 }
 
-const sessionSchema = new Schema(
+export type SessionDocument = HydratedDocument<ISession, ISessionMethods>;
+
+const sessionSchema = new Schema<ISession,SessionModelType,ISessionMethods>(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
     programId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Program',
       required: true,
     },
@@ -44,7 +46,7 @@ const sessionSchema = new Schema(
     },
     sessionStatus: {
       type: String,
-      enum: SESSION_COMPLETION_STATUSES,
+      enum: SESSION_STATUSES,
       required: true,
     },
 
@@ -52,7 +54,7 @@ const sessionSchema = new Schema(
       type: [
         {
           exerciseId: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: Schema.Types.ObjectId,
             ref: 'Exercise',
             required: true,
           },
@@ -101,7 +103,7 @@ const sessionSchema = new Schema(
             },
           },
 
-          feedback: {
+          /* feedback: {
             reportedMMC: {
               type: Number,
               min: 1,
@@ -139,7 +141,7 @@ const sessionSchema = new Schema(
               max: 5,
               required: false,
             },
-          },
+          }, */
           notes: { type: String, maxlength: [999, 'Notes cannot exceed 999 characters'] },
         },
       ],
@@ -161,11 +163,6 @@ const sessionSchema = new Schema(
     },
     notes: { type: String, maxlength: [999, 'Notes cannot exceed 999 characters'] },
 
-    algorithmNotes: String,
-    algorithmData: {
-      version: String,
-      decisions: mongoose.Schema.Types.Mixed,
-    },
     isActive: { type: Boolean, default: true },
   },
   {
@@ -194,7 +191,7 @@ sessionSchema.methods.calculateTotalVolume = function (): number {
 sessionSchema.statics.getRecentSessions = async function (
   userId: Types.ObjectId | string,
   limit = 10,
-): Promise<HydratedDocument<Session, ISessionMethods>[]> {
+): Promise<HydratedDocument<ISession, ISessionMethods>[]> {
   if (!userId) {
     throw new Error('userId is required');
   }
@@ -208,7 +205,7 @@ sessionSchema.statics.getExerciseHistory = async function (
   userId: Types.ObjectId | string,
   exerciseId: Types.ObjectId | string,
   limit = 20,
-): Promise<HydratedDocument<Session, ISessionMethods>[]> {
+): Promise<HydratedDocument<ISession, ISessionMethods>[]> {
   if (!userId || !exerciseId) {
     throw new Error('userId and exerciseId required');
   }
@@ -222,11 +219,9 @@ sessionSchema.statics.getExerciseHistory = async function (
     .limit(limit);
 };
 
-sessionSchema.plugin(mongoosePaginate);
+sessionSchema.plugin(mongoosePaginate as any);
 
-export type Session = InferSchemaType<typeof sessionSchema>;
-
-export const SessionModel = mongoose.model<Session, ISessionModel & PaginateModel<Session>>(
+export const SessionModel = model<ISession,SessionModelType>(
   'Session',
   sessionSchema,
 );

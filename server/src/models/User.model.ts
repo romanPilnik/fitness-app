@@ -7,7 +7,7 @@ import { USER_ROLES, UNITS, WEEK_STARTS_ON } from '../types/enums.types.js';
 import { Document } from 'mongodb';
 
 interface IUserMethods {
-  comparePassword(candidatePassword: string): Promise<boolean>
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 interface UserModelType extends PaginateModel<UserDocument>{
@@ -16,7 +16,7 @@ interface UserModelType extends PaginateModel<UserDocument>{
 
 export type UserDocument = HydratedDocument<IUser, IUserMethods>;
 
-const userSchema = new Schema<IUser>(
+const userSchema = new Schema<IUser, UserModelType, IUserMethods>(
   {
     email: {
       type: String,
@@ -112,6 +112,6 @@ userSchema.statics.findActive = function () {
   return this.find({ isActive: true });
 };
 
-userSchema.plugin(mongoosePaginate);
+userSchema.plugin(mongoosePaginate as any);
 
 export const UserModel = model<IUser,UserModelType>('User', userSchema);

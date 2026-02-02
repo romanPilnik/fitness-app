@@ -117,8 +117,8 @@ export type ProgramSource = (typeof PROGRAM_SOURCES)[number];
 // ============================================================================
 
 // Overall workout session completion status
-export const SESSION_COMPLETION_STATUSES = ['completed', 'partially', 'skipped'] as const;
-export type SessionCompletionStatus = (typeof SESSION_COMPLETION_STATUSES)[number];
+export const SESSION_STATUSES = ['completed', 'partially', 'skipped'] as const;
+export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
 export const SET_TYPES = [
   'straight set',

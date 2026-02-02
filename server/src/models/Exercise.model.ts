@@ -1,4 +1,5 @@
 import { Schema, model, HydratedDocument, PaginateModel } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate-v2';
 import {
   MUSCLE_GROUPS,
   MOVEMENT_PATTERNS,
@@ -6,9 +7,14 @@ import {
   EXERCISE_CATEGORIES,
 } from '../types/enums.types.js';
 import { IExercise } from '../interfaces';
-import mongoosePaginate from 'mongoose-paginate-v2';
 
-const exerciseSchema = new Schema<IExercise>(
+interface IExerciseMethods {}
+
+interface ExerciseModelType extends PaginateModel<ExerciseDocument> {}
+
+export type ExerciseDocument = HydratedDocument<IExercise, IExerciseMethods>;
+
+const exerciseSchema = new Schema<IExercise, ExerciseModelType, IExerciseMethods>(
   {
     name: {
       type: String,
@@ -76,11 +82,7 @@ exerciseSchema.index({ primaryMuscle: 1 });
 exerciseSchema.index({ equipment: 1 });
 exerciseSchema.index({ name: 'text' });
 
-exerciseSchema.plugin(mongoosePaginate);
+exerciseSchema.plugin(mongoosePaginate as any);
 
-export type ExerciseDocument = HydratedDocument<IExercise>;
-
-interface ExerciseModelType extends PaginateModel<ExerciseDocument> {}
-
-export const ExerciseModel = model<IExercise,ExerciseModelType>('Exercise', exerciseSchema);
+export const ExerciseModel = model<IExercise, ExerciseModelType>('Exercise', exerciseSchema);
 

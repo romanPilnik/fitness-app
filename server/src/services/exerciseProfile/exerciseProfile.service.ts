@@ -1,4 +1,4 @@
-import { ExerciseProfileModel } from '../../models/ExerciseProfile.model.js';
+import { ExerciseStatsModel } from '../../models/ExerciseStats.model.js';
 import { Types, type PaginateResult } from 'mongoose';
 import type {
   GetExerciseProfilesInputDTO,

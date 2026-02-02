@@ -1,15 +1,19 @@
-import mongoose, { Schema } from 'mongoose';
-import type { PaginateModel, InferSchemaType } from 'mongoose';
+import { Schema, model, HydratedDocument, PaginateModel } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
 import {
   SPLIT_TYPES,
   DIFFICULTIES,
   GOALS,
-  PERIODIZATION_TYPES,
-  VOLUME_PROGRESSIONS,
 } from '../types/enums.types.js';
+import { ITemplate } from '../interfaces';
 
-const templateSchema = new Schema(
+interface ITemplateMethods {}
+
+interface TemplateModelType extends PaginateModel<TemplateDocument> {}
+
+export type TemplateDocument = HydratedDocument<ITemplate, ITemplateMethods>;
+
+const templateSchema = new Schema<ITemplate, TemplateModelType, ITemplateMethods>(
   {
     name: {
       type: String,
@@ -42,7 +46,7 @@ const templateSchema = new Schema(
       required: true,
     },
 
-    periodization: {
+    /* periodization: {
       type: {
         type: String,
         enum: PERIODIZATION_TYPES,
@@ -120,7 +124,7 @@ const templateSchema = new Schema(
           lowercase: true,
         },
       },
-    },
+    }, */
 
     workouts: {
       type: [
@@ -141,9 +145,14 @@ const templateSchema = new Schema(
             type: [
               {
                 exerciseId: {
-                  type: mongoose.Schema.Types.ObjectId,
+                  type: Schema.Types.ObjectId,
                   ref: 'Exercise',
                   required: true,
+                },
+                order: {
+                  type: Number,
+                  required: true,
+                  min: [1, 'Order must start at 1'],
                 },
                 targetSets: {
                   type: Number,
@@ -166,11 +175,6 @@ const templateSchema = new Schema(
                 notes: {
                   type: String,
                   maxlength: [999, 'Notes cannot exceed 999 characters'],
-                },
-                order: {
-                  type: Number,
-                  required: true,
-                  min: [1, 'Order must start at 1'],
                 },
               },
             ],
@@ -225,11 +229,9 @@ const templateSchema = new Schema(
   },
 );
 
-templateSchema.plugin(mongoosePaginate);
+templateSchema.plugin(mongoosePaginate as any);
 
-export type Template = InferSchemaType<typeof templateSchema>;
-
-export const TemplateModel = mongoose.model<Template, PaginateModel<Template>>(
+export const TemplateModel = model<ITemplate, TemplateModelType>(
   'Template',
   templateSchema,
 );

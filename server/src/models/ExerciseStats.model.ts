@@ -1,8 +1,6 @@
-import mongoose, { Schema, Types } from 'mongoose';
-import type { InferSchemaType, PaginateModel, Model, HydratedDocument } from 'mongoose';
+import { Schema, Types,model , HydratedDocument,PaginateModel } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
-import { REP_RANGES } from '../types/enums.types.js';
-
+import { IExerciseStats } from '../interfaces';
 interface SessionData {
   weight: number;
   reps: number;
@@ -23,36 +21,30 @@ interface SessionSummary {
   sessionId: Types.ObjectId;
 }
 
-const MAX_RECENT_SESSIONS = 10;
-
-interface IExerciseProfileMethods {
-  getProgressionRate(): number;
-  getRecentSessions(_limit?: number): ExerciseProfile['recentSessions'];
-  updateLastPerformed(_sessionData: SessionData): this;
-  addSessionToHistory(_sessionSummary: SessionSummary): this;
-  updatePersonalRecord(_data: PersonalRecordData): this;
+interface IExerciseStatsMethods {
+  updateLastPerformed(sessionData: SessionData): IExerciseStats;
+  addSessionToHistory(sessionSummary: SessionSummary): IExerciseStats;
+  updatePersonalRecord(data: PersonalRecordData) :IExerciseStats;
+  getRecentSessions(): IExerciseStats['recentSessions'];
 }
 
-interface IExerciseProfileModel extends Model<ExerciseProfile, object, IExerciseProfileMethods> {
-  getOrCreateProfile(
-    _userId: Types.ObjectId | string,
-    _exerciseId: Types.ObjectId | string,
-  ): Promise<HydratedDocument<ExerciseProfile, IExerciseProfileMethods>>;
-  getActiveProfilesForUser(
-    _userId: Types.ObjectId | string,
-  ): Promise<HydratedDocument<ExerciseProfile, IExerciseProfileMethods>[]>;
+interface ExerciseStatsModelType extends PaginateModel<ExerciseStatsDocument>{
+  getOrCreateProfile(this: ExerciseStatsModelType,userId: string | Types.ObjectId ,exerciseId: string| Types.ObjectId):Promise<HydratedDocument<IExerciseStats,IExerciseStatsMethods>>;
+  getActiveProfiles(userId:string | Types.ObjectId): Promise<HydratedDocument<IExerciseStats,IExerciseStatsMethods>[]>;
 }
 
-const exerciseProfileSchema = new Schema(
+export type ExerciseStatsDocument = HydratedDocument<IExerciseStats,IExerciseStatsMethods>;
+
+const exerciseStatsSchema = new Schema<IExerciseStats,ExerciseStatsModelType,IExerciseStatsMethods>(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
 
     exerciseId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Exercise',
       required: true,
     },
@@ -94,12 +86,6 @@ const exerciseProfileSchema = new Schema(
       date: Date,
     },
 
-    recentProgression: {
-      attempts: { type: Number, default: 0 },
-      successes: { type: Number, default: 0 },
-      lastProgressionDate: Date,
-    },
-
     recentSessions: [
       {
         date: Date,
@@ -122,7 +108,7 @@ const exerciseProfileSchema = new Schema(
           max: [50, 'Sets cannot exceed 50'],
         },
         sessionId: {
-          type: mongoose.Schema.Types.ObjectId,
+          type: Schema.Types.ObjectId,
           ref: 'WorkoutSession',
           required: true,
         },
@@ -132,16 +118,6 @@ const exerciseProfileSchema = new Schema(
     metrics: {
       avgDaysBetweenSessions: Number,
       totalSessions: { type: Number, default: 0 },
-      bestWorkingSets: [
-        {
-          repRange: {
-            type: String,
-            enum: REP_RANGES,
-          },
-          weight: Number,
-          date: Date,
-        },
-      ],
     },
 
     difficultyRating: { type: Number, min: 1, max: 5 },
@@ -157,8 +133,6 @@ const exerciseProfileSchema = new Schema(
 
     isActive: { type: Boolean, default: true },
     isFavorite: { type: Boolean, default: false },
-    needsFormCheck: { type: Boolean, default: false },
-    isInjuryModified: { type: Boolean, default: false },
   },
 
   {
@@ -168,19 +142,10 @@ const exerciseProfileSchema = new Schema(
   },
 );
 
-exerciseProfileSchema.index({ userId: 1, exerciseId: 1 }, { unique: true });
-exerciseProfileSchema.index({ userId: 1, isActive: 1 });
+exerciseStatsSchema.index({ userId: 1, exerciseId: 1 }, { unique: true });
+exerciseStatsSchema.index({ userId: 1, isActive: 1 });
 
-exerciseProfileSchema.methods.getProgressionRate = function (): number {
-  if (this.recentProgression.attempts === 0) {
-    return 0;
-  }
-  return Number(
-    ((this.recentProgression.successes / this.recentProgression.attempts) * 100).toFixed(1),
-  );
-};
-
-exerciseProfileSchema.methods.updateLastPerformed = function (sessionData: SessionData) {
+exerciseStatsSchema.methods.updateLastPerformed = function (sessionData: SessionData) {
   if (!sessionData || typeof sessionData !== 'object') {
     throw new Error('Session data is required and must be an object');
   }
@@ -203,17 +168,17 @@ exerciseProfileSchema.methods.updateLastPerformed = function (sessionData: Sessi
   return this;
 };
 
-exerciseProfileSchema.methods.addSessionToHistory = function (sessionSummary: SessionSummary) {
+exerciseStatsSchema.methods.addSessionToHistory = function (sessionSummary: SessionSummary) {
   this.recentSessions.unshift(sessionSummary);
 
-  if (this.recentSessions.length > MAX_RECENT_SESSIONS) {
-    this.recentSessions = this.recentSessions.slice(0, MAX_RECENT_SESSIONS);
+  if (this.recentSessions.length > 10) {
+    this.recentSessions = this.recentSessions.slice(0, 10);
   }
 
   return this;
-};
+}; 
 
-exerciseProfileSchema.methods.updatePersonalRecord = function (data: PersonalRecordData) {
+exerciseStatsSchema.methods.updatePersonalRecord = function (data: PersonalRecordData) {
   const { weight, reps } = data;
   const currentWeight = this.personalRecord?.weight ?? 0;
   const currentReps = this.personalRecord?.reps ?? 0;
@@ -234,16 +199,16 @@ exerciseProfileSchema.methods.updatePersonalRecord = function (data: PersonalRec
   return this;
 };
 
-exerciseProfileSchema.methods.getRecentSessions = function (
+exerciseStatsSchema.methods.getRecentSessions = function (
   limit = 5,
-): ExerciseProfile['recentSessions'] {
+): IExerciseStats['recentSessions'] {
   return this.recentSessions.slice(0, limit);
 };
 
-exerciseProfileSchema.statics.getOrCreateProfile = async function (
+exerciseStatsSchema.statics.getOrCreateProfile = async function (
   userId: Types.ObjectId | string,
   exerciseId: Types.ObjectId | string,
-): Promise<HydratedDocument<ExerciseProfile, IExerciseProfileMethods>> {
+): Promise<HydratedDocument<IExerciseStats,IExerciseStatsMethods>> {
   if (!userId || !exerciseId) {
     throw new Error('userId and exerciseId are required');
   }
@@ -260,9 +225,9 @@ exerciseProfileSchema.statics.getOrCreateProfile = async function (
   return profile;
 };
 
-exerciseProfileSchema.statics.getActiveProfilesForUser = async function (
+exerciseStatsSchema.statics.getActiveProfiles = async function (
   userId: Types.ObjectId | string,
-): Promise<HydratedDocument<ExerciseProfile, IExerciseProfileMethods>[]> {
+): Promise<HydratedDocument<IExerciseStats, IExerciseStatsMethods>[]> {
   if (!userId) {
     throw new Error('userId is required');
   }
@@ -277,22 +242,22 @@ exerciseProfileSchema.statics.getActiveProfilesForUser = async function (
   return profiles;
 };
 
-exerciseProfileSchema.virtual('daysSinceLastPerformed').get(function (): number {
+exerciseStatsSchema.virtual('daysSinceLastPerformed').get(function (): number {
   if (!this.lastPerformed?.date) return -1;
   return Date.now() - this.lastPerformed.date.getTime();
 });
 
-exerciseProfileSchema.virtual('volumeLastSession').get(function (): number {
+exerciseStatsSchema.virtual('volumeLastSession').get(function (): number {
   if (!this.lastPerformed) return 0;
   const { weight, reps, sets } = this.lastPerformed;
   return (weight ?? 0) * (reps ?? 0) * (sets ?? 0);
 });
 
-exerciseProfileSchema.plugin(mongoosePaginate);
+exerciseStatsSchema.plugin(mongoosePaginate as any);
 
-export type ExerciseProfile = InferSchemaType<typeof exerciseProfileSchema>;
 
-export const ExerciseProfileModel = mongoose.model<
-  ExerciseProfile,
-  IExerciseProfileModel & PaginateModel<ExerciseProfile>
->('ExerciseProfile', exerciseProfileSchema);
+
+export const ExerciseStatsModel = model<
+  IExerciseStats,
+  ExerciseStatsModelType
+>('ExerciseProfile', exerciseStatsSchema);
