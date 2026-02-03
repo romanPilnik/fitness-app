@@ -49,6 +49,7 @@ export type GetSessionsInputDTO = {
 
 export type GetSessionByIdInputDTO = {
   sessionId: string;
+  userId: string;
 };
 
 export type CreateSessionInputDTO = {
@@ -66,6 +67,7 @@ export type CreateSessionInputDTO = {
 
 export type DeleteSessionInputDTO = {
   sessionId: string;
+  userId: string;
 };
 
 
