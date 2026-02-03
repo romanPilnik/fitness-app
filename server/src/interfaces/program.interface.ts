@@ -31,6 +31,7 @@ export interface IProgram {
   nextWorkoutIndex: number;
   lastCompletedWorkoutDate?: Date;
   hasBeenModified: boolean;
+  isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

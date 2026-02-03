@@ -261,6 +261,7 @@ const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
     lastCompletedWorkoutDate: Date,
 
     hasBeenModified: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
   },
   {
     timestamps: true,

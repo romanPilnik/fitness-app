@@ -88,6 +88,7 @@ export function toProgramDTO(program: PopulatedProgram): ProgramDTO {
     nextWorkoutIndex: program.nextWorkoutIndex ?? 0,
     lastCompletedWorkoutDate: program.lastCompletedWorkoutDate ?? undefined,
     hasBeenModified: program.hasBeenModified ?? false,
+    isActive: program.isActive ?? true,
     createdAt: program.createdAt ?? new Date(),
     updatedAt: program.updatedAt ?? new Date(),
   };

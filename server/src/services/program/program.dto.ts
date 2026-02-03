@@ -93,6 +93,11 @@ export type DeleteProgramInputDTO = {
   userId: string;
 };
 
+export type UpdateProgressInputDTO = {
+  programId: string;
+  userId: string;
+};
+
 export type ProgramDTO = {
   id: string;
   userId: string;
@@ -112,6 +117,7 @@ export type ProgramDTO = {
   nextWorkoutIndex: number;
   lastCompletedWorkoutDate?: Date;
   hasBeenModified: boolean;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
