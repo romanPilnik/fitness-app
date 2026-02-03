@@ -6,16 +6,17 @@ import type {
   ErrorRequestHandler as ExpressErrorRequestHandler,
 } from 'express';
 import type { PaginationQuery } from './api.types.js';
+import type { Units, WeekStartsOn, UserRole } from './enums.types.js';
 
 interface RequestUser {
   _id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: UserRole;
   isActive: boolean;
   preferences?: {
-    units: 'metric' | 'imperial';
-    weekStartsOn: number;
+    units: Units;
+    weekStartsOn: WeekStartsOn;
   };
   createdAt: Date;
   updatedAt: Date;
