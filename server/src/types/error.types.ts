@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+
 // ============================================================================
 // ERROR CODES
 // ============================================================================
@@ -64,11 +66,25 @@ export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
 /**
  * Validation error detail for field-level validation failures
- * Used by Joi and Mongoose validation errors
+ * Legacy format used by Mongoose validation errors
  */
 export interface ValidationErrorDetail {
   field: string;
   message: string;
+}
+
+/**
+ * Zod issue type for validation errors
+ */
+export type ZodIssue = z.core.$ZodIssue;
+
+/**
+ * Zod validation error interface
+ * Used by validate middleware for request validation
+ */
+export interface ZodValidationError extends Error {
+  code: 'VALIDATION_ERROR';
+  issues: ZodIssue[];
 }
 
 /**
@@ -103,7 +119,3 @@ export interface MongoDBDuplicateError extends Error {
   keyPattern: Record<string, unknown>;
 }
 
-export interface JoiValidationError extends Error {
-  code: 'VALIDATION_ERROR';
-  details: unknown;
-}

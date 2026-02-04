@@ -13,7 +13,7 @@ import type {
   MongooseValidationError,
   MongooseCastError,
   MongoDBDuplicateError,
-  JoiValidationError,
+  ZodValidationError,
 } from '../types/error.types.js';
 
 const isAppError = (err: unknown): err is AppError => {
@@ -37,12 +37,12 @@ const isMongoDBDuplicateError = (err: unknown): err is MongoDBDuplicateError => 
   );
 };
 
-const isJoiValidationError = (err: unknown): err is JoiValidationError => {
+const isZodValidationError = (err: unknown): err is ZodValidationError => {
   return (
     err instanceof Error &&
     'code' in err &&
     (err as { code: unknown }).code === 'VALIDATION_ERROR' &&
-    'details' in err
+    'issues' in err
   );
 };
 
@@ -70,20 +70,12 @@ export const errorHandler = (
   }
 
   if (isMongooseValidationError(err)) {
-    const errors = Object.values(err.errors).map((e) => ({
-      field: e.path,
+    const issues = Object.values(err.errors).map((e) => ({
+      code: 'mongoose_validation',
+      path: [e.path],
       message: e.message,
     }));
-    const validationError = new ValidationError('Validation failed', errors);
-    const serialized = validationError.serialize(isDevelopment());
-
-    return sendError(
-      res,
-      serialized.statusCode,
-      serialized.message,
-      serialized.code,
-      serialized.details,
-    );
+    return sendError(res, 400, 'Validation failed', 'VALIDATION_ERROR', issues);
   }
 
   if (isMongooseCastError(err)) {
@@ -121,8 +113,8 @@ export const errorHandler = (
     return sendError(res, serialized.statusCode, serialized.message, serialized.code);
   }
 
-  if (isJoiValidationError(err)) {
-    return sendError(res, 400, err.message, 'VALIDATION_ERROR', err.details);
+  if (isZodValidationError(err)) {
+    return sendError(res, 400, err.message, 'VALIDATION_ERROR', err.issues);
   }
 
   const internalError = new InternalServerError(

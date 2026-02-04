@@ -1,11 +1,6 @@
 import {Request, Response, NextFunction} from 'express';
 import {z} from 'zod';
-
-interface ValidationError extends Error {
-  statusCode: number;
-  code: string;
-  issues: unknown[];
-}
+import {ValidationError} from '../errors/index.js';
 
 // Schema type for validation schemas with body, query, params
 type ValidationSchema = z.ZodObject<{
@@ -24,11 +19,7 @@ export const validate =
     });
 
     if (!result.success) {
-      const error = new Error('Validation failed') as ValidationError;
-      error.statusCode = 400;
-      error.code = 'VALIDATION_ERROR';
-      error.issues = result.error.issues;
-      return next(error);
+      return next(new ValidationError('Validation failed', result.error.issues));
     }
 
     // Assign validated (and potentially transformed) data back to request
