@@ -1,10 +1,12 @@
 import { Schema,model,HydratedDocument,PaginateModel, CallbackError } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate-v2';
 import bcrypt from 'bcryptjs';
-import validator from 'validator';
 import { IUser } from '../interfaces';
 import { USER_ROLES, UNITS, WEEK_STARTS_ON } from '../types/enums.types.js';
 import { Document } from 'mongodb';
+
+// Email validation regex (RFC 5322 simplified)
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface IUserMethods {
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -25,7 +27,7 @@ const userSchema = new Schema<IUser, UserModelType, IUserMethods>(
       trim: true,
       unique: true,
       validate: {
-        validator: (v: string) => validator.isEmail(v),
+        validator: (v: string) => EMAIL_REGEX.test(v),
         message: 'Please enter a valid email',
       },
     },

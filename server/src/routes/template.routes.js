@@ -7,8 +7,8 @@ const express = require('express');
 const { verifyToken } = require('../middlewares/auth');
 const { requireRole } = require('../middlewares/authorize');
 const programTemplateController = require('../controllers/programTemplate.controller');
-const validate = require('../middlewares/validate');
-const templateValidation = require('../validations/template.validation');
+const { validate } = require('../middlewares/validate.ts');
+const templateValidation = require('../validations/template.validation.ts');
 
 const templateRouter = express.Router();
 
