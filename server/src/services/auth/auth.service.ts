@@ -1,6 +1,7 @@
 import { UserModel } from '../../models/User.model.js';
 import { AppError } from '../../errors/AppError.js';
 import { ERROR_CODES } from '../../errors/index.js';
+import jwt from 'jsonwebtoken';
 import type { RegisterInputDTO, LoginInputDTO, AuthUserDTO } from './auth.dto.js';
 import { toAuthUserDTO } from './auth.mapper.js';
 
@@ -39,7 +40,25 @@ async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
   return toAuthUserDTO(user);
 }
 
+function generateAuthToken(userId: string): string {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new AppError('Server configuration error', 500, ERROR_CODES.INTERNAL_ERROR);
+  }
+
+  return jwt.sign(
+    { userId },
+    secret,
+    {
+      expiresIn: process.env.JWT_EXPIRE || '7d',
+      algorithm: 'HS256',
+    },
+  );
+}
+
 export const AuthService = {
   register,
   login,
+  generateAuthToken,
 };

@@ -1,14 +1,14 @@
 import {z} from 'zod';
 import {passwordRegex} from './shared.js';
 
-export const loginUser = z.object({
+export const login = z.object({
   body: z.object({
     email: z.string().email(),
     password: z.string(),
   }),
 });
 
-export const registerUser = z.object({
+export const register = z.object({
   body: z.object({
     email: z.string().email(),
     password: z
@@ -21,5 +21,5 @@ export const registerUser = z.object({
 });
 
 // Export inferred types
-export type LoginUserInput = z.infer<typeof loginUser>;
-export type RegisterUserInput = z.infer<typeof registerUser>;
+export type LoginUserInput = z.infer<typeof login>;
+export type RegisterUserInput = z.infer<typeof register>;
