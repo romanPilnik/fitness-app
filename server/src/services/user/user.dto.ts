@@ -8,7 +8,7 @@ export type ChangePasswordInputDTO = {
 
 export type UpdateUserInputDTO = {
   userId: string;
-  profileUpdates: {
+  updates: {
     name?: string;
     preferences?: {
       units?: Units;

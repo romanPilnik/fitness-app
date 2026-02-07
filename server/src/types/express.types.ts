@@ -9,7 +9,7 @@ import type { PaginationQuery } from './api.types.js';
 import type { Units, WeekStartsOn, UserRole } from './enums.types.js';
 
 interface RequestUser {
-  _id: string;
+  id: string;
   email: string;
   name: string;
   role: UserRole;
