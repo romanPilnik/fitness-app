@@ -1,7 +1,6 @@
 import {z} from 'zod';
 import {splitTypeEnum, difficultyEnum, goalEnum} from './shared.js';
 
-// GET /api/v1/programs/templates
 export const getProgramTemplates = z.object({
   query: z.object({
     splitType: splitTypeEnum.optional(),
@@ -11,14 +10,12 @@ export const getProgramTemplates = z.object({
   }),
 });
 
-// GET /api/v1/programs/templates/:id
 export const getProgramTemplateById = z.object({
   params: z.object({
     id: z.string(),
   }),
 });
 
-// POST /api/v1/programs/templates
 export const createProgramTemplate = z.object({
   body: z.object({
     name: z.string().max(50).trim(),
@@ -34,7 +31,6 @@ export const createProgramTemplate = z.object({
   }),
 });
 
-// PATCH /api/v1/programs/templates/:id
 export const updateProgramTemplate = z.object({
   params: z.object({
     id: z.string(),
@@ -55,14 +51,12 @@ export const updateProgramTemplate = z.object({
     }),
 });
 
-// DELETE /api/v1/programs/templates/:id
 export const deleteProgramTemplate = z.object({
   params: z.object({
     id: z.string(),
   }),
 });
 
-// Export inferred types
 export type GetProgramTemplatesInput = z.infer<typeof getProgramTemplates>;
 export type GetProgramTemplateByIdInput = z.infer<
   typeof getProgramTemplateById

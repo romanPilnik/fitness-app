@@ -6,7 +6,6 @@ const exerciseProfileValidation = require('../validations/exerciseProfile.valida
 
 const exerciseProfileRouter = express.Router();
 
-// GET /api/v1/profile/exercises/
 exerciseProfileRouter.get(
   '/',
   verifyToken,
@@ -14,7 +13,6 @@ exerciseProfileRouter.get(
   exerciseProfileController.getExerciseProfiles,
 );
 
-// GET /api/v1/profile/exercises/:exerciseId
 exerciseProfileRouter.get(
   '/:exerciseId',
   verifyToken,
@@ -22,7 +20,6 @@ exerciseProfileRouter.get(
   exerciseProfileController.getExerciseProfileById,
 );
 
-// PATCH /api/v1/profile/exercises/:exerciseId
 exerciseProfileRouter.patch(
   '/:exerciseId',
   verifyToken,

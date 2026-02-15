@@ -1,7 +1,3 @@
-// ============================================================================
-// USER ENUMS
-// ============================================================================
-
 export const USER_ROLES = ['user', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
@@ -10,10 +6,6 @@ export type Units = (typeof UNITS)[number];
 
 export const WEEK_STARTS_ON = ['sunday', 'monday', 'saturday'] as const;
 export type WeekStartsOn = (typeof WEEK_STARTS_ON)[number];
-
-// ============================================================================
-// EXERCISE ENUMS
-// ============================================================================
 
 export const MUSCLE_GROUPS = [
   'chest',
@@ -33,32 +25,27 @@ export const MUSCLE_GROUPS = [
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];
 
 export const MOVEMENT_PATTERNS = [
-  // Push patterns
-  'horizontal_push', // bench press, push-ups
-  'vertical_push', // overhead press, military press
-  'incline_push', // incline bench, incline db press
+  'horizontal_push', 
+  'vertical_push', 
+  'incline_push', 
 
-  // Pull patterns
-  'horizontal_pull', // rows, face pulls
-  'vertical_pull', // pull-ups, lat pulldowns
+  'horizontal_pull',
+  'vertical_pull',
 
-  // Lower body patterns
-  'squat', // squats, leg press, lunges
-  'hip_hinge', // deadlifts, RDLs, good mornings
+  'squat',
+  'hip_hinge',
 
-  // Isolation patterns
-  'elbow_flexion', // bicep curls
-  'elbow_extension', // tricep extensions
-  'side_shoulder_isolation', // lateral raises
-  'rear_shoulder_isolation', // rear delts
-  'quad_isolation', // leg extensions
-  'hamstring_isolation', // leg curls
-  'glute_isolation', // hip thrusts
-  'calf_isolation', // calf raises
+  'elbow_flexion',
+  'elbow_extension',
+  'side_shoulder_isolation',
+  'rear_shoulder_isolation',
+  'quad_isolation',
+  'hamstring_isolation',
+  'glute_isolation',
+  'calf_isolation',
 
-  // Core/Carry
-  'core', // planks, ab wheel, crunches
-  'carry', // farmer's walks, suitcase carries
+  'core',
+  'carry',
 ] as const;
 export type MovementPattern = (typeof MOVEMENT_PATTERNS)[number];
 
@@ -79,10 +66,6 @@ export type ExerciseCategory = (typeof EXERCISE_CATEGORIES)[number];
 
 export const PROGRESSION_TYPES = ['repetitions', 'weight', 'sets'] as const;
 export type ProgressionType = (typeof PROGRESSION_TYPES)[number];
-
-// ============================================================================
-// PROGRAM ENUMS
-// ============================================================================
 
 export const SPLIT_TYPES = [
   'full body',
@@ -112,11 +95,7 @@ export type ProgramStatus = (typeof PROGRAM_STATUSES)[number];
 export const PROGRAM_SOURCES = ['template', 'scratch', 'shared'] as const;
 export type ProgramSource = (typeof PROGRAM_SOURCES)[number];
 
-// ============================================================================
-// SESSION ENUMS
-// ============================================================================
 
-// Overall workout session completion status
 export const SESSION_STATUSES = ['completed', 'partially', 'skipped'] as const;
 export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
@@ -130,10 +109,6 @@ export const SET_TYPES = [
   'cluster set',
 ] as const;
 export type SetType = (typeof SET_TYPES)[number];
-
-// ============================================================================
-// EXERCISE PROFILE ENUMS
-// ============================================================================
 
 export const REP_RANGES = ['2-4', '5-7', '8-11', '12-15'] as const;
 export type RepRange = (typeof REP_RANGES)[number];

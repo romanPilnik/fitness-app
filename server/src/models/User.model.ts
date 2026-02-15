@@ -5,7 +5,6 @@ import { IUser } from '../interfaces';
 import { USER_ROLES, UNITS, WEEK_STARTS_ON } from '../types/enums.types.js';
 import { Document } from 'mongodb';
 
-// Email validation regex (RFC 5322 simplified)
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface IUserMethods {

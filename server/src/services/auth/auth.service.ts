@@ -42,6 +42,8 @@ async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
 
 function generateAuthToken(userId: string): string {
   const secret = process.env.JWT_SECRET;
+  const expiresIn: jwt.SignOptions['expiresIn'] =
+    (process.env.JWT_EXPIRE as jwt.SignOptions['expiresIn']) ?? '7d';
 
   if (!secret) {
     throw new AppError('Server configuration error', 500, ERROR_CODES.INTERNAL_ERROR);
@@ -51,7 +53,7 @@ function generateAuthToken(userId: string): string {
     { userId },
     secret,
     {
-      expiresIn: process.env.JWT_EXPIRE || '7d',
+      expiresIn,
       algorithm: 'HS256',
     },
   );

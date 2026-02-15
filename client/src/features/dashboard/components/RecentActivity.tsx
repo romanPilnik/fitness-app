@@ -88,8 +88,6 @@ export function RecentActivity() {
             );
           })}
         </div>
-
-        {/* Quick Actions */}
         <div className="pt-4 border-t border-border space-y-2">
           <p className="text-sm font-semibold text-foreground">Quick Actions</p>
           <div className="flex flex-col gap-2">

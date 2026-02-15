@@ -1,7 +1,6 @@
 import {z} from 'zod';
 import {passwordRegex, unitsEnum, weekStartsOnEnum} from './shared.js';
 
-// PATCH /api/users/me
 export const updateUser = z.object({
   body: z
     .object({
@@ -18,7 +17,6 @@ export const updateUser = z.object({
     }),
 });
 
-// POST /api/users/change-password
 export const changePassword = z.object({
   body: z.object({
     oldPassword: z.string(),
@@ -30,6 +28,5 @@ export const changePassword = z.object({
   }),
 });
 
-// Export inferred types
 export type UpdateUserInput = z.infer<typeof updateUser>;
 export type ChangePasswordInput = z.infer<typeof changePassword>;

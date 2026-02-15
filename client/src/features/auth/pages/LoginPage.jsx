@@ -4,16 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { LoginForm } from '../components/LoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-/**
- * LoginPage - Container component that orchestrates login flow
- *
- * RESPONSIBILITIES:
- * 1. Redirect if already authenticated
- * 2. Handle login API call through auth context
- * 3. Navigate on success (with redirect support)
- * 4. Transform API errors for the form
- */
-
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();

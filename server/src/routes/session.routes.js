@@ -6,10 +6,8 @@ const sessionValidation = require('../validations/session.validation.ts');
 
 const sessionRouter = express.Router();
 
-// GET api/v1/sessions/
 sessionRouter.get('/', verifyToken, sessionController.getSessions);
 
-// GET api/v1/sessions/:sessionId
 sessionRouter.get(
   '/:sessionId',
   verifyToken,
@@ -17,7 +15,6 @@ sessionRouter.get(
   sessionController.getSessionById,
 );
 
-// POST api/v1/sessions/create
 sessionRouter.post(
   '/create',
   verifyToken,
@@ -25,7 +22,6 @@ sessionRouter.post(
   sessionController.createSession,
 );
 
-// DELETE api/v1/sessions/:sessionId
 sessionRouter.delete(
   '/:sessionId',
   verifyToken,

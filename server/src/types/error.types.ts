@@ -50,59 +50,30 @@ export const ERROR_CODES = {
   MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
   PASSWORD_MISMATCH: 'PASSWORD_MISMATCH',
 
-  // ========== Server Errors ==========
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;
 
-// ============================================================================
-// TYPES
-// ============================================================================
 
-/**
- * Union type of all error codes
- * Derived from ERROR_CODES constant for type safety
- */
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
-/**
- * Validation error detail for field-level validation failures
- * Legacy format used by Mongoose validation errors
- */
 export interface ValidationErrorDetail {
   field: string;
   message: string;
 }
 
-/**
- * Zod issue type for validation errors
- */
-export type ZodIssue = z.core.$ZodIssue;
 
-/**
- * Zod validation error interface
- * Used by validate middleware for request validation
- */
+export type ZodIssue = z.core.$ZodIssue;
 export interface ZodValidationError extends Error {
   code: 'VALIDATION_ERROR';
   issues: ZodIssue[];
 }
-
-/**
- * Serialized error object for API responses
- * Consistent error format across all endpoints
- */
 export interface SerializedError {
   message: string;
   code: ErrorCode;
   statusCode: number;
   details?: ValidationErrorDetail[] | unknown;
-  stack?: string; // Only included in development environment
+  stack?: string;
 }
-
-// ============================================================================
-// EXTERNAL LIBRARY ERROR TYPES
-// ============================================================================
-
 export interface MongooseValidationError extends Error {
   name: 'ValidationError';
   errors: Record<string, { path: string; message: string }>;

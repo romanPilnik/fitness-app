@@ -1,6 +1,5 @@
 import { api } from '../api/client.js';
 import { programTemplatesMock } from '../mocks/programTemplates.mock.js';
-/** @type {import('../api/types').Exercise[]} */
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCKS === 'true';
 

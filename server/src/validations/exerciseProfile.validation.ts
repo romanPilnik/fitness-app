@@ -1,6 +1,5 @@
 import {z} from 'zod';
 
-// GET /api/v1/profile/exercises
 export const getExerciseProfiles = z.object({
   query: z.object({
     isFavorite: z.coerce.boolean().optional(),
@@ -9,14 +8,12 @@ export const getExerciseProfiles = z.object({
   }),
 });
 
-// GET /api/v1/profile/exercises/:exerciseId
 export const getExerciseProfileById = z.object({
   params: z.object({
     exerciseId: z.string(),
   }),
 });
 
-// PATCH /api/v1/profile/exercises/:exerciseId
 export const updateExerciseProfile = z.object({
   params: z.object({
     exerciseId: z.string(),
@@ -32,7 +29,6 @@ export const updateExerciseProfile = z.object({
   }),
 });
 
-// Export inferred types
 export type GetExerciseProfilesInput = z.infer<typeof getExerciseProfiles>;
 export type GetExerciseProfileByIdInput = z.infer<
   typeof getExerciseProfileById

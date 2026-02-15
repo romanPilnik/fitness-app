@@ -20,6 +20,5 @@ export const register = z.object({
   }),
 });
 
-// Export inferred types
 export type LoginUserInput = z.infer<typeof login>;
 export type RegisterUserInput = z.infer<typeof register>;

@@ -1,17 +1,14 @@
 import {z} from 'zod';
 import {sessionStatusEnum} from './shared.js';
 
-// GET /api/v1/sessions/ - No validation needed
 export const getSessions = z.object({});
 
-// GET /api/v1/sessions/:sessionId
 export const getSessionById = z.object({
   params: z.object({
     sessionId: z.string(),
   }),
 });
 
-// POST /api/v1/sessions/create
 export const createSession = z.object({
   body: z.object({
     programId: z.string(),
@@ -24,14 +21,12 @@ export const createSession = z.object({
   }),
 });
 
-// DELETE /api/v1/sessions/:sessionId
 export const deleteSession = z.object({
   params: z.object({
     sessionId: z.string(),
   }),
 });
 
-// Export inferred types
 export type GetSessionsInput = z.infer<typeof getSessions>;
 export type GetSessionByIdInput = z.infer<typeof getSessionById>;
 export type CreateSessionInput = z.infer<typeof createSession>;

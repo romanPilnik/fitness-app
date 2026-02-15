@@ -7,24 +7,20 @@ import {
   programSourceEnum,
 } from './shared.js';
 
-// GET /api/v1/programs
 export const getPrograms = z.object({
   query: z.object({
     status: programStatusEnum.optional(),
   }),
 });
 
-// GET /api/v1/programs/active - No validation needed
 export const getActiveProgram = z.object({});
 
-// GET /api/v1/programs/:id
 export const getProgramById = z.object({
   params: z.object({
     id: z.string(),
   }),
 });
 
-// POST /api/v1/programs/from-template
 export const createFromTemplate = z.object({
   body: z.object({
     templateId: z.string(),
@@ -38,7 +34,6 @@ export const createFromTemplate = z.object({
   }),
 });
 
-// POST /api/v1/programs/custom
 export const createCustomProgram = z.object({
   body: z.object({
     name: z.string().max(50).trim(),
@@ -54,7 +49,6 @@ export const createCustomProgram = z.object({
   }),
 });
 
-// PATCH /api/v1/programs/:id
 export const updateProgramById = z.object({
   params: z.object({
     id: z.string(),
@@ -79,14 +73,12 @@ export const updateProgramById = z.object({
     }),
 });
 
-// DELETE /api/v1/programs/:id
 export const deleteProgramById = z.object({
   params: z.object({
     id: z.string(),
   }),
 });
 
-// Export inferred types
 export type GetProgramsInput = z.infer<typeof getPrograms>;
 export type GetActiveProgramInput = z.infer<typeof getActiveProgram>;
 export type GetProgramByIdInput = z.infer<typeof getProgramById>;

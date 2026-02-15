@@ -6,10 +6,6 @@ import {
   BarChartIcon,
 } from 'lucide-react';
 
-/**
- * Navigation routes used by sidebar and bottom nav
- * Add new routes here to have them appear in navigation
- */
 export const navRoutes = [
   {
     name: 'Dashboard',

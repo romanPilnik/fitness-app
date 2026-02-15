@@ -38,7 +38,6 @@ interface RequestWithBody<B> extends Request {
   body: B;
 }
 
-// Combined authenticated request types
 interface AuthenticatedRequestWithBody<B> extends Request {
   user: RequestUser;
   body: B;

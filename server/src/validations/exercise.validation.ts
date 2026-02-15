@@ -6,23 +6,21 @@ import {
   movementPatternEnum,
 } from './shared.js';
 
-// GET /api/v1/exercises
 export const getExercises = z.object({
   query: z.object({
     primaryMuscle: muscleGroupEnum.optional(),
     equipment: equipmentEnum.optional(),
     category: exerciseCategoryEnum.optional(),
+    movementPattern: movementPatternEnum.optional(),
   }),
 });
 
-// GET /api/v1/exercises/:id
 export const getExerciseById = z.object({
   params: z.object({
     id: z.string(),
   }),
 });
 
-// Shared schema for rep/rir range
 const rangeSchema = z
   .object({
     min: z.number().optional(),
@@ -30,7 +28,6 @@ const rangeSchema = z
   })
   .optional();
 
-// POST /api/v1/exercises
 export const createExercise = z.object({
   body: z.object({
     name: z.string().max(50),
@@ -55,7 +52,6 @@ export const createExercise = z.object({
   }),
 });
 
-// PATCH /api/v1/exercises/:id
 export const updateExercise = z.object({
   params: z.object({
     id: z.string(),
@@ -83,14 +79,12 @@ export const updateExercise = z.object({
   }),
 });
 
-// DELETE /api/v1/exercises/:id
 export const deleteExercise = z.object({
   params: z.object({
     id: z.string(),
   }),
 });
 
-// Export inferred types
 export type GetExercisesInput = z.infer<typeof getExercises>;
 export type GetExerciseByIdInput = z.infer<typeof getExerciseById>;
 export type CreateExerciseInput = z.infer<typeof createExercise>;
