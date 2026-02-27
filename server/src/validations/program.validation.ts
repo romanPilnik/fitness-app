@@ -1,11 +1,11 @@
-import {z} from 'zod';
+import { z } from "zod";
 import {
   programStatusEnum,
   difficultyEnum,
   goalEnum,
   splitTypeEnum,
   programSourceEnum,
-} from './shared.js';
+} from "./shared.js";
 
 export const getPrograms = z.object({
   query: z.object({
@@ -68,8 +68,8 @@ export const updateProgramById = z.object({
       currentWeek: z.number().int().min(1).optional(),
       nextWorkoutIndex: z.number().int().min(0).optional(),
     })
-    .refine(data => Object.keys(data).length > 0, {
-      message: 'At least one field must be provided',
+    .refine((data) => Object.keys(data).length > 0, {
+      message: "At least one field must be provided",
     }),
 });
 

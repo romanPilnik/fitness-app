@@ -1,31 +1,31 @@
-import type { PaginateResult } from 'mongoose';
-import type { ITemplate } from '../../interfaces';
+import type { PaginateResult } from "mongoose";
+import type { ITemplate } from "../../interfaces";
 import type {
   ProgramTemplateDTO,
   ProgramTemplateSummaryDTO,
   TemplateWorkoutDTO,
   TemplateExerciseDTO,
-} from './template.dto.js';
+} from "./template.dto.js";
 
-type PopulatedExercise = {
+interface PopulatedExercise {
   _id?: { toString(): string };
   name?: string;
-};
+}
 
-type PopulatedTemplateExercise = {
+interface PopulatedTemplateExercise {
   exerciseId?: PopulatedExercise | { toString(): string };
   order?: number;
   targetSets?: number;
   targetReps?: number;
   targetRir?: number;
   notes?: string;
-};
+}
 
-type PopulatedTemplateWorkout = {
+interface PopulatedTemplateWorkout {
   name?: string;
   dayNumber?: number;
   exercises?: PopulatedTemplateExercise[];
-};
+}
 
 type PopulatedTemplate = ITemplate & {
   _id?: { toString(): string };
@@ -34,13 +34,20 @@ type PopulatedTemplate = ITemplate & {
   updatedAt?: Date;
 };
 
-function toTemplateExerciseDTO(exercise: PopulatedTemplateExercise): TemplateExerciseDTO {
-  let exerciseIdStr = '';
+function toTemplateExerciseDTO(
+  exercise: PopulatedTemplateExercise,
+): TemplateExerciseDTO {
+  let exerciseIdStr = "";
   if (exercise.exerciseId) {
-    if (typeof exercise.exerciseId === 'object' && '_id' in exercise.exerciseId) {
-      exerciseIdStr = exercise.exerciseId._id?.toString() ?? '';
+    if (
+      typeof exercise.exerciseId === "object" &&
+      "_id" in exercise.exerciseId
+    ) {
+      exerciseIdStr = exercise.exerciseId._id?.toString() ?? "";
     } else {
-      exerciseIdStr = (exercise.exerciseId as { toString(): string }).toString();
+      exerciseIdStr = (
+        exercise.exerciseId as { toString(): string }
+      ).toString();
     }
   }
 
@@ -54,25 +61,29 @@ function toTemplateExerciseDTO(exercise: PopulatedTemplateExercise): TemplateExe
   };
 }
 
-function toTemplateWorkoutDTO(workout: PopulatedTemplateWorkout): TemplateWorkoutDTO {
+function toTemplateWorkoutDTO(
+  workout: PopulatedTemplateWorkout,
+): TemplateWorkoutDTO {
   return {
-    name: workout.name ?? '',
+    name: workout.name ?? "",
     dayNumber: workout.dayNumber,
     exercises: (workout.exercises ?? []).map(toTemplateExerciseDTO),
   };
 }
 
-export function toProgramTemplateDTO(template: PopulatedTemplate): ProgramTemplateDTO {
+export function toProgramTemplateDTO(
+  template: PopulatedTemplate,
+): ProgramTemplateDTO {
   const rawId = (template as { _id?: { toString(): string } })._id;
 
   return {
-    id: rawId ? rawId.toString() : '',
-    name: template.name ?? '',
-    createdBy: template.createdBy ?? '',
-    splitType: template.splitType ?? 'other',
+    id: rawId ? rawId.toString() : "",
+    name: template.name ?? "",
+    createdBy: template.createdBy ?? "",
+    splitType: template.splitType ?? "other",
     daysPerWeek: template.daysPerWeek ?? 3,
     description: template.description ?? undefined,
-    difficulty: template.difficulty ?? 'intermediate',
+    difficulty: template.difficulty ?? "intermediate",
     goals: template.goals ?? [],
     workouts: (template.workouts ?? []).map(toTemplateWorkoutDTO),
     createdAt: template.createdAt ?? new Date(),
@@ -80,17 +91,19 @@ export function toProgramTemplateDTO(template: PopulatedTemplate): ProgramTempla
   };
 }
 
-export function toProgramTemplateSummaryDTO(template: PopulatedTemplate): ProgramTemplateSummaryDTO {
+export function toProgramTemplateSummaryDTO(
+  template: PopulatedTemplate,
+): ProgramTemplateSummaryDTO {
   const rawId = (template as { _id?: { toString(): string } })._id;
 
   return {
-    id: rawId ? rawId.toString() : '',
-    name: template.name ?? '',
-    createdBy: template.createdBy ?? '',
-    splitType: template.splitType ?? 'other',
+    id: rawId ? rawId.toString() : "",
+    name: template.name ?? "",
+    createdBy: template.createdBy ?? "",
+    splitType: template.splitType ?? "other",
     daysPerWeek: template.daysPerWeek ?? 3,
     description: template.description ?? undefined,
-    difficulty: template.difficulty ?? 'intermediate',
+    difficulty: template.difficulty ?? "intermediate",
     goals: template.goals ?? [],
     workoutCount: template.workouts?.length ?? 0,
   };

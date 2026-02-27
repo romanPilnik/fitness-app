@@ -1,17 +1,17 @@
-import type { UserRole, WeekStartsOn, Units } from '../../types/enums.types.js';
+import type { UserRole, WeekStartsOn, Units } from "../../types/enums.types.js";
 
-export type RegisterInputDTO = {
+export interface RegisterInputDTO {
   email: string;
   password: string;
   name: string;
-};
+}
 
-export type LoginInputDTO = {
+export interface LoginInputDTO {
   email: string;
   password: string;
-};
+}
 
-export type AuthUserDTO = {
+export interface AuthUserDTO {
   id: string;
   email: string;
   name: string;
@@ -21,4 +21,4 @@ export type AuthUserDTO = {
     units: Units;
     weekStartsOn: WeekStartsOn;
   };
-};
+}

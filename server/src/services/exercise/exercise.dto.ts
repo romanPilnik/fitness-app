@@ -3,11 +3,10 @@ import type {
   ExerciseCategory,
   MovementPattern,
   MuscleGroup,
-  ProgressionType,
-} from '../../types/enums.types.js';
-import { PaginationQuery } from '../../types/api.types.js';
+} from "../../types/enums.types.js";
+import { type PaginationQuery } from "../../types/api.types.js";
 
-export type GetExercisesInputDTO = {
+export interface GetExercisesInputDTO {
   filters?: {
     primaryMuscle?: MuscleGroup;
     equipment?: Equipment;
@@ -15,13 +14,13 @@ export type GetExercisesInputDTO = {
     movementPattern?: MovementPattern;
   };
   pagination?: PaginationQuery;
-};
+}
 
-export type GetExerciseByIdInputDTO = {
+export interface GetExerciseByIdInputDTO {
   exerciseId: string;
-};
+}
 
-export type CreateExerciseInputDTO = {
+export interface CreateExerciseInputDTO {
   name: string;
   equipment: Equipment;
   primaryMuscle: MuscleGroup;
@@ -37,18 +36,18 @@ export type CreateExerciseInputDTO = {
     max?: number;
   };
   instructions?: string;
-};
+}
 
-export type UpdateExerciseInputDTO = {
+export interface UpdateExerciseInputDTO {
   exerciseId: string;
   updates: Partial<CreateExerciseInputDTO>;
-};
+}
 
-export type DeleteExerciseInputDTO = {
+export interface DeleteExerciseInputDTO {
   exerciseId: string;
-};
+}
 
-export type ExerciseDTO = {
+export interface ExerciseDTO {
   id: string;
   name: string;
   equipment: Equipment;
@@ -57,4 +56,4 @@ export type ExerciseDTO = {
   category: ExerciseCategory;
   movementPattern: MovementPattern;
   instructions?: string;
-};
+}

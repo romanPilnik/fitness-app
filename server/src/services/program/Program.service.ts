@@ -1,8 +1,8 @@
-import type { PaginateResult } from 'mongoose';
-import { AppError } from '../../errors/AppError.js';
-import { ERROR_CODES } from '../../types/error.types.js';
-import { ProgramModel } from '../../models/Program.model.js';
-import { TemplateModel } from '../../models/Template.model.js';
+import type { PaginateResult } from "mongoose";
+import { AppError } from "../../errors/AppError.js";
+import { ERROR_CODES } from "../../types/error.types.js";
+import { ProgramModel } from "../../models/Program.model.js";
+import { TemplateModel } from "../../models/Template.model.js";
 import type {
   CreateCustomProgramInputDTO,
   CreateFromTemplateInputDTO,
@@ -14,15 +14,17 @@ import type {
   UpdateProgressInputDTO,
   ProgramDTO,
   ProgramSummaryDTO,
-} from './program.dto.js';
-import { mapPaginatedPrograms, toProgramDTO } from './program.mapper.js';
+} from "./program.dto.js";
+import { mapPaginatedPrograms, toProgramDTO } from "./program.mapper.js";
 
-async function getPrograms(input: GetProgramsInputDTO): Promise<PaginateResult<ProgramSummaryDTO>> {
+async function getPrograms(
+  input: GetProgramsInputDTO,
+): Promise<PaginateResult<ProgramSummaryDTO>> {
   const { userId, filters = {}, pagination = {} } = input;
-  const allowedStatuses = ['active', 'paused', 'completed'];
+  const allowedStatuses = ["active", "paused", "completed"];
 
   if (filters.status && !allowedStatuses.includes(filters.status)) {
-    throw new AppError('Invalid status filter', 400, ERROR_CODES.INVALID_INPUT);
+    throw new AppError("Invalid status filter", 400, ERROR_CODES.INVALID_INPUT);
   }
 
   const query: Record<string, unknown> = { userId, isActive: true };
@@ -31,9 +33,9 @@ async function getPrograms(input: GetProgramsInputDTO): Promise<PaginateResult<P
   }
 
   const paginateOptions = {
-    page: pagination.page || 1,
-    limit: pagination.limit || 20,
-    select: '-__v',
+    page: pagination.page ?? 1,
+    limit: pagination.limit ?? 20,
+    select: "-__v",
     sort: { createdAt: -1 },
     lean: true,
   };
@@ -42,12 +44,14 @@ async function getPrograms(input: GetProgramsInputDTO): Promise<PaginateResult<P
   return mapPaginatedPrograms(result);
 }
 
-async function createFromTemplate(input: CreateFromTemplateInputDTO): Promise<ProgramDTO> {
+async function createFromTemplate(
+  input: CreateFromTemplateInputDTO,
+): Promise<ProgramDTO> {
   const { userId, templateId, startDate, customizations } = input;
 
   const template = await TemplateModel.findById(templateId).lean();
   if (!template) {
-    throw new AppError('Template not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
   const workoutOverrides = customizations?.workouts;
@@ -56,7 +60,7 @@ async function createFromTemplate(input: CreateFromTemplateInputDTO): Promise<Pr
     return override ? { ...workout, ...override } : { ...workout };
   });
 
-  const programName = customizations?.name || template.name;
+  const programName = customizations?.name ?? template.name;
 
   const existing = await ProgramModel.findOne({
     userId,
@@ -65,14 +69,18 @@ async function createFromTemplate(input: CreateFromTemplateInputDTO): Promise<Pr
   }).lean();
 
   if (existing) {
-    throw new AppError('Program with this name already exists', 409, ERROR_CODES.DUPLICATE_VALUE);
+    throw new AppError(
+      "Program with this name already exists",
+      409,
+      ERROR_CODES.DUPLICATE_VALUE,
+    );
   }
 
   const programData = {
     userId,
     sourceTemplateId: templateId,
     sourceTemplateName: template.name,
-    createdFrom: 'template' as const,
+    createdFrom: "template" as const,
     name: programName,
     description: template.description,
     difficulty: template.difficulty,
@@ -80,8 +88,8 @@ async function createFromTemplate(input: CreateFromTemplateInputDTO): Promise<Pr
     splitType: template.splitType,
     daysPerWeek: template.daysPerWeek,
     workouts,
-    status: 'active' as const,
-    startDate: startDate || new Date(),
+    status: "active" as const,
+    startDate: startDate ?? new Date(),
     currentWeek: 1,
     nextWorkoutIndex: 0,
     hasBeenModified: false,
@@ -92,7 +100,9 @@ async function createFromTemplate(input: CreateFromTemplateInputDTO): Promise<Pr
   return toProgramDTO(saved);
 }
 
-async function createCustomProgram(input: CreateCustomProgramInputDTO): Promise<ProgramDTO> {
+async function createCustomProgram(
+  input: CreateCustomProgramInputDTO,
+): Promise<ProgramDTO> {
   const { userId, name } = input;
 
   const existing = await ProgramModel.findOne({
@@ -102,14 +112,18 @@ async function createCustomProgram(input: CreateCustomProgramInputDTO): Promise<
   }).lean();
 
   if (existing) {
-    throw new AppError('Program with this name already exists', 409, ERROR_CODES.DUPLICATE_VALUE);
+    throw new AppError(
+      "Program with this name already exists",
+      409,
+      ERROR_CODES.DUPLICATE_VALUE,
+    );
   }
 
   const programData = {
     ...input,
-    createdFrom: 'scratch' as const,
-    status: 'active' as const,
-    startDate: input.startDate || new Date(),
+    createdFrom: "scratch" as const,
+    status: "active" as const,
+    startDate: input.startDate ?? new Date(),
     currentWeek: 1,
     nextWorkoutIndex: 0,
     hasBeenModified: false,
@@ -120,40 +134,50 @@ async function createCustomProgram(input: CreateCustomProgramInputDTO): Promise<
   return toProgramDTO(saved);
 }
 
-async function getActiveProgram(input: GetActiveProgramInputDTO): Promise<ProgramDTO> {
+async function getActiveProgram(
+  input: GetActiveProgramInputDTO,
+): Promise<ProgramDTO> {
   const { userId } = input;
   const program = await ProgramModel.findOne({
     userId,
-    status: 'active',
+    status: "active",
     isActive: true,
   })
-    .select('-__v')
+    .select("-__v")
     .lean();
 
   if (!program) {
-    throw new AppError('No active program found for user', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError(
+      "No active program found for user",
+      404,
+      ERROR_CODES.NOT_FOUND,
+    );
   }
   return toProgramDTO(program);
-};
+}
 
-async function getProgramById(input: GetProgramByIdInputDTO): Promise<ProgramDTO> {
+async function getProgramById(
+  input: GetProgramByIdInputDTO,
+): Promise<ProgramDTO> {
   const { programId, userId } = input;
   const program = await ProgramModel.findOne({
     _id: programId,
     userId,
     isActive: true,
   })
-    .populate('workouts.exercises.exerciseId', 'name')
-    .select('-__v')
+    .populate("workouts.exercises.exerciseId", "name")
+    .select("-__v")
     .lean();
 
   if (!program) {
-    throw new AppError('Program not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
   }
   return toProgramDTO(program);
-};
+}
 
-async function updateProgramById(input: UpdateProgramInputDTO): Promise<ProgramDTO> {
+async function updateProgramById(
+  input: UpdateProgramInputDTO,
+): Promise<ProgramDTO> {
   const { programId, userId, updates } = input;
   const updatedProgram = await ProgramModel.findOneAndUpdate(
     { _id: programId, userId, isActive: true },
@@ -162,7 +186,7 @@ async function updateProgramById(input: UpdateProgramInputDTO): Promise<ProgramD
   ).lean();
 
   if (!updatedProgram) {
-    throw new AppError('Program not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
   return toProgramDTO(updatedProgram);
@@ -182,22 +206,24 @@ async function deleteProgramById(input: DeleteProgramInputDTO): Promise<void> {
   );
 
   if (!deletedProgram) {
-    throw new AppError('Program not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
   }
 }
 
-async function updateProgress(input: UpdateProgressInputDTO): Promise<ProgramDTO> {
+async function updateProgress(
+  input: UpdateProgressInputDTO,
+): Promise<ProgramDTO> {
   const { programId, userId } = input;
 
   const program = await ProgramModel.findOne({
     _id: programId,
     userId,
-    status: 'active',
+    status: "active",
     isActive: true,
   });
 
   if (!program) {
-    throw new AppError('Active program not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Active program not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
   program.nextWorkoutIndex++;

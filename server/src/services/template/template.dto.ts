@@ -1,37 +1,37 @@
-import type { SplitType, Difficulty, Goal } from '../../types/enums.types.js';
-import type { PaginationQuery } from '../../types/api.types.js';
+import type { SplitType, Difficulty, Goal } from "../../types/enums.types.js";
+import type { PaginationQuery } from "../../types/api.types.js";
 
-export type TemplateExerciseInputDTO = {
+export interface TemplateExerciseInputDTO {
   exerciseId: string;
   order: number;
   targetSets: number;
   targetReps: number;
   targetRir: number;
   notes?: string;
-};
+}
 
-export type TemplateExerciseDTO = {
+export interface TemplateExerciseDTO {
   exerciseId: string;
   order: number;
   targetSets: number;
   targetReps: number;
   targetRir: number;
   notes?: string;
-};
+}
 
-export type TemplateWorkoutInputDTO = {
+export interface TemplateWorkoutInputDTO {
   name: string;
   dayNumber?: number;
   exercises: TemplateExerciseInputDTO[];
-};
+}
 
-export type TemplateWorkoutDTO = {
+export interface TemplateWorkoutDTO {
   name: string;
   dayNumber?: number;
   exercises: TemplateExerciseDTO[];
-};
+}
 
-export type GetTemplatesInputDTO = {
+export interface GetTemplatesInputDTO {
   filters?: {
     splitType?: SplitType;
     difficulty?: Difficulty;
@@ -39,13 +39,13 @@ export type GetTemplatesInputDTO = {
     daysPerWeek?: number;
   };
   pagination?: PaginationQuery;
-};
+}
 
-export type GetTemplateByIdInputDTO = {
+export interface GetTemplateByIdInputDTO {
   templateId: string;
-};
+}
 
-export type CreateTemplateInputDTO = {
+export interface CreateTemplateInputDTO {
   templateData: {
     name: string;
     createdBy: string;
@@ -56,9 +56,9 @@ export type CreateTemplateInputDTO = {
     goals?: Goal[];
     workouts: TemplateWorkoutInputDTO[];
   };
-};
+}
 
-export type UpdateTemplateInputDTO = {
+export interface UpdateTemplateInputDTO {
   templateId: string;
   updates: {
     name?: string;
@@ -69,13 +69,13 @@ export type UpdateTemplateInputDTO = {
     daysPerWeek?: number;
     splitType?: SplitType;
   };
-};
+}
 
-export type DeleteTemplateInputDTO = {
+export interface DeleteTemplateInputDTO {
   templateId: string;
-};
+}
 
-export type ProgramTemplateDTO = {
+export interface ProgramTemplateDTO {
   id: string;
   name: string;
   createdBy: string;
@@ -87,9 +87,9 @@ export type ProgramTemplateDTO = {
   workouts: TemplateWorkoutDTO[];
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
-export type ProgramTemplateSummaryDTO = {
+export interface ProgramTemplateSummaryDTO {
   id: string;
   name: string;
   createdBy: string;
@@ -99,4 +99,4 @@ export type ProgramTemplateSummaryDTO = {
   difficulty: Difficulty;
   goals: Goal[];
   workoutCount: number;
-};
+}

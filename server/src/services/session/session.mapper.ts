@@ -1,37 +1,37 @@
-import type { PaginateResult } from 'mongoose';
-import type { ISession } from '../../interfaces';
+import type { PaginateResult } from "mongoose";
+import type { ISession } from "../../interfaces";
 import type {
   SessionDTO,
   SessionSummaryDTO,
   SessionExerciseDTO,
   SetDTO,
   ExerciseFeedbackDTO,
-} from './session.dto.js';
+} from "./session.dto.js";
 
-type PopulatedSet = {
+interface PopulatedSet {
   setType?: string;
   reps?: number;
   weight?: number;
   rir?: number;
   setCompleted?: boolean;
-};
+}
 
-type PopulatedFeedback = {
+interface PopulatedFeedback {
   reportedMMC?: number;
   reportedPump?: number;
   reportedTension?: number;
   reportedCardioFatigue?: number;
   reportedJointFatigue?: number;
   reportedSystemicFatigue?: number;
-};
+}
 
-type PopulatedSessionExercise = {
+interface PopulatedSessionExercise {
   exerciseId?: { toString(): string };
   order?: number;
   sets?: PopulatedSet[];
   feedback?: PopulatedFeedback;
   notes?: string;
-};
+}
 
 type PopulatedSession = ISession & {
   _id?: { toString(): string };
@@ -44,7 +44,7 @@ type PopulatedSession = ISession & {
 
 function toSetDTO(set: PopulatedSet): SetDTO {
   return {
-    setType: (set.setType as SetDTO['setType']) ?? 'straight set',
+    setType: (set.setType as SetDTO["setType"]) ?? "straight set",
     reps: set.reps ?? 0,
     weight: set.weight ?? 0,
     rir: set.rir ?? 0,
@@ -52,7 +52,9 @@ function toSetDTO(set: PopulatedSet): SetDTO {
   };
 }
 
-function toFeedbackDTO(feedback?: PopulatedFeedback): ExerciseFeedbackDTO | undefined {
+function toFeedbackDTO(
+  feedback?: PopulatedFeedback,
+): ExerciseFeedbackDTO | undefined {
   if (!feedback) return undefined;
 
   const hasAnyFeedback =
@@ -75,9 +77,11 @@ function toFeedbackDTO(feedback?: PopulatedFeedback): ExerciseFeedbackDTO | unde
   };
 }
 
-function toSessionExerciseDTO(exercise: PopulatedSessionExercise): SessionExerciseDTO {
+function toSessionExerciseDTO(
+  exercise: PopulatedSessionExercise,
+): SessionExerciseDTO {
   return {
-    exerciseId: exercise.exerciseId ? exercise.exerciseId.toString() : '',
+    exerciseId: exercise.exerciseId ? exercise.exerciseId.toString() : "",
     order: exercise.order ?? 1,
     sets: (exercise.sets ?? []).map(toSetDTO),
     feedback: toFeedbackDTO(exercise.feedback),
@@ -91,12 +95,12 @@ export function toSessionDTO(session: PopulatedSession): SessionDTO {
   const rawProgramId = session.programId;
 
   return {
-    id: rawId ? rawId.toString() : '',
-    userId: rawUserId ? rawUserId.toString() : '',
-    programId: rawProgramId ? rawProgramId.toString() : '',
-    workoutName: session.workoutName ?? '',
+    id: rawId ? rawId.toString() : "",
+    userId: rawUserId ? rawUserId.toString() : "",
+    programId: rawProgramId ? rawProgramId.toString() : "",
+    workoutName: session.workoutName ?? "",
     dayNumber: session.dayNumber ?? undefined,
-    sessionStatus: session.sessionStatus ?? 'completed',
+    sessionStatus: session.sessionStatus ?? "completed",
     exercises: (session.exercises ?? []).map(toSessionExerciseDTO),
     datePerformed: session.datePerformed ?? new Date(),
     sessionDuration: session.sessionDuration ?? undefined,
@@ -106,15 +110,20 @@ export function toSessionDTO(session: PopulatedSession): SessionDTO {
   };
 }
 
-export function toSessionSummaryDTO(session: PopulatedSession): SessionSummaryDTO {
+export function toSessionSummaryDTO(
+  session: PopulatedSession,
+): SessionSummaryDTO {
   const rawId = (session as { _id?: { toString(): string } })._id;
   const exercises = session.exercises ?? [];
-  const totalSets = exercises.reduce((sum, ex) => sum + (ex.sets?.length ?? 0), 0);
+  const totalSets = exercises.reduce(
+    (sum, ex) => sum + (ex.sets?.length ?? 0),
+    0,
+  );
 
   return {
-    id: rawId ? rawId.toString() : '',
-    workoutName: session.workoutName ?? '',
-    sessionStatus: session.sessionStatus ?? 'completed',
+    id: rawId ? rawId.toString() : "",
+    workoutName: session.workoutName ?? "",
+    sessionStatus: session.sessionStatus ?? "completed",
     datePerformed: session.datePerformed ?? new Date(),
     sessionDuration: session.sessionDuration ?? undefined,
     exerciseCount: exercises.length,

@@ -1,7 +1,12 @@
-import { type Response } from 'express';
-import type { ApiSuccess, ApiError } from '../types/api.types.js';
+import { type Response } from "express";
+import type { ApiSuccess, ApiError } from "../types/api.types.js";
 
-function sendSuccess<T>(res: Response, data: T, statusCode = 200, message?: string): Response {
+function sendSuccess<T>(
+  res: Response,
+  data: T,
+  statusCode = 200,
+  message?: string,
+): Response {
   if (statusCode === 204) {
     return res.status(204).send();
   }
@@ -19,7 +24,7 @@ function sendError(
   res: Response,
   statusCode = 500,
   message: string,
-  code = 'ERROR',
+  code = "ERROR",
   details?: unknown,
 ): Response {
   const response: ApiError = {

@@ -4,9 +4,9 @@ import type {
   NextFunction,
   RequestHandler as ExpressRequestHandler,
   ErrorRequestHandler as ExpressErrorRequestHandler,
-} from 'express';
-import type { PaginationQuery } from './api.types.js';
-import type { Units, WeekStartsOn, UserRole } from './enums.types.js';
+} from "express";
+import type { PaginationQuery } from "./api.types.js";
+import type { Units, WeekStartsOn, UserRole } from "./enums.types.js";
 
 interface RequestUser {
   id: string;
@@ -30,7 +30,9 @@ interface RequestWithParams<P extends Record<string, string>> extends Request {
   params: P;
 }
 
-interface RequestWithQuery<Q extends Record<string, string | string[]>> extends Request {
+interface RequestWithQuery<
+  Q extends Record<string, string | string[]>,
+> extends Request {
   query: PaginationQuery & Q;
 }
 
@@ -43,19 +45,24 @@ interface AuthenticatedRequestWithBody<B> extends Request {
   body: B;
 }
 
-interface AuthenticatedRequestWithParams<P extends Record<string, string>> extends Request {
+interface AuthenticatedRequestWithParams<
+  P extends Record<string, string>,
+> extends Request {
   user: RequestUser;
   params: P;
 }
 
-interface AuthenticatedRequestWithQuery<Q extends Record<string, string | string[]>>
-  extends Request {
+interface AuthenticatedRequestWithQuery<
+  Q extends Record<string, string | string[]>,
+> extends Request {
   user: RequestUser;
   query: PaginationQuery & Q;
 }
 
-interface AuthenticatedRequestWithParamsAndBody<P extends Record<string, string>, B>
-  extends Request {
+interface AuthenticatedRequestWithParamsAndBody<
+  P extends Record<string, string>,
+  B,
+> extends Request {
   user: RequestUser;
   params: P;
   body: B;
@@ -80,7 +87,7 @@ type AsyncRequestHandler<
   req: Request<P, ResBody, ReqBody, ReqQuery>,
   res: Response<ResBody>,
   next: NextFunction,
-) => Promise<void | Response<ResBody>>;
+) => Promise<Response<ResBody>>;
 
 export type {
   RequestUser,

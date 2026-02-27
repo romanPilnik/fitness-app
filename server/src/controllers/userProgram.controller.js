@@ -1,9 +1,12 @@
-const userProgramService = require('../services/program/userProgram.service');
-const { sendSuccess } = require('../utils/response');
+const userProgramService = require("../services/program/userProgram.service");
+const { sendSuccess } = require("../utils/response");
 
 const getPrograms = async (req, res) => {
-  const programs = await userProgramService.getPrograms(req.user._id, req.query);
-  return sendSuccess(res, programs, 200, 'Programs retrieved');
+  const programs = await userProgramService.getPrograms(
+    req.user._id,
+    req.query,
+  );
+  return sendSuccess(res, programs, 200, "Programs retrieved");
 };
 
 const createFromTemplate = async (req, res) => {
@@ -16,7 +19,7 @@ const createFromTemplate = async (req, res) => {
     customizations,
   });
 
-  return sendSuccess(res, program, 201, 'Program created from template');
+  return sendSuccess(res, program, 201, "Program created from template");
 };
 
 const createCustomProgram = async (req, res) => {
@@ -25,22 +28,29 @@ const createCustomProgram = async (req, res) => {
     ...req.body,
   });
 
-  return sendSuccess(res, program, 201, 'Custom program created');
+  return sendSuccess(res, program, 201, "Custom program created");
 };
 
 const getActiveProgram = async (req, res) => {
   const program = await userProgramService.getActiveProgram(req.user._id);
-  return sendSuccess(res, program, 200, 'Active program retrieved');
+  return sendSuccess(res, program, 200, "Active program retrieved");
 };
 
 const getProgramById = async (req, res) => {
-  const program = await userProgramService.getProgramById(req.params.id, req.user._id);
-  return sendSuccess(res, program, 200, 'Program retrieved');
+  const program = await userProgramService.getProgramById(
+    req.params.id,
+    req.user._id,
+  );
+  return sendSuccess(res, program, 200, "Program retrieved");
 };
 
 const updateProgramById = async (req, res) => {
-  const program = await userProgramService.updateProgramById(req.params.id, req.user._id, req.body);
-  return sendSuccess(res, program, 200, 'Program updated');
+  const program = await userProgramService.updateProgramById(
+    req.params.id,
+    req.user._id,
+    req.body,
+  );
+  return sendSuccess(res, program, 200, "Program updated");
 };
 
 const deleteProgramById = async (req, res) => {

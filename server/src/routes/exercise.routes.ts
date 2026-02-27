@@ -1,40 +1,49 @@
-import express from 'express';
-import { verifyToken } from '../middlewares/auth.middleware';
-import { requireRole } from '../middlewares/authorize.middleware';
-import { ExerciseController } from '../controllers/exercise.controller';
-import { validate } from '../middlewares/validate';
-import { getExercises,getExerciseById,createExercise,deleteExercise } from'../validations/exercise.validation';
+import express from "express";
+import { verifyToken } from "../middlewares/auth.middleware";
+import { requireRole } from "../middlewares/authorize.middleware";
+import { ExerciseController } from "../controllers/exercise.controller";
+import { validate } from "../middlewares/validate";
+import {
+  getExercises,
+  getExerciseById,
+  createExercise,
+  deleteExercise,
+} from "../validations/exercise.validation";
 
 const exerciseRouter = express.Router();
 
-exerciseRouter.get('/', validate(getExercises), ExerciseController.getExercises);
+exerciseRouter.get(
+  "/",
+  validate(getExercises),
+  ExerciseController.getExercises,
+);
 
 exerciseRouter.get(
-  '/:id',
+  "/:id",
   validate(getExerciseById),
   ExerciseController.getExerciseById,
 );
 
 exerciseRouter.post(
-  '/',
+  "/",
   verifyToken,
-  requireRole('admin'),
+  requireRole("admin"),
   validate(createExercise),
   ExerciseController.createExercise,
 );
 
 exerciseRouter.patch(
-  '/:id',
+  "/:id",
   verifyToken,
-  requireRole('admin'),
+  requireRole("admin"),
   validate(getExercises),
   ExerciseController.updateExercise,
 );
 
 exerciseRouter.delete(
-  '/:id',
+  "/:id",
   verifyToken,
-  requireRole('admin'),
+  requireRole("admin"),
   validate(deleteExercise),
   ExerciseController.deleteExercise,
 );

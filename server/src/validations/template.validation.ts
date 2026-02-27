@@ -1,5 +1,5 @@
-import {z} from 'zod';
-import {splitTypeEnum, difficultyEnum, goalEnum} from './shared.js';
+import { z } from "zod";
+import { splitTypeEnum, difficultyEnum, goalEnum } from "./shared.js";
 
 export const getProgramTemplates = z.object({
   query: z.object({
@@ -46,8 +46,8 @@ export const updateProgramTemplate = z.object({
       daysPerWeek: z.number().int().min(1).max(14).optional(),
       splitType: splitTypeEnum.optional(),
     })
-    .refine(data => Object.keys(data).length > 0, {
-      message: 'At least one field must be provided',
+    .refine((data) => Object.keys(data).length > 0, {
+      message: "At least one field must be provided",
     }),
 });
 

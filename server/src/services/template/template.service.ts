@@ -1,7 +1,7 @@
-import type { PaginateResult } from 'mongoose';
-import { AppError } from '../../errors/AppError.js';
-import { ERROR_CODES } from '../../types/error.types.js';
-import { TemplateModel } from '../../models/Template.model.js';
+import type { PaginateResult } from "mongoose";
+import { AppError } from "../../errors/AppError.js";
+import { ERROR_CODES } from "../../types/error.types.js";
+import { TemplateModel } from "../../models/Template.model.js";
 import type {
   GetTemplatesInputDTO,
   GetTemplateByIdInputDTO,
@@ -10,8 +10,11 @@ import type {
   DeleteTemplateInputDTO,
   ProgramTemplateDTO,
   ProgramTemplateSummaryDTO,
-} from './template.dto.js';
-import { mapPaginatedTemplates, toProgramTemplateDTO } from './template.mapper.js';
+} from "./template.dto.js";
+import {
+  mapPaginatedTemplates,
+  toProgramTemplateDTO,
+} from "./template.mapper.js";
 
 async function getTemplates(
   input: GetTemplatesInputDTO = {},
@@ -31,9 +34,9 @@ async function getTemplates(
   const queryOptions = { ...query, ...textFilter };
 
   const paginateOptions = {
-    page: pagination.page || 1,
-    limit: pagination.limit || 20,
-    select: '-__v',
+    page: pagination.page ?? 1,
+    limit: pagination.limit ?? 20,
+    select: "-__v",
     sort: { createdAt: -1 },
     lean: true,
   };
@@ -42,25 +45,29 @@ async function getTemplates(
   return mapPaginatedTemplates(result);
 }
 
-async function getTemplateById(input: GetTemplateByIdInputDTO): Promise<ProgramTemplateDTO> {
+async function getTemplateById(
+  input: GetTemplateByIdInputDTO,
+): Promise<ProgramTemplateDTO> {
   const { templateId } = input;
 
   const template = await TemplateModel.findOne({
     _id: templateId,
     isActive: true,
   })
-    .populate('workouts.exercises.exerciseId', 'name')
-    .select('-__v')
+    .populate("workouts.exercises.exerciseId", "name")
+    .select("-__v")
     .lean();
 
   if (!template) {
-    throw new AppError('Template not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
   return toProgramTemplateDTO(template);
 }
 
-async function createTemplate(input: CreateTemplateInputDTO): Promise<ProgramTemplateDTO> {
+async function createTemplate(
+  input: CreateTemplateInputDTO,
+): Promise<ProgramTemplateDTO> {
   const { templateData } = input;
 
   const existing = await TemplateModel.findOne({
@@ -69,7 +76,11 @@ async function createTemplate(input: CreateTemplateInputDTO): Promise<ProgramTem
   }).lean();
 
   if (existing) {
-    throw new AppError('Template with this name already exists', 409, ERROR_CODES.DUPLICATE_VALUE);
+    throw new AppError(
+      "Template with this name already exists",
+      409,
+      ERROR_CODES.DUPLICATE_VALUE,
+    );
   }
 
   const template = new TemplateModel({
@@ -81,17 +92,19 @@ async function createTemplate(input: CreateTemplateInputDTO): Promise<ProgramTem
   return toProgramTemplateDTO(saved);
 }
 
-async function updateTemplate(input: UpdateTemplateInputDTO): Promise<ProgramTemplateDTO> {
+async function updateTemplate(
+  input: UpdateTemplateInputDTO,
+): Promise<ProgramTemplateDTO> {
   const { templateId, updates } = input;
 
   const allowedUpdates = [
-    'name',
-    'description',
-    'difficulty',
-    'goals',
-    'workouts',
-    'daysPerWeek',
-    'splitType',
+    "name",
+    "description",
+    "difficulty",
+    "goals",
+    "workouts",
+    "daysPerWeek",
+    "splitType",
   ];
 
   const sanitizedUpdates: Record<string, unknown> = {};
@@ -106,11 +119,11 @@ async function updateTemplate(input: UpdateTemplateInputDTO): Promise<ProgramTem
     { $set: sanitizedUpdates },
     { new: true, runValidators: true },
   )
-    .select('-__v')
+    .select("-__v")
     .lean();
 
   if (!template) {
-    throw new AppError('Template not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
   return toProgramTemplateDTO(template);
@@ -126,7 +139,7 @@ async function deleteTemplate(input: DeleteTemplateInputDTO): Promise<void> {
   );
 
   if (!template) {
-    throw new AppError('Template not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 }
 

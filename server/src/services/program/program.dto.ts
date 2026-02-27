@@ -4,57 +4,57 @@ import type {
   Goal,
   ProgramStatus,
   ProgramSource,
-} from '../../types/enums.types.js';
-import type { PaginationQuery } from '../../types/api.types.js';
+} from "../../types/enums.types.js";
+import type { PaginationQuery } from "../../types/api.types.js";
 
-export type ProgramExerciseInputDTO = {
+export interface ProgramExerciseInputDTO {
   exerciseId: string;
   order: number;
   targetSets: number;
   targetReps: number;
   targetRir: number;
   notes?: string;
-};
+}
 
-export type ProgramExerciseDTO = {
+export interface ProgramExerciseDTO {
   exerciseId: string;
   order: number;
   targetSets: number;
   targetReps: number;
   targetRir: number;
   notes?: string;
-};
+}
 
-export type WorkoutInputDTO = {
+export interface WorkoutInputDTO {
   name: string;
   dayNumber?: number;
   exercises: ProgramExerciseInputDTO[];
-};
+}
 
-export type WorkoutDTO = {
+export interface WorkoutDTO {
   name: string;
   dayNumber?: number;
   exercises: ProgramExerciseDTO[];
-};
+}
 
-export type GetProgramsInputDTO = {
+export interface GetProgramsInputDTO {
   userId: string;
   filters?: {
     status?: ProgramStatus;
   };
   pagination?: PaginationQuery;
-};
+}
 
-export type GetProgramByIdInputDTO = {
+export interface GetProgramByIdInputDTO {
   programId: string;
   userId: string;
-};
+}
 
-export type GetActiveProgramInputDTO = {
+export interface GetActiveProgramInputDTO {
   userId: string;
-};
+}
 
-export type CreateFromTemplateInputDTO = {
+export interface CreateFromTemplateInputDTO {
   userId: string;
   templateId: string;
   startDate?: Date;
@@ -62,9 +62,9 @@ export type CreateFromTemplateInputDTO = {
     name?: string;
     workouts?: Partial<WorkoutInputDTO>[];
   };
-};
+}
 
-export type CreateCustomProgramInputDTO = {
+export interface CreateCustomProgramInputDTO {
   userId: string;
   name: string;
   description?: string;
@@ -74,9 +74,9 @@ export type CreateCustomProgramInputDTO = {
   daysPerWeek: number;
   workouts: WorkoutInputDTO[];
   startDate?: Date;
-};
+}
 
-export type UpdateProgramInputDTO = {
+export interface UpdateProgramInputDTO {
   programId: string;
   userId: string;
   updates: {
@@ -86,19 +86,19 @@ export type UpdateProgramInputDTO = {
     startDate?: Date;
     workouts?: WorkoutInputDTO[];
   };
-};
+}
 
-export type DeleteProgramInputDTO = {
+export interface DeleteProgramInputDTO {
   programId: string;
   userId: string;
-};
+}
 
-export type UpdateProgressInputDTO = {
+export interface UpdateProgressInputDTO {
   programId: string;
   userId: string;
-};
+}
 
-export type ProgramDTO = {
+export interface ProgramDTO {
   id: string;
   userId: string;
   sourceTemplateId?: string;
@@ -120,9 +120,9 @@ export type ProgramDTO = {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
-export type ProgramSummaryDTO = {
+export interface ProgramSummaryDTO {
   id: string;
   name: string;
   description?: string;
@@ -133,4 +133,4 @@ export type ProgramSummaryDTO = {
   status: ProgramStatus;
   currentWeek: number;
   createdAt: Date;
-};
+}

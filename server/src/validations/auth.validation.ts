@@ -1,21 +1,21 @@
-import {z} from 'zod';
-import {passwordRegex} from './shared.js';
+import { z } from "zod";
+import { passwordRegex } from "./shared.js";
 
 export const login = z.object({
   body: z.object({
-    email: z.string().email(),
+    email: z.string().z.email(),
     password: z.string(),
   }),
 });
 
 export const register = z.object({
   body: z.object({
-    email: z.string().email(),
+    email: z.string().z.email(),
     password: z
       .string()
       .min(8)
       .max(128)
-      .regex(passwordRegex, 'Password must contain letters and numbers'),
+      .regex(passwordRegex, "Password must contain letters and numbers"),
     name: z.string().min(2).max(50),
   }),
 });

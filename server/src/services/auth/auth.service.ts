@@ -1,9 +1,13 @@
-import { UserModel } from '../../models/User.model.js';
-import { AppError } from '../../errors/AppError.js';
-import { ERROR_CODES } from '../../errors/index.js';
-import jwt from 'jsonwebtoken';
-import type { RegisterInputDTO, LoginInputDTO, AuthUserDTO } from './auth.dto.js';
-import { toAuthUserDTO } from './auth.mapper.js';
+import { UserModel } from "../../models/User.model.js";
+import { AppError } from "../../errors/AppError.js";
+import { ERROR_CODES } from "../../errors/index.js";
+import jwt from "jsonwebtoken";
+import type {
+  RegisterInputDTO,
+  LoginInputDTO,
+  AuthUserDTO,
+} from "./auth.dto.js";
+import { toAuthUserDTO } from "./auth.mapper.js";
 
 async function register(input: RegisterInputDTO): Promise<AuthUserDTO> {
   const { email, password, name } = input;
@@ -11,7 +15,11 @@ async function register(input: RegisterInputDTO): Promise<AuthUserDTO> {
   const existingUser = await UserModel.findOne({ email });
 
   if (existingUser) {
-    throw new AppError('User with this email already exists', 409, ERROR_CODES.DUPLICATE_VALUE);
+    throw new AppError(
+      "User with this email already exists",
+      409,
+      ERROR_CODES.DUPLICATE_VALUE,
+    );
   }
 
   const newUser = new UserModel({
@@ -26,15 +34,23 @@ async function register(input: RegisterInputDTO): Promise<AuthUserDTO> {
 async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
   const { email, password } = input;
 
-  const user = await UserModel.findOne({ email }).select('+password');
+  const user = await UserModel.findOne({ email }).select("+password");
 
   if (!user) {
-    throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIALS);
+    throw new AppError(
+      "Invalid email or password",
+      401,
+      ERROR_CODES.INVALID_CREDENTIALS,
+    );
   }
 
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
-    throw new AppError('Invalid email or password', 401, ERROR_CODES.INVALID_CREDENTIALS);
+    throw new AppError(
+      "Invalid email or password",
+      401,
+      ERROR_CODES.INVALID_CREDENTIALS,
+    );
   }
 
   return toAuthUserDTO(user);
@@ -42,21 +58,21 @@ async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
 
 function generateAuthToken(userId: string): string {
   const secret = process.env.JWT_SECRET;
-  const expiresIn: jwt.SignOptions['expiresIn'] =
-    (process.env.JWT_EXPIRE as jwt.SignOptions['expiresIn']) ?? '7d';
+  const expiresIn: jwt.SignOptions["expiresIn"] =
+    (process.env.JWT_EXPIRE as jwt.SignOptions["expiresIn"]) ?? "7d";
 
   if (!secret) {
-    throw new AppError('Server configuration error', 500, ERROR_CODES.INTERNAL_ERROR);
+    throw new AppError(
+      "Server configuration error",
+      500,
+      ERROR_CODES.INTERNAL_ERROR,
+    );
   }
 
-  return jwt.sign(
-    { userId },
-    secret,
-    {
-      expiresIn,
-      algorithm: 'HS256',
-    },
-  );
+  return jwt.sign({ userId }, secret, {
+    expiresIn,
+    algorithm: "HS256",
+  });
 }
 
 export const AuthService = {

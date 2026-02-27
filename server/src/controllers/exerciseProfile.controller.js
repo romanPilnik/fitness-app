@@ -1,9 +1,11 @@
-const exerciseProfileService = require('../services/exerciseProfile/exerciseProfile.service');
-const { sendSuccess } = require('../utils/response');
+const exerciseProfileService = require("../services/exerciseProfile/exerciseProfile.service");
+const { sendSuccess } = require("../utils/response");
 
 const getExerciseProfiles = async (req, res) => {
-  const profiles = await exerciseProfileService.getExerciseProfiles(req.user._id);
-  return sendSuccess(res, profiles, 200, 'Profiles retrieved');
+  const profiles = await exerciseProfileService.getExerciseProfiles(
+    req.user._id,
+  );
+  return sendSuccess(res, profiles, 200, "Profiles retrieved");
 };
 
 const getExerciseProfileById = async (req, res) => {
@@ -11,7 +13,7 @@ const getExerciseProfileById = async (req, res) => {
     req.params.exerciseId,
     req.user._id,
   );
-  return sendSuccess(res, profile, 200, 'Profile retrieved');
+  return sendSuccess(res, profile, 200, "Profile retrieved");
 };
 
 const updateExerciseProfile = async (req, res) => {
@@ -20,7 +22,7 @@ const updateExerciseProfile = async (req, res) => {
     req.user._id,
     req.body,
   );
-  return sendSuccess(res, profile, 200, 'Profile updated');
+  return sendSuccess(res, profile, 200, "Profile updated");
 };
 
 module.exports = {

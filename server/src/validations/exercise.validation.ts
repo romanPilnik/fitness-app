@@ -1,10 +1,10 @@
-import {z} from 'zod';
+import { z } from "zod";
 import {
   muscleGroupEnum,
   equipmentEnum,
   exerciseCategoryEnum,
   movementPatternEnum,
-} from './shared.js';
+} from "./shared.js";
 
 export const getExercises = z.object({
   query: z.object({

@@ -1,16 +1,19 @@
-import type { ErrorCode, SerializedError } from '../types/error.types.js';
+import type { ErrorCode, SerializedError } from "../types/error.types.js";
 
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly code: ErrorCode;
   public readonly isOperational: boolean;
 
-  constructor(message: string, statusCode: number, code: ErrorCode, isOperational = true) {
+  constructor(
+    message: string,
+    statusCode: number,
+    code: ErrorCode,
+    isOperational = true,
+  ) {
     super(message);
 
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
+    Error.captureStackTrace(this, this.constructor);
 
     this.name = this.constructor.name;
     this.statusCode = statusCode;

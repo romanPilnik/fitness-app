@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import { z } from "zod";
 import {
   MUSCLE_GROUPS,
   MOVEMENT_PATTERNS,
@@ -12,11 +12,11 @@ import {
   SESSION_STATUSES,
   UNITS,
   WEEK_STARTS_ON,
-} from '../types/enums.types.js';
+} from "../types/enums.types.js";
 
 export const objectId = z
   .string()
-  .regex(/^[a-fA-F0-9]{24}$/, 'Invalid ObjectId');
+  .regex(/^[a-fA-F0-9]{24}$/, "Invalid ObjectId");
 
 export const paginationQuery = z.object({
   page: z.coerce.number().int().positive().optional(),

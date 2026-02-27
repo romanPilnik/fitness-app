@@ -1,6 +1,6 @@
-import {Request, Response, NextFunction} from 'express';
-import {z} from 'zod';
-import {ValidationError} from '../errors/index.js';
+import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { ValidationError } from "../errors/index.js";
 
 type ValidationSchema = z.ZodObject<{
   body?: z.ZodType;
@@ -18,13 +18,20 @@ export const validate =
     });
 
     if (!result.success) {
-      return next(new ValidationError('Validation failed', result.error.issues));
+      next(
+        new ValidationError("Validation failed", result.error.issues),
+      ); return;
     }
 
-    const data = result.data as {body?: unknown; query?: unknown; params?: unknown};
+    const data = result.data as {
+      body?: unknown;
+      query?: unknown;
+      params?: unknown;
+    };
     if (data.body !== undefined) req.body = data.body;
     if (data.query !== undefined) req.query = data.query as typeof req.query;
-    if (data.params !== undefined) req.params = data.params as typeof req.params;
+    if (data.params !== undefined)
+      req.params = data.params as typeof req.params;
 
-    return next();
+    next();
   };

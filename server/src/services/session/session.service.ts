@@ -1,9 +1,9 @@
-import type { PaginateResult } from 'mongoose';
-import { AppError } from '../../errors/AppError.js';
-import { ERROR_CODES } from '../../types/error.types.js';
-import { SessionModel } from '../../models/Session.model.js';
-import { ExerciseStatsService } from '../exerciseStats/exerciseStats.service.js';
-import { ProgramService } from '../program/Program.service.js';
+import type { PaginateResult } from "mongoose";
+import { AppError } from "../../errors/AppError.js";
+import { ERROR_CODES } from "../../types/error.types.js";
+import { SessionModel } from "../../models/Session.model.js";
+import { ExerciseStatsService } from "../exerciseStats/exerciseStats.service.js";
+import { ProgramService } from "../program/Program.service.js";
 import type {
   GetSessionsInputDTO,
   GetSessionByIdInputDTO,
@@ -11,10 +11,12 @@ import type {
   DeleteSessionInputDTO,
   SessionDTO,
   SessionSummaryDTO,
-} from './session.dto.js';
-import { mapPaginatedSessions, toSessionDTO } from './session.mapper.js';
+} from "./session.dto.js";
+import { mapPaginatedSessions, toSessionDTO } from "./session.mapper.js";
 
-async function getSessions(input: GetSessionsInputDTO): Promise<PaginateResult<SessionSummaryDTO>> {
+async function getSessions(
+  input: GetSessionsInputDTO,
+): Promise<PaginateResult<SessionSummaryDTO>> {
   const { userId, pagination = {} } = input;
 
   const query = { userId, isActive: true };
@@ -22,7 +24,7 @@ async function getSessions(input: GetSessionsInputDTO): Promise<PaginateResult<S
   const paginateOptions = {
     page: pagination.page || 1,
     limit: pagination.limit || 20,
-    select: '-__v',
+    select: "-__v",
     sort: { datePerformed: -1 },
     lean: true,
   };
@@ -31,7 +33,9 @@ async function getSessions(input: GetSessionsInputDTO): Promise<PaginateResult<S
   return mapPaginatedSessions(result);
 }
 
-async function getSessionById(input: GetSessionByIdInputDTO): Promise<SessionDTO> {
+async function getSessionById(
+  input: GetSessionByIdInputDTO,
+): Promise<SessionDTO> {
   const { sessionId, userId } = input;
 
   const session = await SessionModel.findOne({
@@ -39,20 +43,29 @@ async function getSessionById(input: GetSessionByIdInputDTO): Promise<SessionDTO
     userId,
     isActive: true,
   })
-    .select('-__v')
+    .select("-__v")
     .lean();
 
   if (!session) {
-    throw new AppError('Session not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Session not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
   return toSessionDTO(session);
 }
 
-async function createSession(input: CreateSessionInputDTO): Promise<SessionDTO> {
+async function createSession(
+  input: CreateSessionInputDTO,
+): Promise<SessionDTO> {
   const { userId, sessionData } = input;
-  const { programId, workoutName, dayNumber, sessionStatus, exercises, sessionDuration, notes } =
-    sessionData;
+  const {
+    programId,
+    workoutName,
+    dayNumber,
+    sessionStatus,
+    exercises,
+    sessionDuration,
+    notes,
+  } = sessionData;
 
   const session = await SessionModel.create({
     userId,
@@ -96,7 +109,7 @@ async function deleteSession(input: DeleteSessionInputDTO): Promise<void> {
   );
 
   if (!session) {
-    throw new AppError('Session not found', 404, ERROR_CODES.NOT_FOUND);
+    throw new AppError("Session not found", 404, ERROR_CODES.NOT_FOUND);
   }
 }
 

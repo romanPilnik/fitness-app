@@ -1,5 +1,9 @@
-import { AppError } from './AppError.js';
-import { ERROR_CODES, type ErrorCode, type ZodIssue } from '../types/error.types.js';
+import { AppError } from "./AppError.js";
+import {
+  ERROR_CODES,
+  type ErrorCode,
+  type ZodIssue,
+} from "../types/error.types.js";
 
 export class ValidationError extends AppError {
   public readonly issues: ZodIssue[];
@@ -19,13 +23,19 @@ export class ValidationError extends AppError {
 }
 
 export class AuthenticationError extends AppError {
-  constructor(message: string, code: ErrorCode = ERROR_CODES.INVALID_CREDENTIALS) {
+  constructor(
+    message: string,
+    code: ErrorCode = ERROR_CODES.INVALID_CREDENTIALS,
+  ) {
     super(message, 401, code);
   }
 }
 
 export class AuthorizationError extends AppError {
-  constructor(message: string, code: ErrorCode = ERROR_CODES.UNAUTHORIZED_ACCESS) {
+  constructor(
+    message: string,
+    code: ErrorCode = ERROR_CODES.UNAUTHORIZED_ACCESS,
+  ) {
     super(message, 403, code);
   }
 }

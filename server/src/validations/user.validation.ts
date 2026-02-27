@@ -1,5 +1,5 @@
-import {z} from 'zod';
-import {passwordRegex, unitsEnum, weekStartsOnEnum} from './shared.js';
+import { z } from "zod";
+import { passwordRegex, unitsEnum, weekStartsOnEnum } from "./shared.js";
 
 export const updateUser = z.object({
   body: z
@@ -12,8 +12,8 @@ export const updateUser = z.object({
         })
         .optional(),
     })
-    .refine(data => Object.keys(data).length > 0, {
-      message: 'At least one field must be provided',
+    .refine((data) => Object.keys(data).length > 0, {
+      message: "At least one field must be provided",
     }),
 });
 
@@ -24,7 +24,7 @@ export const changePassword = z.object({
       .string()
       .min(8)
       .max(128)
-      .regex(passwordRegex, 'Password must contain letters and numbers'),
+      .regex(passwordRegex, "Password must contain letters and numbers"),
   }),
 });
 
