@@ -2,18 +2,18 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
+    "dev": "tsx --watch --env-file .env src/index.ts",
+    "start": "node --env-file .env build/index.js",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node build/src/server.js",
-    "dev": "node --watch --import tsx src/server.ts",
-    "lint": "gts lint",
-    "lint:types": "tsc --noEmit",
-    "seed": "node scripts/seed.js",
-    "clean": "gts clean",
-    "compile": "tsc",
-    "fix": "gts fix",
-    "posttest": "npm run lint"
+    "seed": "node scripts/seed.js"
   },
   "keywords": [],
   "author": "",
@@ -31,14 +31,16 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^9",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.7.5",
-    "gts": "^7.0.0",
-    "nodemon": "^3.1.10",
+    "eslint": "^9",
+    "prettier": "^3.8.1",
     "tsx": "^4.21.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.55.0"
   }
 }

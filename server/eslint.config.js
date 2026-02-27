@@ -1,28 +1,22 @@
-import gts from 'gts';
+// @ts-check
 
-export default [
+import eslint from "@eslint/js";
+import { defineConfig } from "eslint/config";
+import tseslint from "typescript-eslint";
+
+export default defineConfig(
   {
-    ignores: ['build/', 'dist/', 'node_modules/', 'eslint.config.js'],
+    ignores: ["**/*.js"],
   },
-  ...gts,
-  // Override for JS files still using CommonJS during TS migration
+  eslint.configs.recommended,
+  tseslint.configs.strictTypeChecked,
+  tseslint.configs.stylisticTypeChecked,
   {
-    files: ['**/*.js'],
     languageOptions: {
-      globals: {
-        require: 'readonly',
-        module: 'readonly',
-        exports: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
-        process: 'readonly',
-        console: 'readonly',
-        Buffer: 'readonly',
-        setInterval: 'readonly',
-        setTimeout: 'readonly',
-        clearInterval: 'readonly',
-        clearTimeout: 'readonly',
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
   },
-];
+);

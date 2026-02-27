@@ -1,54 +1,90 @@
-import {Types,Schema,model, HydratedDocument, PaginateModel, } from 'mongoose';
-import mongoosePaginate from 'mongoose-paginate-v2';
+import {
+  Types,
+  Schema,
+  model,
+  type PaginateModel,
+  type Document,
+} from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
 import {
   SPLIT_TYPES,
   DIFFICULTIES,
   GOALS,
   PROGRAM_STATUSES,
   PROGRAM_SOURCES,
-} from '../types/enums.types.js';
-import {IProgram} from '../interfaces';
+} from "../types/enums.types.js";
+import type {
+  ProgramSource,
+  Difficulty,
+  Goal,
+  SplitType,
+  ProgramStatus,
+} from "../types/enums.types.js";
 
-interface IProgramMethods {
-  getNextWorkout(): IProgram['workouts'][number] | null;
+export interface IProgram {
+  userId: string | Types.ObjectId;
+  sourceTemplateId?: string | Types.ObjectId;
+  sourceTemplateName?: string;
+  createdFrom: ProgramSource;
+  name: string;
+  description?: string;
+  difficulty: Difficulty;
+  goals: Goal[];
+  splitType: SplitType;
+  daysPerWeek: number;
+  workouts: {
+    name: string;
+    dayNumber: number;
+    exercises: {
+      exerciseId: string | Types.ObjectId;
+      order: number;
+      targetSets: number;
+      targetReps: number;
+      targetRir: number;
+      notes?: string;
+    }[];
+  }[];
+  status: ProgramStatus;
+  startDate: Date;
+  currentWeek: number;
+  nextWorkoutIndex: number;
+  lastCompletedWorkoutDate?: Date;
+  hasBeenModified: boolean;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-interface ProgramModelType extends PaginateModel<ProgramDocument>{
-  findActiveProgram(userId: Types.ObjectId | string): Promise<HydratedDocument<IProgram, IProgramMethods> | null>;
-}
-
-export type ProgramDocument = HydratedDocument<IProgram,IProgramMethods>;
-
-const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
+const programSchema = new Schema<ProgramDocument>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     sourceTemplateId: {
       type: Schema.Types.ObjectId,
-      ref: 'ProgramTemplate',
+      ref: "Template",
       default: null,
     },
     sourceTemplateName: String,
     createdFrom: {
       type: String,
       enum: PROGRAM_SOURCES,
-      default: 'scratch',
+      default: "scratch",
       lowercase: true,
       required: true,
     },
 
     name: {
       type: String,
-      maxlength: [50, 'Name cannot exceed 50 characters'],
+      maxlength: [50, "Name cannot exceed 50 characters"],
       required: true,
       trim: true,
     },
     description: {
       type: String,
-      maxlength: [500, 'Description cannot exceed 500 characters'],
+      maxlength: [500, "Description cannot exceed 500 characters"],
     },
     difficulty: {
       type: String,
@@ -63,26 +99,26 @@ const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
           enum: GOALS,
           required: true,
           lowercase: true,
-          default: 'hypertrophy',
+          default: "hypertrophy",
         },
       ],
       validate: {
-        validator: (arr: string[]) => arr.length <= 3,
-        message: 'Maximum of 3 goals',
+        validator: (arr: string[]) => arr.length >= 1 && arr.length <= 3,
+        message: "Maximum of 3 goals",
       },
     },
 
     splitType: {
       type: String,
       enum: SPLIT_TYPES,
-      default: 'other',
+      default: "other",
       required: true,
       lowercase: true,
     },
     daysPerWeek: {
       type: Number,
-      min: [1, 'Must have at least 1 day per week'],
-      max: [14, 'Session number per week cannot exceed 14'],
+      min: [1, "Must have at least 1 day per week"],
+      max: [14, "Session number per week cannot exceed 14"],
       required: true,
     },
 
@@ -91,13 +127,13 @@ const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
         {
           name: {
             type: String,
-            maxlength: [50, 'Name cannot exceed 50 characters'],
+            maxlength: [50, "Name cannot exceed 50 characters"],
             required: true,
             trim: true,
           },
           dayNumber: {
             type: Number,
-            min: [1, 'Workout day must be at least 1'],
+            min: [1, "Workout day must be at least 1"],
           },
 
           exercises: {
@@ -105,35 +141,35 @@ const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
               {
                 exerciseId: {
                   type: Schema.Types.ObjectId,
-                  ref: 'Exercise',
+                  ref: "Exercise",
                   required: true,
                 },
                 order: {
                   type: Number,
                   required: true,
-                  min: [1, 'Order must start at 1'],
+                  min: [1, "Order must start at 1"],
                 },
                 targetSets: {
                   type: Number,
-                  min: [1, 'Sets must be at least 1'],
-                  max: [20, 'Sets cannot exceed 20'],
+                  min: [1, "Sets must be at least 1"],
+                  max: [20, "Sets cannot exceed 20"],
                   required: true,
                 },
                 targetReps: {
                   type: Number,
-                  min: [1, 'Reps must be at least 1'],
-                  max: [100, 'Reps cannot exceed 100'],
+                  min: [1, "Reps must be at least 1"],
+                  max: [100, "Reps cannot exceed 100"],
                   required: true,
                 },
                 targetRir: {
                   type: Number,
-                  min: [0, 'Rir cannot be negative'],
-                  max: [10, 'Rir cannot be above 10'],
+                  min: [0, "Rir cannot be negative"],
+                  max: [10, "Rir cannot be above 10"],
                   required: true,
                 },
                 notes: {
                   type: String,
-                  maxlength: [999, 'Notes cannot exceed 999 characters'],
+                  maxlength: [999, "Notes cannot exceed 999 characters"],
                 },
               },
             ],
@@ -141,7 +177,7 @@ const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
               validator: function (arr: unknown[]) {
                 return arr.length > 0;
               },
-              message: 'Workout must have at least 1 exercise',
+              message: "Workout must have at least 1 exercise",
             },
           },
         },
@@ -150,99 +186,14 @@ const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
         validator: function (arr: unknown[]) {
           return arr.length > 0;
         },
-        message: 'Split must have at least 1 workout',
+        message: "Split must have at least 1 workout",
       },
     },
-
-    /* periodization: {
-      type: {
-        type: String,
-        enum: PERIODIZATION_TYPES,
-        required: true,
-        default: 'linear_rir',
-        lowercase: true,
-      },
-
-      config: {
-        weeks: {
-          type: Number,
-          min: [1, 'Mesocycle must be at least 1 week'],
-          max: [12, 'Mesocycle cannot exceed 12 weeks'],
-          required: true,
-        },
-
-        rirProgression: {
-          type: [Number],
-          validate: {
-            validator: function (
-              this: { periodization?: { config?: { weeks?: number } } },
-              arr: number[],
-            ) {
-              if (
-                this.periodization?.config?.weeks &&
-                arr.length !== this.periodization?.config?.weeks
-              ) {
-                return false;
-              }
-              return arr.every((rir) => rir >= 0 && rir <= 10);
-            },
-            message: 'RIR progression must match week count and be between 0-10',
-          },
-        },
-
-        deloadWeek: {
-          type: Number,
-          min: [4, 'Deload weeks must be between 4-20'],
-          max: [20, 'Deload weeks must be between 4-20'],
-          validate: {
-            validator: function (
-              this: { periodization?: { config?: { weeks?: number } } },
-              value: number,
-            ) {
-              if (
-                this.periodization?.config?.weeks != null &&
-                value > this.periodization.config.weeks
-              ) {
-                return false;
-              }
-              return true;
-            },
-            message: 'Deload week must be within mesocycle duration',
-          },
-        },
-
-        autoDeload: {
-          enabled: { type: Boolean, default: true },
-
-          triggerAfterFailures: {
-            type: Number,
-            default: 2,
-            min: [1, 'Must fail at least 1 session to trigger'],
-            max: [5, 'Trigger threshold too high'],
-          },
-
-          fatigueThreshold: {
-            type: Number,
-            default: 8,
-            min: [1, 'Fatigue threshold minimum is 1'],
-            max: [10, 'Fatigue threshold maximum is 10'],
-          },
-        },
-
-        volumeProgression: {
-          type: String,
-          enum: VOLUME_PROGRESSIONS,
-          default: 'static',
-          required: true,
-          lowercase: true,
-        },
-      },
-    }, */
 
     status: {
       type: String,
       enum: PROGRAM_STATUSES,
-      default: 'active',
+      default: "active",
       required: true,
       lowercase: true,
     },
@@ -265,57 +216,16 @@ const programSchema = new Schema<IProgram,ProgramModelType,IProgramMethods>(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
   },
 );
 
 programSchema.index({ userId: 1, status: 1 });
 
-programSchema.methods.getNextWorkout = function (): IProgram['workouts'][number] | null {
-  if (!this.workouts || this.workouts.length === 0) {
-    return null;
-  }
-  if (this.nextWorkoutIndex >= this.workouts.length) {
-    return this.workouts[0];
-  }
-  return this.workouts[this.nextWorkoutIndex];
-};
+programSchema.plugin(mongoosePaginate);
 
-programSchema.statics.findActiveProgram = async function (
-  userId: Types.ObjectId | string,
-): Promise<HydratedDocument<IProgram, IProgramMethods> | null> {
-  if (!userId) {
-    throw new Error('userId is required');
-  }
+export interface ProgramDocument extends IProgram, Document {}
 
-  return await this.findOne({
-    userId,
-    status: 'active',
-  });
-};
-
-/* programSchema.virtual('progressPercentage').get(function () {
-  if (this.periodization?.config?.weeks != null && this.currentWeek != null) {
-    return (this.currentWeek / this.periodization.config.weeks) * 100;
-  }
-  return 0;
-});
-
-programSchema.virtual('weeksRemaining').get(function () {
-  if (this.periodization?.config?.weeks) return this.periodization.config.weeks - this.currentWeek;
-  return -1;
-});
-
-programSchema.virtual('isComplete').get(function () {
-  if (this.periodization?.config?.weeks) return this.currentWeek > this.periodization.config.weeks;
-  return false;
-}); */
-
-programSchema.plugin(mongoosePaginate as any);
-
-
-export const ProgramModel = model<IProgram, ProgramModelType>(
-  'Program',
-  programSchema,
-);
+export const ProgramModel = model<
+  ProgramDocument,
+  PaginateModel<ProgramDocument>
+>("Program", programSchema, "Program");

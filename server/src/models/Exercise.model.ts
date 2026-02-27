@@ -1,76 +1,84 @@
-import { Schema, model, HydratedDocument, PaginateModel } from 'mongoose';
-import mongoosePaginate from 'mongoose-paginate-v2';
+import type { Document, PaginateModel } from "mongoose";
+
+import { model, Schema } from "mongoose";
+import paginate from "mongoose-paginate-v2";
+
 import {
-  MUSCLE_GROUPS,
-  MOVEMENT_PATTERNS,
   EQUIPMENT,
+  type Equipment,
   EXERCISE_CATEGORIES,
-} from '../types/enums.types.js';
-import { IExercise } from '../interfaces';
+  type ExerciseCategory,
+  MOVEMENT_PATTERNS,
+  type MovementPattern,
+  MUSCLE_GROUPS,
+  type MuscleGroup,
+} from "../types/enums.types";
 
-interface IExerciseMethods {}
+export interface IExercise {
+  category: ExerciseCategory;
+  equipment: Equipment;
+  instructions?: string;
+  isActive: boolean;
+  movementPattern: MovementPattern;
+  name: string;
+  primaryMuscle: MuscleGroup;
+  secondaryMuscles: MuscleGroup[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
-interface ExerciseModelType extends PaginateModel<ExerciseDocument> {}
-
-export type ExerciseDocument = HydratedDocument<IExercise, IExerciseMethods>;
-
-const exerciseSchema = new Schema<IExercise, ExerciseModelType, IExerciseMethods>(
+const exerciseSchema = new Schema<ExerciseDocument>(
   {
-    name: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      maxlength: [50, 'Name cannot exceed 50 characters'],
-    },
-    
-    equipment: {
-      type: String,
-      enum: EQUIPMENT,
-      lowercase: true,
-      default: 'none',
-    },
-
-    primaryMuscle: {
-      type: String,
-      enum: MUSCLE_GROUPS,
-      required: true,
-      lowercase: true,
-    },
-
-    secondaryMuscles: {
-      type: [String],
-      enum: MUSCLE_GROUPS,
-      lowercase: true,
-      default: [],
-      validate: {
-        validator: (arr: string[]) => arr.length <= 3,
-        message: 'Maximum of 3 secondary muscle groups',
-      },
-    },
-
     category: {
-      type: String,
       enum: EXERCISE_CATEGORIES,
       required: true,
-      lowercase: true,
+      type: String,
     },
 
-    movementPattern: {
+    equipment: {
+      default: "none",
+      enum: EQUIPMENT,
       type: String,
-      enum: MOVEMENT_PATTERNS,
-      required: true,
-      lowercase: true,
     },
 
     instructions: {
+      maxlength: [500, "Instructions cannot exceed 500 characters"],
       type: String,
-      maxlength: [500, 'Instructions cannot exceed 500 characters'],
     },
 
     isActive: {
-      type: Boolean,
       default: true,
+      type: Boolean,
+    },
+
+    movementPattern: {
+      enum: MOVEMENT_PATTERNS,
+      required: true,
+      type: String,
+    },
+
+    name: {
+      maxlength: [50, "Name cannot exceed 50 characters"],
+      required: true,
+      trim: true,
+      type: String,
+      unique: true,
+    },
+
+    primaryMuscle: {
+      enum: MUSCLE_GROUPS,
+      required: true,
+      type: String,
+    },
+
+    secondaryMuscles: {
+      default: [],
+      enum: MUSCLE_GROUPS,
+      type: [String],
+      validate: {
+        message: "Maximum of 3 secondary muscle groups",
+        validator: (arr: string[]) => arr.length <= 3,
+      },
     },
   },
   {
@@ -80,9 +88,13 @@ const exerciseSchema = new Schema<IExercise, ExerciseModelType, IExerciseMethods
 
 exerciseSchema.index({ primaryMuscle: 1 });
 exerciseSchema.index({ equipment: 1 });
-exerciseSchema.index({ name: 'text' });
+exerciseSchema.index({ name: "text" });
 
-exerciseSchema.plugin(mongoosePaginate as any);
+exerciseSchema.plugin(paginate);
 
-export const ExerciseModel = model<IExercise, ExerciseModelType>('Exercise', exerciseSchema);
+export interface ExerciseDocument extends IExercise, Document {}
 
+export const ExerciseModel = model<
+  ExerciseDocument,
+  PaginateModel<ExerciseDocument>
+>("Exercise", exerciseSchema, "Exercise");

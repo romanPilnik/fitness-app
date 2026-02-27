@@ -1,118 +1,133 @@
-import { Schema,model,HydratedDocument,PaginateModel, CallbackError } from 'mongoose';
-import mongoosePaginate from 'mongoose-paginate-v2';
-import bcrypt from 'bcryptjs';
-import { IUser } from '../interfaces';
-import { USER_ROLES, UNITS, WEEK_STARTS_ON } from '../types/enums.types.js';
-import { Document } from 'mongodb';
+import bcrypt from "bcryptjs";
+import {
+  type CallbackError,
+  Document,
+  model,
+  Schema,
+  type PaginateModel,
+} from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
+
+import {
+  UNITS,
+  USER_ROLES,
+  WEEK_STARTS_ON,
+  type Units,
+  type UserRole,
+  type WeekStartsOn,
+} from "../types/enums.types.js";
+
+export interface IUser {
+  createdAt?: Date;
+  email: string;
+  isActive: boolean;
+  name: string;
+  password: string;
+  preferences: {
+    units: Units;
+    weekStartsOn: WeekStartsOn;
+  };
+  role: UserRole;
+  updatedAt?: Date;
+}
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-interface IUserMethods {
-  comparePassword(candidatePassword: string): Promise<boolean>;
-}
-
-interface UserModelType extends PaginateModel<UserDocument>{
-  findActive(): Promise<UserDocument[]>;
-}
-
-export type UserDocument = HydratedDocument<IUser, IUserMethods>;
-
-const userSchema = new Schema<IUser, UserModelType, IUserMethods>(
+const userSchema = new Schema<UserDocument>(
   {
     email: {
-      type: String,
-      required: [true, 'Email is required'],
       lowercase: true,
+      required: [true, "Email is required"],
       trim: true,
+      type: String,
       unique: true,
       validate: {
+        message: "Please enter a valid email",
         validator: (v: string) => EMAIL_REGEX.test(v),
-        message: 'Please enter a valid email',
       },
     },
 
-    password: {
+    isActive: {
+      default: true,
+      type: Boolean,
+    },
+
+    name: {
+      maxlength: [50, "Name cannot exceed 50 characters"],
+      minlength: [2, "Name must be at least 2 characters"],
+      required: [true, "Name is required"],
+      trim: true,
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [8, 'Password length must be at least 8 characters'],
-      maxlength: [128, 'Password length cannot exceed 128 characters'],
+    },
+
+    password: {
+      maxlength: [128, "Password length cannot exceed 128 characters"],
+      minlength: [8, "Password length must be at least 8 characters"],
+      required: [true, "Password is required"],
       select: false,
+      type: String,
       validate: {
+        message: "Password must contain at least one letter and one number",
         validator: function (this: Document, password: string) {
-          if (!this.isModified('password')) {
+          if (!this.isModified("password")) {
             return true;
           }
           return /^(?=.*[A-Za-z])(?=.*\d).{8,}$/.test(password);
         },
-        message: 'Password must contain at least one letter and one number',
       },
-    },
-
-    name: {
-      type: String,
-      required: [true, 'Name is required'],
-      trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [50, 'Name cannot exceed 50 characters'],
     },
 
     preferences: {
       units: {
-        type: String,
+        default: "metric",
         enum: UNITS,
-        default: 'metric',
+        type: String,
       },
 
       weekStartsOn: {
-        type: String,
+        default: "sunday",
         enum: WEEK_STARTS_ON,
-        default: 'sunday',
+        type: String,
       },
     },
 
     role: {
-      type: String,
+      default: "user",
       enum: USER_ROLES,
-      default: 'user',
-    },
-
-    isActive: {
-      type: Boolean,
-      default: true,
+      type: String,
     },
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
   },
 );
 
 userSchema.index({ createdAt: -1 });
 
-userSchema.pre('save', async function (this:UserDocument, next:(err?:CallbackError)=>void) {
-  if (!this.isModified('password')) {
-    return next();
-  }
-  try{
-    if(this.password){
-      this.password = await bcrypt.hash(this.password, 12);
+userSchema.pre(
+  "save",
+  async function (this: UserDocument, next: (err?: CallbackError) => void) {
+    if (!this.isModified("password")) {
+      next();
+      return;
     }
-    next();
-  }catch(error){
-    next(error as CallbackError);
-  }
- 
-});
+    try {
+      if (this.password) {
+        this.password = await bcrypt.hash(this.password, 12);
+      }
+      next();
+    } catch (error) {
+      next(error as CallbackError);
+    }
+  },
+);
 
-userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
+userSchema.plugin(mongoosePaginate);
 
-userSchema.statics.findActive = function () {
-  return this.find({ isActive: true });
-};
+export interface UserDocument extends IUser, Document {}
 
-userSchema.plugin(mongoosePaginate as any);
-
-export const UserModel = model<IUser,UserModelType>('User', userSchema);
+export const UserModel = model<UserDocument, PaginateModel<UserDocument>>(
+  "User",
+  userSchema,
+  "User",
+);

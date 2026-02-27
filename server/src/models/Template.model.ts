@@ -1,227 +1,175 @@
-import { Schema, model, HydratedDocument, PaginateModel } from 'mongoose';
-import mongoosePaginate from 'mongoose-paginate-v2';
 import {
-  SPLIT_TYPES,
+  type PaginateModel,
+  type Document,
+  model,
+  Schema,
+  Types,
+} from "mongoose";
+import mongoosePaginate from "mongoose-paginate-v2";
+
+import {
   DIFFICULTIES,
   GOALS,
-} from '../types/enums.types.js';
-import { ITemplate } from '../interfaces';
+  SPLIT_TYPES,
+  type Goal,
+  type Difficulty,
+  type SplitType,
+} from "../types/enums.types.js";
 
-interface ITemplateMethods {}
+export interface ITemplate {
+  createdAt?: Date;
+  createdBy: string;
+  daysPerWeek: number;
+  description?: string;
+  difficulty: Difficulty;
+  goals: Goal[];
+  isActive: boolean;
+  name: string;
+  splitType: SplitType;
+  updatedAt?: Date;
+  workouts: {
+    dayNumber: number;
+    exercises: {
+      exerciseId: string | Types.ObjectId;
+      notes?: string;
+      order: number;
+      targetReps: number;
+      targetRir: number;
+      targetSets: number;
+    }[];
+    name: string;
+  }[];
+}
 
-interface TemplateModelType extends PaginateModel<TemplateDocument> {}
-
-export type TemplateDocument = HydratedDocument<ITemplate, ITemplateMethods>;
-
-const templateSchema = new Schema<ITemplate, TemplateModelType, ITemplateMethods>(
+const templateSchema = new Schema<TemplateDocument>(
   {
-    name: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      maxlength: [50, 'Name cannot exceed 50 characters'],
-    },
-
     createdBy: {
-      type: String,
-      minlength: [2, 'Owner name must be at least 2 characters'],
-      maxlength: [50, 'Owner name cannot exceed 50 characters'],
+      maxlength: [50, "Owner name cannot exceed 50 characters"],
+      minlength: [2, "Owner name must be at least 2 characters"],
+      required: true,
       trim: true,
-      required: true,
-    },
-
-    splitType: {
       type: String,
-      enum: SPLIT_TYPES,
-      default: 'other',
-      required: true,
-      lowercase: true,
     },
 
     daysPerWeek: {
-      type: Number,
-      min: [1, 'Must have at least 1 day per week'],
-      max: [14, 'Session number per week cannot exceed 14'],
+      max: [14, "Session number per week cannot exceed 14"],
+      min: [1, "Must have at least 1 day per week"],
       required: true,
+      type: Number,
     },
 
-    /* periodization: {
-      type: {
-        type: String,
-        enum: PERIODIZATION_TYPES,
-        required: true,
-        default: 'linear_rir',
-        lowercase: true,
-      },
+    description: {
+      maxlength: [500, "Description cannot exceed 500 characters"],
+      type: String,
+    },
 
-      config: {
-        weeks: {
-          type: Number,
-          min: [1, 'Mesocycle must be at least 1 week'],
-          max: [12, 'Mesocycle cannot exceed 12 weeks'],
-          required: true,
-        },
+    difficulty: {
+      enum: DIFFICULTIES,
+      lowercase: true,
+      required: true,
+      type: String,
+    },
 
-        rirProgression: {
-          type: [Number],
-          validate: {
-            validator: function (
-              this: { periodization?: { config?: { weeks?: number } } },
-              arr: number[],
-            ) {
-              if (
-                this.periodization?.config?.weeks &&
-                arr.length !== this.periodization.config.weeks
-              ) {
-                return false;
-              }
-              return arr.every((rir) => rir >= 0 && rir <= 10);
-            },
-            message: 'RIR progression must match week count and be between 0-10',
-          },
-        },
-
-        deloadWeek: {
-          type: Number,
-          min: [4, 'Deload weeks must be between 4-20'],
-          max: [20, 'Deload weeks must be between 4-20'],
-          validate: {
-            validator: function (
-              this: { periodization?: { config?: { weeks?: number } } },
-              value: number,
-            ) {
-              if (this.periodization?.config?.weeks && value > this.periodization.config.weeks) {
-                return false;
-              }
-              return true;
-            },
-            message: 'Deload week must be within mesocycle duration',
-          },
-        },
-
-        autoDeload: {
-          enabled: { type: Boolean, default: true },
-          triggerAfterFailures: {
-            type: Number,
-            default: 2,
-            min: [1, 'Must fail at least 1 session to trigger'],
-            max: [5, 'Trigger threshold too high'],
-          },
-          fatigueThreshold: {
-            type: Number,
-            default: 8,
-            min: [1, 'Fatigue threshold minimum is 1'],
-            max: [10, 'Fatigue threshold maximum is 10'],
-          },
-        },
-
-        volumeProgression: {
-          type: String,
-          enum: VOLUME_PROGRESSIONS,
-          default: 'static',
-          required: true,
+    goals: {
+      type: [
+        {
+          default: "hypertrophy",
+          enum: GOALS,
           lowercase: true,
+          required: true,
+          type: String,
         },
+      ],
+      validate: {
+        message: "Maximum of 3 goals",
+        validator: (arr: string[]) => arr.length >= 1 && arr.length <= 3,
       },
-    }, */
+    },
+
+    isActive: {
+      default: true,
+      type: Boolean,
+    },
+
+    name: {
+      maxlength: [50, "Name cannot exceed 50 characters"],
+      required: true,
+      trim: true,
+      type: String,
+      unique: true,
+    },
+
+    splitType: {
+      default: "other",
+      enum: SPLIT_TYPES,
+      lowercase: true,
+      required: true,
+      type: String,
+    },
 
     workouts: {
       type: [
         {
-          name: {
-            type: String,
-            maxlength: [50, 'Name cannot exceed 50 characters'],
-            required: true,
-            trim: true,
-          },
-
           dayNumber: {
+            min: [1, "Workout day must be at least 1"],
             type: Number,
-            min: [1, 'Workout day must be at least 1'],
           },
 
           exercises: {
             type: [
               {
                 exerciseId: {
+                  ref: "Exercise",
+                  required: true,
                   type: Schema.Types.ObjectId,
-                  ref: 'Exercise',
-                  required: true,
-                },
-                order: {
-                  type: Number,
-                  required: true,
-                  min: [1, 'Order must start at 1'],
-                },
-                targetSets: {
-                  type: Number,
-                  min: [1, 'Sets must be at least 1'],
-                  max: [20, 'Sets cannot exceed 20'],
-                  required: true,
-                },
-                targetReps: {
-                  type: Number,
-                  min: [1, 'Reps must be at least 1'],
-                  max: [100, 'Reps cannot exceed 100'],
-                  required: true,
-                },
-                targetRir: {
-                  type: Number,
-                  min: [0, 'Rir cannot be negative'],
-                  max: [10, 'Rir cannot be above 10'],
-                  required: true,
                 },
                 notes: {
+                  maxlength: [999, "Notes cannot exceed 999 characters"],
                   type: String,
-                  maxlength: [999, 'Notes cannot exceed 999 characters'],
+                },
+                order: {
+                  min: [1, "Order must start at 1"],
+                  required: true,
+                  type: Number,
+                },
+                targetReps: {
+                  max: [100, "Reps cannot exceed 100"],
+                  min: [1, "Reps must be at least 1"],
+                  required: true,
+                  type: Number,
+                },
+                targetRir: {
+                  max: [10, "Rir cannot be above 10"],
+                  min: [0, "Rir cannot be negative"],
+                  required: true,
+                  type: Number,
+                },
+                targetSets: {
+                  max: [20, "Sets cannot exceed 20"],
+                  min: [1, "Sets must be at least 1"],
+                  required: true,
+                  type: Number,
                 },
               },
             ],
             validate: {
+              message: "Workout must have at least 1 exercise",
               validator: (arr: unknown[]) => arr.length > 0,
-              message: 'Workout must have at least 1 exercise',
             },
+          },
+
+          name: {
+            maxlength: [50, "Name cannot exceed 50 characters"],
+            required: true,
+            trim: true,
+            type: String,
           },
         },
       ],
       validate: {
+        message: "Split must have at least 1 workout",
         validator: (arr: unknown[]) => arr.length > 0,
-        message: 'Split must have at least 1 workout',
       },
-    },
-
-    description: {
-      type: String,
-      maxlength: [500, 'Description cannot exceed 500 characters'],
-    },
-
-    difficulty: {
-      type: String,
-      enum: DIFFICULTIES,
-      required: true,
-      lowercase: true,
-    },
-
-    goals: {
-      type: [
-        {
-          type: String,
-          enum: GOALS,
-          required: true,
-          lowercase: true,
-          default: 'hypertrophy',
-        },
-      ],
-      validate: {
-        validator: (arr: string[]) => arr.length <= 3,
-        message: 'Maximum of 3 goals',
-      },
-    },
-
-    isActive: {
-      type: Boolean,
-      default: true,
     },
   },
   {
@@ -229,9 +177,11 @@ const templateSchema = new Schema<ITemplate, TemplateModelType, ITemplateMethods
   },
 );
 
-templateSchema.plugin(mongoosePaginate as any);
+templateSchema.plugin(mongoosePaginate);
 
-export const TemplateModel = model<ITemplate, TemplateModelType>(
-  'Template',
-  templateSchema,
-);
+export interface TemplateDocument extends ITemplate, Document {}
+
+export const TemplateModel = model<
+  TemplateDocument,
+  PaginateModel<TemplateDocument>
+>("Template", templateSchema, "Template");
