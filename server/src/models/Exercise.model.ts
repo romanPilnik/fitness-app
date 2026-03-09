@@ -18,7 +18,6 @@ export interface IExercise {
   category: ExerciseCategory;
   equipment: Equipment;
   instructions?: string;
-  isActive: boolean;
   movementPattern: MovementPattern;
   name: string;
   primaryMuscle: MuscleGroup;
@@ -44,11 +43,6 @@ const exerciseSchema = new Schema<ExerciseDocument>(
     instructions: {
       maxlength: [500, "Instructions cannot exceed 500 characters"],
       type: String,
-    },
-
-    isActive: {
-      default: true,
-      type: Boolean,
     },
 
     movementPattern: {
@@ -97,4 +91,4 @@ export interface ExerciseDocument extends IExercise, Document {}
 export const ExerciseModel = model<
   ExerciseDocument,
   PaginateModel<ExerciseDocument>
->("Exercise", exerciseSchema, "Exercise");
+>("Exercise", exerciseSchema, "Exercises");

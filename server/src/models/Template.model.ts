@@ -18,19 +18,18 @@ import {
 
 export interface ITemplate {
   createdAt?: Date;
-  createdBy: string;
+  createdBy: Types.ObjectId;
   daysPerWeek: number;
   description?: string;
   difficulty: Difficulty;
   goals: Goal[];
-  isActive: boolean;
   name: string;
   splitType: SplitType;
   updatedAt?: Date;
   workouts: {
     dayNumber: number;
     exercises: {
-      exerciseId: string | Types.ObjectId;
+      exerciseId: Types.ObjectId;
       notes?: string;
       order: number;
       targetReps: number;
@@ -44,11 +43,9 @@ export interface ITemplate {
 const templateSchema = new Schema<TemplateDocument>(
   {
     createdBy: {
-      maxlength: [50, "Owner name cannot exceed 50 characters"],
-      minlength: [2, "Owner name must be at least 2 characters"],
+      type: Schema.Types.ObjectId,
       required: true,
-      trim: true,
-      type: String,
+      ref: "User",
     },
 
     daysPerWeek: {
@@ -65,30 +62,18 @@ const templateSchema = new Schema<TemplateDocument>(
 
     difficulty: {
       enum: DIFFICULTIES,
-      lowercase: true,
       required: true,
       type: String,
     },
 
     goals: {
+      default: [],
       type: [
         {
-          default: "hypertrophy",
           enum: GOALS,
-          lowercase: true,
-          required: true,
           type: String,
         },
       ],
-      validate: {
-        message: "Maximum of 3 goals",
-        validator: (arr: string[]) => arr.length >= 1 && arr.length <= 3,
-      },
-    },
-
-    isActive: {
-      default: true,
-      type: Boolean,
     },
 
     name: {
@@ -102,7 +87,6 @@ const templateSchema = new Schema<TemplateDocument>(
     splitType: {
       default: "other",
       enum: SPLIT_TYPES,
-      lowercase: true,
       required: true,
       type: String,
     },
@@ -177,6 +161,12 @@ const templateSchema = new Schema<TemplateDocument>(
   },
 );
 
+templateSchema.index({ splitType: 1 });
+templateSchema.index({ difficulty: 1 });
+templateSchema.index({ goals: 1 });
+templateSchema.index({ createdAt: -1 });
+templateSchema.index({ name: "text" });
+
 templateSchema.plugin(mongoosePaginate);
 
 export interface TemplateDocument extends ITemplate, Document {}
@@ -184,4 +174,4 @@ export interface TemplateDocument extends ITemplate, Document {}
 export const TemplateModel = model<
   TemplateDocument,
   PaginateModel<TemplateDocument>
->("Template", templateSchema, "Template");
+>("Template", templateSchema, "Templates");

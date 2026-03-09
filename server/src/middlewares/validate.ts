@@ -1,37 +1,29 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { ValidationError } from "../errors/index.js";
-
-type ValidationSchema = z.ZodObject<{
-  body?: z.ZodType;
-  query?: z.ZodType;
-  params?: z.ZodType;
-}>;
+import { ValidationError } from "../errors/index";
 
 export const validate =
-  (schema: ValidationSchema) =>
-  async (req: Request, res: Response, next: NextFunction) => {
-    const result = await schema.safeParseAsync({
-      body: req.body,
+  (schema: z.ZodType) =>
+  (req: Request, _res: Response, next: NextFunction): void => {
+    const result = schema.safeParse({
+      body: req.body as unknown,
       query: req.query,
       params: req.params,
     });
 
     if (!result.success) {
-      next(
-        new ValidationError("Validation failed", result.error.issues),
-      ); return;
+      next(new ValidationError("Validation failed", result.error.issues));
+      return;
     }
 
-    const data = result.data as {
+    const { body, query, params } = result.data as {
       body?: unknown;
-      query?: unknown;
-      params?: unknown;
+      query?: typeof req.query;
+      params?: typeof req.params;
     };
-    if (data.body !== undefined) req.body = data.body;
-    if (data.query !== undefined) req.query = data.query as typeof req.query;
-    if (data.params !== undefined)
-      req.params = data.params as typeof req.params;
+    if (body !== undefined) req.body = body;
+    if (query !== undefined) req.query = query;
+    if (params !== undefined) req.params = params;
 
     next();
   };

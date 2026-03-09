@@ -129,5 +129,5 @@ export interface UserDocument extends IUser, Document {}
 export const UserModel = model<UserDocument, PaginateModel<UserDocument>>(
   "User",
   userSchema,
-  "User",
+  "Users",
 );

@@ -1,13 +1,9 @@
-import { UserModel } from "../../models/User.model.js";
-import { AppError } from "../../errors/AppError.js";
-import { ERROR_CODES } from "../../errors/index.js";
-import jwt from "jsonwebtoken";
-import type {
-  RegisterInputDTO,
-  LoginInputDTO,
-  AuthUserDTO,
-} from "./auth.dto.js";
-import { toAuthUserDTO } from "./auth.mapper.js";
+import { UserModel } from "../../models/User.model";
+import { AppError } from "../../errors/AppError";
+import { ERROR_CODES } from "../../errors/index";
+import type { RegisterInputDTO, LoginInputDTO, AuthUserDTO } from "./auth.dto";
+import { toAuthUserDTO } from "./auth.mapper";
+import bcrypt from "bcryptjs";
 
 async function register(input: RegisterInputDTO): Promise<AuthUserDTO> {
   const { email, password, name } = input;
@@ -44,7 +40,7 @@ async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
     );
   }
 
-  const isMatch = await user.comparePassword(password);
+  const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     throw new AppError(
       "Invalid email or password",
@@ -56,27 +52,7 @@ async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
   return toAuthUserDTO(user);
 }
 
-function generateAuthToken(userId: string): string {
-  const secret = process.env.JWT_SECRET;
-  const expiresIn: jwt.SignOptions["expiresIn"] =
-    (process.env.JWT_EXPIRE as jwt.SignOptions["expiresIn"]) ?? "7d";
-
-  if (!secret) {
-    throw new AppError(
-      "Server configuration error",
-      500,
-      ERROR_CODES.INTERNAL_ERROR,
-    );
-  }
-
-  return jwt.sign({ userId }, secret, {
-    expiresIn,
-    algorithm: "HS256",
-  });
-}
-
 export const AuthService = {
   register,
   login,
-  generateAuthToken,
 };

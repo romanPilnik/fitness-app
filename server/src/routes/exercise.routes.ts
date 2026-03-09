@@ -1,4 +1,4 @@
-import express from "express";
+import { Router } from "express";
 import { verifyToken } from "../middlewares/auth.middleware";
 import { requireRole } from "../middlewares/authorize.middleware";
 import { ExerciseController } from "../controllers/exercise.controller";
@@ -10,7 +10,7 @@ import {
   deleteExercise,
 } from "../validations/exercise.validation";
 
-const exerciseRouter = express.Router();
+const exerciseRouter = Router();
 
 exerciseRouter.get(
   "/",

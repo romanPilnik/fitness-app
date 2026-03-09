@@ -1,12 +1,13 @@
-import { UserModel } from "../../models/User.model.js";
-import { AppError } from "../../errors/AppError.js";
-import { ERROR_CODES } from "../../types/error.types.js";
+import { UserModel } from "../../models/User.model";
+import { AppError } from "../../errors/AppError";
+import { ERROR_CODES } from "../../types/error.types";
 import type {
   ChangePasswordInputDTO,
   UpdateUserInputDTO,
   UserDTO,
-} from "./user.dto.js";
-import { toUserDTO } from "./user.mapper.js";
+} from "./user.dto";
+import { toUserDTO } from "./user.mapper";
+import bcrypt from "bcryptjs";
 
 async function changePassword(input: ChangePasswordInputDTO): Promise<void> {
   const { userId, oldPassword, newPassword } = input;
@@ -16,20 +17,12 @@ async function changePassword(input: ChangePasswordInputDTO): Promise<void> {
   if (!user) {
     throw new AppError("User not found", 404, ERROR_CODES.NOT_FOUND);
   }
-
-  if (!(await user.comparePassword(oldPassword))) {
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isMatch) {
     throw new AppError(
-      "Current password is incorrect",
+      "Incorrect old password",
       401,
       ERROR_CODES.INVALID_CREDENTIALS,
-    );
-  }
-
-  if (!newPassword) {
-    throw new AppError(
-      "New password must be provided",
-      400,
-      ERROR_CODES.INVALID_INPUT,
     );
   }
 
@@ -46,15 +39,15 @@ async function changePassword(input: ChangePasswordInputDTO): Promise<void> {
 }
 
 async function updateUser(input: UpdateUserInputDTO): Promise<UserDTO> {
-  const { userId, profileUpdates } = input;
+  const { userId, updates } = input;
 
-  if (!profileUpdates || Object.keys(profileUpdates).length === 0) {
+  if (Object.keys(updates).length === 0) {
     throw new AppError("No fields to update", 400, ERROR_CODES.INVALID_INPUT);
   }
 
   const user = await UserModel.findByIdAndUpdate(
     userId,
-    { $set: profileUpdates },
+    { $set: updates },
     { new: true, runValidators: true },
   ).select("-password -__v");
 

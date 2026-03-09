@@ -50,7 +50,6 @@ export interface IProgram {
   nextWorkoutIndex: number;
   lastCompletedWorkoutDate?: Date;
   hasBeenModified: boolean;
-  isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -212,7 +211,6 @@ const programSchema = new Schema<ProgramDocument>(
     lastCompletedWorkoutDate: Date,
 
     hasBeenModified: { type: Boolean, default: false },
-    isActive: { type: Boolean, default: true },
   },
   {
     timestamps: true,
@@ -228,4 +226,4 @@ export interface ProgramDocument extends IProgram, Document {}
 export const ProgramModel = model<
   ProgramDocument,
   PaginateModel<ProgramDocument>
->("Program", programSchema, "Program");
+>("Program", programSchema, "Programs");

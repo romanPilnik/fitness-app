@@ -1,9 +1,9 @@
-import { AppError } from "./AppError.js";
+import { AppError } from "./AppError";
 import {
   ERROR_CODES,
   type ErrorCode,
   type ZodIssue,
-} from "../types/error.types.js";
+} from "../types/error.types";
 
 export class ValidationError extends AppError {
   public readonly issues: ZodIssue[];

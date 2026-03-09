@@ -27,7 +27,7 @@ async function getPrograms(
     throw new AppError("Invalid status filter", 400, ERROR_CODES.INVALID_INPUT);
   }
 
-  const query: Record<string, unknown> = { userId, isActive: true };
+  const query: Record<string, unknown> = { userId };
   if (filters.status) {
     query.status = filters.status;
   }
@@ -62,11 +62,7 @@ async function createFromTemplate(
 
   const programName = customizations?.name ?? template.name;
 
-  const existing = await ProgramModel.findOne({
-    userId,
-    name: programName,
-    isActive: true,
-  }).lean();
+  const existing = await ProgramModel.findOne({ userId, name: programName }).lean();
 
   if (existing) {
     throw new AppError(
@@ -105,11 +101,7 @@ async function createCustomProgram(
 ): Promise<ProgramDTO> {
   const { userId, name } = input;
 
-  const existing = await ProgramModel.findOne({
-    userId,
-    name,
-    isActive: true,
-  }).lean();
+  const existing = await ProgramModel.findOne({ userId, name }).lean();
 
   if (existing) {
     throw new AppError(
@@ -141,7 +133,6 @@ async function getActiveProgram(
   const program = await ProgramModel.findOne({
     userId,
     status: "active",
-    isActive: true,
   })
     .select("-__v")
     .lean();
@@ -163,7 +154,6 @@ async function getProgramById(
   const program = await ProgramModel.findOne({
     _id: programId,
     userId,
-    isActive: true,
   })
     .populate("workouts.exercises.exerciseId", "name")
     .select("-__v")
@@ -180,7 +170,7 @@ async function updateProgramById(
 ): Promise<ProgramDTO> {
   const { programId, userId, updates } = input;
   const updatedProgram = await ProgramModel.findOneAndUpdate(
-    { _id: programId, userId, isActive: true },
+    { _id: programId, userId },
     { $set: { ...updates, hasBeenModified: true } },
     { new: true, runValidators: true },
   ).lean();
@@ -195,15 +185,7 @@ async function updateProgramById(
 async function deleteProgramById(input: DeleteProgramInputDTO): Promise<void> {
   const { programId, userId } = input;
 
-  const deletedProgram = await ProgramModel.findOneAndUpdate(
-    {
-      _id: programId,
-      userId,
-      isActive: true,
-    },
-    { $set: { isActive: false } },
-    { new: true },
-  );
+  const deletedProgram = await ProgramModel.findOneAndDelete({ _id: programId, userId });
 
   if (!deletedProgram) {
     throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
@@ -219,7 +201,6 @@ async function updateProgress(
     _id: programId,
     userId,
     status: "active",
-    isActive: true,
   });
 
   if (!program) {

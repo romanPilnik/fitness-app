@@ -1,7 +1,7 @@
 import { ExerciseService } from '../services/exercise/exercise.service';
-import { RequestWithQuery } from '../types/express.types';
+import type { RequestWithQuery } from '../types/express.types';
 import { sendSuccess } from '../utils/response';
-import { GetExercisesInput } from '../validations/exercise.validation';
+import type { GetExercisesInput } from '../validations/exercise.validation';
 
 type GetExercisesQuery = GetExercisesInput['query'];
 type ExerciseFilters = {
@@ -42,7 +42,7 @@ const createExercise = async (req, res) => {
   return sendSuccess(res, newExercise, 201, 'Exercise created successfully');
 };
 
-const updateExercise = async (req, res) => {
+const updateExercise = async(req: RequestWithQuery<GetExercisesQuery>, res: Response) => {
   const updatedExercise = await ExerciseService.updateExercise(req.params.id, req.body);
 
   return sendSuccess(res, updatedExercise, 200, 'Exercise updated successfully');

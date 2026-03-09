@@ -1,4 +1,4 @@
-import type { ErrorCode, SerializedError } from "../types/error.types.js";
+import type { ErrorCode, SerializedError } from "../types/error.types";
 
 export class AppError extends Error {
   public readonly statusCode: number;

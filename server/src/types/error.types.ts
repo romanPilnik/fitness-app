@@ -18,7 +18,6 @@ export const ERROR_CODES = {
   PROGRAM_NOT_FOUND: "PROGRAM_NOT_FOUND",
   PROGRAM_TEMPLATE_NOT_FOUND: "PROGRAM_TEMPLATE_NOT_FOUND",
   SESSION_NOT_FOUND: "SESSION_NOT_FOUND",
-  EXERCISE_PROFILE_NOT_FOUND: "EXERCISE_PROFILE_NOT_FOUND",
 
   DUPLICATE_VALUE: "DUPLICATE_VALUE",
 
@@ -29,9 +28,7 @@ export const ERROR_CODES = {
   TEMPLATE_NAME_EXISTS: "TEMPLATE_NAME_EXISTS",
 
   INVALID_INPUT: "INVALID_INPUT",
-  CAST_ERROR: "CAST_ERROR",
   INVALID_STATUS: "INVALID_STATUS",
-  MISSING_REQUIRED_FIELD: "MISSING_REQUIRED_FIELD",
   PASSWORD_MISMATCH: "PASSWORD_MISMATCH",
 
   INTERNAL_ERROR: "INTERNAL_ERROR",
@@ -39,35 +36,12 @@ export const ERROR_CODES = {
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
-export interface ValidationErrorDetail {
-  field: string;
-  message: string;
-}
-
 export type ZodIssue = z.core.$ZodIssue;
-export interface ZodValidationError extends Error {
-  code: "VALIDATION_ERROR";
-  issues: ZodIssue[];
-}
+
 export interface SerializedError {
   message: string;
   code: ErrorCode;
   statusCode: number;
-  details?: ValidationErrorDetail[];
+  details?: ZodIssue[];
   stack?: string;
-}
-export interface MongooseValidationError extends Error {
-  name: "ValidationError";
-  errors: Record<string, { path: string; message: string }>;
-}
-
-export interface MongooseCastError extends Error {
-  name: "CastError";
-  path: string;
-  value: unknown;
-}
-
-export interface MongoDBDuplicateError extends Error {
-  code: 11000;
-  keyPattern: Record<string, unknown>;
 }

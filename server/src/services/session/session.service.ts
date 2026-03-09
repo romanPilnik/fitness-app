@@ -19,7 +19,7 @@ async function getSessions(
 ): Promise<PaginateResult<SessionSummaryDTO>> {
   const { userId, pagination = {} } = input;
 
-  const query = { userId, isActive: true };
+  const query = { userId };
 
   const paginateOptions = {
     page: pagination.page || 1,
@@ -41,7 +41,6 @@ async function getSessionById(
   const session = await SessionModel.findOne({
     _id: sessionId,
     userId,
-    isActive: true,
   })
     .select("-__v")
     .lean();
@@ -77,7 +76,6 @@ async function createSession(
     sessionDuration,
     notes,
     datePerformed: new Date(),
-    isActive: true,
   });
 
   const sessionDTO = toSessionDTO(session);
@@ -98,15 +96,7 @@ async function createSession(
 async function deleteSession(input: DeleteSessionInputDTO): Promise<void> {
   const { sessionId, userId } = input;
 
-  const session = await SessionModel.findOneAndUpdate(
-    {
-      _id: sessionId,
-      userId,
-      isActive: true,
-    },
-    { $set: { isActive: false } },
-    { new: true },
-  );
+  const session = await SessionModel.findOneAndDelete({ _id: sessionId, userId });
 
   if (!session) {
     throw new AppError("Session not found", 404, ERROR_CODES.NOT_FOUND);

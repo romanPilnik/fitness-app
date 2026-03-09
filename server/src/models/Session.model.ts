@@ -28,7 +28,6 @@ export interface ISession {
   datePerformed: Date;
   sessionDuration?: number;
   notes?: string;
-  isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -140,7 +139,6 @@ const sessionSchema = new Schema<SessionDocument>(
       maxlength: [999, "Notes cannot exceed 999 characters"],
     },
 
-    isActive: { type: Boolean, default: true },
   },
   {
     timestamps: true,
@@ -158,4 +156,4 @@ export interface SessionDocument extends ISession, Document {}
 export const SessionModel = model<
   SessionDocument,
   PaginateModel<SessionDocument>
->("Session", sessionSchema, "Session");
+>("Session", sessionSchema, "Sessions");

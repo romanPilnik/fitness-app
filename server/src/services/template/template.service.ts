@@ -1,27 +1,24 @@
 import type { PaginateResult } from "mongoose";
-import { AppError } from "../../errors/AppError.js";
-import { ERROR_CODES } from "../../types/error.types.js";
-import { TemplateModel } from "../../models/Template.model.js";
+import { AppError } from "../../errors/AppError";
+import { ERROR_CODES } from "../../types/error.types";
+import { TemplateModel } from "../../models/Template.model";
 import type {
   GetTemplatesInputDTO,
   GetTemplateByIdInputDTO,
   CreateTemplateInputDTO,
   UpdateTemplateInputDTO,
   DeleteTemplateInputDTO,
-  ProgramTemplateDTO,
-  ProgramTemplateSummaryDTO,
-} from "./template.dto.js";
-import {
-  mapPaginatedTemplates,
-  toProgramTemplateDTO,
-} from "./template.mapper.js";
+  TemplateDTO,
+  TemplateSummaryDTO,
+} from "./template.dto";
+import { mapPaginatedTemplates, toTemplateDTO } from "./template.mapper";
 
 async function getTemplates(
   input: GetTemplatesInputDTO = {},
-): Promise<PaginateResult<ProgramTemplateSummaryDTO>> {
+): Promise<PaginateResult<TemplateSummaryDTO>> {
   const { filters = {}, pagination = {} } = input;
 
-  const query: Record<string, unknown> = { isActive: true };
+  const query: Record<string, unknown> = {};
 
   if (filters.splitType) query.splitType = filters.splitType;
   if (filters.difficulty) query.difficulty = filters.difficulty;
@@ -38,7 +35,6 @@ async function getTemplates(
     limit: pagination.limit ?? 20,
     select: "-__v",
     sort: { createdAt: -1 },
-    lean: true,
   };
 
   const result = await TemplateModel.paginate(queryOptions, paginateOptions);
@@ -47,33 +43,26 @@ async function getTemplates(
 
 async function getTemplateById(
   input: GetTemplateByIdInputDTO,
-): Promise<ProgramTemplateDTO> {
+): Promise<TemplateDTO> {
   const { templateId } = input;
 
-  const template = await TemplateModel.findOne({
-    _id: templateId,
-    isActive: true,
-  })
+  const template = await TemplateModel.findById(templateId)
     .populate("workouts.exercises.exerciseId", "name")
-    .select("-__v")
-    .lean();
+    .select("-__v");
 
   if (!template) {
     throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  return toProgramTemplateDTO(template);
+  return toTemplateDTO(template);
 }
 
 async function createTemplate(
   input: CreateTemplateInputDTO,
-): Promise<ProgramTemplateDTO> {
-  const { templateData } = input;
-
+): Promise<TemplateDTO> {
   const existing = await TemplateModel.findOne({
-    name: templateData.name,
-    isActive: true,
-  }).lean();
+    name: input.name,
+  });
 
   if (existing) {
     throw new AppError(
@@ -83,60 +72,37 @@ async function createTemplate(
     );
   }
 
-  const template = new TemplateModel({
-    ...templateData,
-    isActive: true,
-  });
+  const template = new TemplateModel(input);
   const saved = await template.save();
+  await saved.populate("workouts.exercises.exerciseId", "name");
 
-  return toProgramTemplateDTO(saved);
+  return toTemplateDTO(saved);
 }
 
 async function updateTemplate(
   input: UpdateTemplateInputDTO,
-): Promise<ProgramTemplateDTO> {
+): Promise<TemplateDTO> {
   const { templateId, updates } = input;
 
-  const allowedUpdates = [
-    "name",
-    "description",
-    "difficulty",
-    "goals",
-    "workouts",
-    "daysPerWeek",
-    "splitType",
-  ];
-
-  const sanitizedUpdates: Record<string, unknown> = {};
-  Object.keys(updates).forEach((key) => {
-    if (allowedUpdates.includes(key)) {
-      sanitizedUpdates[key] = updates[key as keyof typeof updates];
-    }
-  });
-
-  const template = await TemplateModel.findOneAndUpdate(
-    { _id: templateId, isActive: true },
-    { $set: sanitizedUpdates },
+  const template = await TemplateModel.findByIdAndUpdate(
+    templateId,
+    { $set: updates },
     { new: true, runValidators: true },
   )
     .select("-__v")
-    .lean();
+    .populate("workouts.exercises.exerciseId", "name");
 
   if (!template) {
     throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  return toProgramTemplateDTO(template);
+  return toTemplateDTO(template);
 }
 
 async function deleteTemplate(input: DeleteTemplateInputDTO): Promise<void> {
   const { templateId } = input;
 
-  const template = await TemplateModel.findOneAndUpdate(
-    { _id: templateId, isActive: true },
-    { $set: { isActive: false } },
-    { new: true },
-  );
+  const template = await TemplateModel.findByIdAndDelete(templateId);
 
   if (!template) {
     throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
