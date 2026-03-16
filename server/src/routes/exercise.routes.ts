@@ -4,23 +4,24 @@ import { requireRole } from "../middlewares/authorize.middleware";
 import { ExerciseController } from "../controllers/exercise.controller";
 import { validate } from "../middlewares/validate";
 import {
-  getExercises,
-  getExerciseById,
-  createExercise,
-  deleteExercise,
+  getExercisesSchema,
+  getExerciseByIdSchema,
+  createExerciseSchema,
+  deleteExerciseSchema,
+  updateExerciseSchema,
 } from "../validations/exercise.validation";
 
 const exerciseRouter = Router();
 
 exerciseRouter.get(
   "/",
-  validate(getExercises),
+  validate(getExercisesSchema),
   ExerciseController.getExercises,
 );
 
 exerciseRouter.get(
   "/:id",
-  validate(getExerciseById),
+  validate(getExerciseByIdSchema),
   ExerciseController.getExerciseById,
 );
 
@@ -28,15 +29,14 @@ exerciseRouter.post(
   "/",
   verifyToken,
   requireRole("admin"),
-  validate(createExercise),
+  validate(createExerciseSchema),
   ExerciseController.createExercise,
 );
 
 exerciseRouter.patch(
   "/:id",
   verifyToken,
-  requireRole("admin"),
-  validate(getExercises),
+  validate(updateExerciseSchema),
   ExerciseController.updateExercise,
 );
 
@@ -44,8 +44,8 @@ exerciseRouter.delete(
   "/:id",
   verifyToken,
   requireRole("admin"),
-  validate(deleteExercise),
+  validate(deleteExerciseSchema),
   ExerciseController.deleteExercise,
 );
 
-module.exports = exerciseRouter;
+export default exerciseRouter;

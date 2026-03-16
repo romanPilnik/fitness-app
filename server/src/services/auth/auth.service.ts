@@ -1,14 +1,16 @@
-import { UserModel } from "../../models/User.model";
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODES } from "../../errors/index";
-import type { RegisterInputDTO, LoginInputDTO, AuthUserDTO } from "./auth.dto";
-import { toAuthUserDTO } from "./auth.mapper";
+import type { RegisterUserDTO, LoginUserDTO } from "./auth.dtos";
+import type { UserModel } from "../../generated/prisma/models";
+import { prisma } from "../../lib/prisma";
 import bcrypt from "bcryptjs";
 
-async function register(input: RegisterInputDTO): Promise<AuthUserDTO> {
+async function register(
+  input: RegisterUserDTO,
+): Promise<Omit<UserModel, "password">> {
   const { email, password, name } = input;
 
-  const existingUser = await UserModel.findOne({ email });
+  const existingUser = await prisma.user.findUnique({ where: { email } });
 
   if (existingUser) {
     throw new AppError(
@@ -17,20 +19,24 @@ async function register(input: RegisterInputDTO): Promise<AuthUserDTO> {
       ERROR_CODES.DUPLICATE_VALUE,
     );
   }
-
-  const newUser = new UserModel({
-    email,
-    password,
-    name,
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      name,
+    },
   });
-  const savedUser = await newUser.save();
-  return toAuthUserDTO(savedUser);
+  const { password: _, ...safeUser } = newUser;
+  return safeUser;
 }
 
-async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
+async function login(
+  input: LoginUserDTO,
+): Promise<Omit<UserModel, "password">> {
   const { email, password } = input;
 
-  const user = await UserModel.findOne({ email }).select("+password");
+  const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
     throw new AppError(
@@ -48,8 +54,9 @@ async function login(input: LoginInputDTO): Promise<AuthUserDTO> {
       ERROR_CODES.INVALID_CREDENTIALS,
     );
   }
+  const { password: _, ...safeUser } = user;
 
-  return toAuthUserDTO(user);
+  return safeUser;
 }
 
 export const AuthService = {

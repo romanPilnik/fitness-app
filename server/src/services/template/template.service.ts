@@ -1,17 +1,5 @@
-import type { PaginateResult } from "mongoose";
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODES } from "../../types/error.types";
-import { TemplateModel } from "../../models/Template.model";
-import type {
-  GetTemplatesInputDTO,
-  GetTemplateByIdInputDTO,
-  CreateTemplateInputDTO,
-  UpdateTemplateInputDTO,
-  DeleteTemplateInputDTO,
-  TemplateDTO,
-  TemplateSummaryDTO,
-} from "./template.dto";
-import { mapPaginatedTemplates, toTemplateDTO } from "./template.mapper";
 
 async function getTemplates(
   input: GetTemplatesInputDTO = {},

@@ -6,7 +6,6 @@
     "target": "esnext",
     "lib": ["esnext"],
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",

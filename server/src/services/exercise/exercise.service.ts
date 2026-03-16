@@ -1,91 +1,110 @@
-import { ExerciseModel } from "../../models/Exercise.model";
-import type { PaginateResult } from "mongoose";
+import type { ExerciseModel } from "../../generated/prisma/models/Exercise";
+import type {
+  getExercisesDTO,
+  getExerciseByIdDTO,
+  createExerciseDTO,
+  updateExerciseDTO,
+  deleteExerciseDTO,
+} from "./exercise.dtos";
+import { prisma } from "../../lib/prisma";
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODES } from "../../types/error.types";
-import type {
-  GetExercisesInputDTO,
-  GetExerciseByIdInputDTO,
-  CreateExerciseInputDTO,
-  UpdateExerciseInputDTO,
-  DeleteExerciseInputDTO,
-  ExerciseDTO,
-} from "./exercise.dto";
-import { mapPaginatedExercises, toExerciseDTO } from "./exercise.mapper";
+import type { Prisma } from "../../generated/prisma/client";
+import {
+  buildCursorArgs,
+  paginateCursorResult,
+  type CursorPage,
+} from "../../lib/pagination";
 
 async function getExercises(
-  input: GetExercisesInputDTO = {},
-): Promise<PaginateResult<ExerciseDTO>> {
-  const { filters = {}, pagination = {} } = input;
+  input: getExercisesDTO,
+): Promise<CursorPage<ExerciseModel>> {
+  const { primaryMuscle, equipment, category, movementPattern, userId } = input;
+  const { cursor, limit } = input;
+  const items = await prisma.exercise.findMany({
+    where: {
+      primaryMuscle,
+      equipment,
+      category,
+      movementPattern,
+      OR: [{ createdByUserId: null }, { createdByUserId: userId }],
+    },
+    orderBy: { id: "asc" },
+    ...buildCursorArgs({ cursor, limit }),
+  });
 
-  const query = {
-    ...filters,
-  };
-
-  const textFilter = pagination.q ? { $text: { $search: pagination.q } } : {};
-  const queryOptions = { ...query, ...textFilter };
-
-  const paginationOptions = {
-    page: pagination.page ?? 1,
-    limit: pagination.limit ?? 20,
-    select: "-__v",
-  };
-
-  const result = await ExerciseModel.paginate(queryOptions, paginationOptions);
-  return mapPaginatedExercises(result);
+  return paginateCursorResult(items, limit);
 }
 
 async function getExerciseById(
-  input: GetExerciseByIdInputDTO,
-): Promise<ExerciseDTO> {
-  const { exerciseId } = input;
+  input: getExerciseByIdDTO,
+): Promise<ExerciseModel> {
+  const { id } = input;
 
-  const exercise = await ExerciseModel.findById(exerciseId);
+  const exercise = await prisma.exercise.findUnique({ where: { id } });
   if (!exercise) {
     throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
   }
-  return toExerciseDTO(exercise);
+  return exercise;
 }
 
 async function createExercise(
-  input: CreateExerciseInputDTO,
-): Promise<ExerciseDTO> {
-  const existing = await ExerciseModel.findOne({ name: input.name });
-  if (existing) {
-    throw new AppError(
-      "Exercise with this name already exists",
-      409,
-      ERROR_CODES.DUPLICATE_VALUE,
-    );
-  }
-
-  const exercise = new ExerciseModel(input);
-  await exercise.save();
-  return toExerciseDTO(exercise);
+  input: createExerciseDTO,
+): Promise<ExerciseModel> {
+  const data: Prisma.ExerciseUncheckedCreateInput = input;
+  const exercise = await prisma.exercise.create({ data });
+  return exercise;
 }
 
 async function updateExercise(
-  input: UpdateExerciseInputDTO,
-): Promise<ExerciseDTO> {
-  const { exerciseId, updates } = input;
+  input: updateExerciseDTO,
+): Promise<ExerciseModel> {
+  const { id, userId } = input;
 
-  const updatedExercise = await ExerciseModel.findByIdAndUpdate(
-    exerciseId,
-    { $set: updates },
-    { new: true, runValidators: true },
-  );
-  if (!updatedExercise) {
+  const existing = await prisma.exercise.findUnique({ where: { id } });
+  if (!existing) {
     throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
   }
-  return toExerciseDTO(updatedExercise);
+  if (existing.createdByUserId !== userId) {
+    throw new AppError("Insufficient permissions", 403, ERROR_CODES.INSUFFICIENT_PERMISSIONS);
+  }
+
+  const {
+    name,
+    equipment,
+    primaryMuscle,
+    secondaryMuscles,
+    category,
+    movementPattern,
+    instructions,
+  } = input;
+  const updatedExercise = await prisma.exercise.update({
+    where: { id },
+    data: {
+      name,
+      equipment,
+      primaryMuscle,
+      secondaryMuscles,
+      category,
+      movementPattern,
+      instructions,
+    },
+  });
+  return updatedExercise;
 }
 
-async function deleteExercise(input: DeleteExerciseInputDTO): Promise<void> {
-  const { exerciseId } = input;
+async function deleteExercise(input: deleteExerciseDTO): Promise<void> {
+  const { id, userId } = input;
 
-  const deletedExercise = await ExerciseModel.findByIdAndDelete(exerciseId);
-  if (!deletedExercise) {
+  const existing = await prisma.exercise.findUnique({ where: { id } });
+  if (!existing) {
     throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
   }
+  if (existing.createdByUserId !== userId) {
+    throw new AppError("Insufficient permissions", 403, ERROR_CODES.INSUFFICIENT_PERMISSIONS);
+  }
+
+  await prisma.exercise.delete({ where: { id } });
 }
 
 export const ExerciseService = {

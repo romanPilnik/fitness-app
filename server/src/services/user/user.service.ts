@@ -1,18 +1,14 @@
-import { UserModel } from "../../models/User.model";
 import { AppError } from "../../errors/AppError";
 import { ERROR_CODES } from "../../types/error.types";
-import type {
-  ChangePasswordInputDTO,
-  UpdateUserInputDTO,
-  UserDTO,
-} from "./user.dto";
-import { toUserDTO } from "./user.mapper";
 import bcrypt from "bcryptjs";
+import type { ChangePasswordDTO, UpdateUserDTO } from "./user.dtos";
+import { prisma } from "../../lib/prisma";
+import type { UserModel } from "../../generated/prisma/models";
 
-async function changePassword(input: ChangePasswordInputDTO): Promise<void> {
-  const { userId, oldPassword, newPassword } = input;
+async function changePassword(input: ChangePasswordDTO): Promise<void> {
+  const { id, oldPassword, newPassword } = input;
 
-  const user = await UserModel.findById(userId).select("+password");
+  const user = await prisma.user.findUnique({ where: { id } });
 
   if (!user) {
     throw new AppError("User not found", 404, ERROR_CODES.NOT_FOUND);
@@ -33,29 +29,25 @@ async function changePassword(input: ChangePasswordInputDTO): Promise<void> {
       ERROR_CODES.INVALID_INPUT,
     );
   }
-
-  user.password = newPassword;
-  await user.save();
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id },
+    data: { password: hashedPassword },
+  });
 }
 
-async function updateUser(input: UpdateUserInputDTO): Promise<UserDTO> {
-  const { userId, updates } = input;
+async function updateUser(
+  input: UpdateUserDTO,
+): Promise<Omit<UserModel, "password">> {
+  const { id, name, units, weekStartsOn } = input;
 
-  if (Object.keys(updates).length === 0) {
-    throw new AppError("No fields to update", 400, ERROR_CODES.INVALID_INPUT);
-  }
+  const user = await prisma.user.update({
+    where: { id },
+    data: { name, units, weekStartsOn },
+  });
 
-  const user = await UserModel.findByIdAndUpdate(
-    userId,
-    { $set: updates },
-    { new: true, runValidators: true },
-  ).select("-password -__v");
-
-  if (!user) {
-    throw new AppError("User not found", 404, ERROR_CODES.NOT_FOUND);
-  }
-
-  return toUserDTO(user);
+  const { password: _, ...safeUser } = user;
+  return safeUser;
 }
 
 export const UserService = {

@@ -1,92 +1,71 @@
 import { z } from "zod";
 import {
-  muscleGroupEnum,
-  equipmentEnum,
-  exerciseCategoryEnum,
-  movementPatternEnum,
-} from "./shared.js";
+  MuscleGroup,
+  Equipment,
+  ExerciseCategory,
+  MovementPattern,
+} from "../generated/prisma/enums";
+import { cursorPaginationSchema } from "../lib/pagination";
 
-export const getExercises = z.object({
-  query: z.object({
-    primaryMuscle: muscleGroupEnum.optional(),
-    equipment: equipmentEnum.optional(),
-    category: exerciseCategoryEnum.optional(),
-    movementPattern: movementPatternEnum.optional(),
-  }),
+export const getExercisesSchema = z.object({
+  query: z
+    .object({
+      primaryMuscle: z.enum(MuscleGroup).optional(),
+      equipment: z.enum(Equipment).optional(),
+      category: z.enum(ExerciseCategory).optional(),
+      movementPattern: z.enum(MovementPattern).optional(),
+    })
+    .extend(cursorPaginationSchema.shape),
 });
 
-export const getExerciseById = z.object({
+export const getExerciseByIdSchema = z.object({
   params: z.object({
-    id: z.string(),
+    id: z.cuid(),
   }),
 });
 
-const rangeSchema = z
-  .object({
-    min: z.number().optional(),
-    max: z.number().optional(),
-  })
-  .optional();
-
-export const createExercise = z.object({
+export const createExerciseSchema = z.object({
   body: z.object({
     name: z.string().max(50),
-    equipment: equipmentEnum,
-    primaryMuscle: muscleGroupEnum,
-    secondaryMuscles: z.array(muscleGroupEnum).max(3).optional(),
-    category: exerciseCategoryEnum,
-    movementPattern: movementPatternEnum,
-    typicalRepRange: z
-      .object({
-        min: z.number().min(1).max(50).optional(),
-        max: z.number().min(1).max(50).optional(),
-      })
-      .optional(),
-    rirBoundaries: z
-      .object({
-        min: z.number().min(0).max(10).optional(),
-        max: z.number().min(0).max(10).optional(),
-      })
-      .optional(),
+    equipment: z.enum(Equipment),
+    primaryMuscle: z.enum(MuscleGroup),
+    secondaryMuscles: z.array(z.enum(MuscleGroup)).max(3).default([]),
+    category: z.enum(ExerciseCategory),
+    movementPattern: z.enum(MovementPattern),
     instructions: z.string().max(500).optional(),
   }),
 });
 
-export const updateExercise = z.object({
+export const updateExerciseSchema = z.object({
   params: z.object({
-    id: z.string(),
+    id: z.cuid(),
   }),
   body: z.object({
     name: z.string().max(50).optional(),
-    equipment: equipmentEnum.optional(),
-    primaryMuscle: muscleGroupEnum.optional(),
-    secondaryMuscles: z.array(muscleGroupEnum).max(3).optional(),
-    category: exerciseCategoryEnum.optional(),
-    movementPattern: movementPatternEnum.optional(),
-    typicalRepRange: z
-      .object({
-        min: z.number().min(1).max(50).optional(),
-        max: z.number().min(1).max(50).optional(),
-      })
-      .optional(),
-    rirBoundaries: z
-      .object({
-        min: z.number().min(0).max(10).optional(),
-        max: z.number().min(0).max(10).optional(),
-      })
-      .optional(),
+    equipment: z.enum(Equipment).optional(),
+    primaryMuscle: z.enum(MuscleGroup).optional(),
+    secondaryMuscles: z.array(z.enum(MuscleGroup)).max(3).optional(),
+    category: z.enum(ExerciseCategory).optional(),
+    movementPattern: z.enum(MovementPattern).optional(),
     instructions: z.string().max(500).optional(),
   }),
 });
 
-export const deleteExercise = z.object({
+export const deleteExerciseSchema = z.object({
   params: z.object({
-    id: z.string(),
+    id: z.cuid(),
   }),
 });
 
-export type GetExercisesInput = z.infer<typeof getExercises>;
-export type GetExerciseByIdInput = z.infer<typeof getExerciseById>;
-export type CreateExerciseInput = z.infer<typeof createExercise>;
-export type UpdateExerciseInput = z.infer<typeof updateExercise>;
-export type DeleteExerciseInput = z.infer<typeof deleteExercise>;
+export type GetExercisesQuery = z.infer<typeof getExercisesSchema>["query"];
+export type GetExerciseByIdParams = z.infer<
+  typeof getExerciseByIdSchema
+>["params"];
+export type CreateExerciseBody = z.infer<typeof createExerciseSchema>["body"];
+export type UpdateExerciseParams = z.infer<
+  typeof updateExerciseSchema
+>["params"];
+export type UpdateExerciseBody = z.infer<typeof updateExerciseSchema>["body"];
+export type DeleteExerciseParams = z.infer<
+  typeof deleteExerciseSchema
+>["params"];

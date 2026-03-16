@@ -1,22 +1,13 @@
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../errors/AppError.js";
-import { ERROR_CODES } from "../types/error.types.js";
-import { UserModel } from "../models/User.model.js";
-import type { RequestUser } from "../types/express.types.js";
+import { AppError } from "../errors/AppError";
+import { ERROR_CODES } from "../types/error.types";
+import { prisma } from "../lib/prisma";
 
 interface JwtPayload {
   userId: string;
   iat?: number;
   exp?: number;
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: RequestUser;
-    }
-  }
 }
 
 async function verifyToken(
@@ -69,9 +60,20 @@ async function verifyToken(
       );
     }
 
-    const user = await UserModel.findById(decoded.userId)
-      .select("-password")
-      .lean();
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        units: true,
+        weekStartsOn: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
     if (!user) {
       throw new AppError("User not found", 401, ERROR_CODES.INVALID_TOKEN);
@@ -85,16 +87,7 @@ async function verifyToken(
       );
     }
 
-    req.user = {
-      _id: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      isActive: user.isActive,
-      preferences: user.preferences,
-      createdAt: user.createdAt ?? new Date(),
-      updatedAt: user.updatedAt ?? new Date(),
-    };
+    req.user = user;
 
     next();
   } catch (error) {

@@ -1,54 +1,41 @@
 import { sendSuccess } from "../utils/response";
 import { UserService } from "../services/user/user.service";
+import { AppError } from "../errors/AppError";
+import { ERROR_CODES } from "../types/error.types";
+import type { Request, Response } from "express";
 import type {
-  AuthenticatedRequest,
-  AuthenticatedRequestWithBody,
-} from "../types/express.types";
-import type { Response } from "express";
-import type {
-  UpdateUserInput,
-  ChangePasswordInput,
+  UpdateUserBody,
+  ChangePasswordBody,
 } from "../validations/user.validation";
 
-type UpdateUserBody = UpdateUserInput["body"];
-type ChangePasswordBody = ChangePasswordInput["body"];
-
-// Doesnt use DTO, consider changing in the future
-async function getCurrentUser(req: AuthenticatedRequest, res: Response) {
+function getCurrentUser(req: Request, res: Response) {
   return sendSuccess(res, req.user, 200, "User retrieved");
 }
 
 async function updateCurrentUser(
-  req: AuthenticatedRequestWithBody<UpdateUserBody>,
+  req: Request<object, object, UpdateUserBody>,
   res: Response,
 ) {
-  const allowedUpdates = [
-    "name",
-    "preferences.units",
-    "preferences.weekStartsOn",
-  ];
-  const updates: Partial<UpdateUserBody> = {};
-
-  if (updates.name) updates.name = req.body.name;
-  if (req.body.preferences) {
-    updates.preferences = {};
-    if (req.body.preferences.units)
-      updates.preferences.units = req.body.preferences.units;
-    if (req.body.preferences.weekStartsOn)
-      updates.preferences.weekStartsOn = req.body.preferences.weekStartsOn;
-  }
-  const userId = req.user.id;
-  const user = await UserService.updateUser({ userId: userId, updates });
+  if (!req.user) throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+  const { id } = req.user;
+  const { name, units, weekStartsOn } = req.body;
+  const user = await UserService.updateUser({
+    id,
+    name,
+    units,
+    weekStartsOn,
+  });
   return sendSuccess(res, user, 200, "User updated");
 }
 
 async function changePassword(
-  req: AuthenticatedRequestWithBody<ChangePasswordBody>,
+  req: Request<object, object, ChangePasswordBody>,
   res: Response,
 ) {
+  if (!req.user) throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+  const { id } = req.user;
   const { oldPassword, newPassword } = req.body;
-  const userId = req.user.id;
-  await UserService.changePassword({ userId, oldPassword, newPassword });
+  await UserService.changePassword({ id, oldPassword, newPassword });
   sendSuccess(res, null, 200, "Password changed successfully");
 }
 

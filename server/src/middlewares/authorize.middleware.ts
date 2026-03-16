@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../errors/AppError.js";
-import { ERROR_CODES } from "../types/error.types.js";
-import type { UserRole } from "../types/enums.types.js";
+import { AppError } from "../errors/AppError";
+import { ERROR_CODES } from "../types/error.types";
+import { Role } from "../generated/prisma/enums";
 
-function requireRole(...allowedRoles: UserRole[]) {
+function requireRole(...allowedRoles: Role[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {

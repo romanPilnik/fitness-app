@@ -1,19 +1,19 @@
-import type { Response } from "express";
-import type { RequestWithBody } from "../types/express.types";
+import type { Request, Response } from "express";
 import type {
-  LoginUserInput,
-  RegisterUserInput,
+  RegisterUserBody,
+  LoginUserBody,
 } from "../validations/auth.validation";
 import { AuthService } from "../services/auth/auth.service";
 import { sendSuccess } from "../utils/response";
+import generateAuthToken from "../services/auth/auth.helpers";
 
-type RegisterBody = RegisterUserInput["body"];
-type LoginBody = LoginUserInput["body"];
-
-async function registerUser(req: RequestWithBody<RegisterBody>, res: Response) {
+async function registerUser(
+  req: Request<object, object, RegisterUserBody>,
+  res: Response,
+) {
   const { email, password, name } = req.body;
   const user = await AuthService.register({ email, password, name });
-  const token = AuthService.generateAuthToken(user.id);
+  const token = generateAuthToken(user.id);
   return sendSuccess(
     res,
     {
@@ -29,10 +29,13 @@ async function registerUser(req: RequestWithBody<RegisterBody>, res: Response) {
   );
 }
 
-async function loginUser(req: RequestWithBody<LoginBody>, res: Response) {
+async function loginUser(
+  req: Request<object, object, LoginUserBody>,
+  res: Response,
+) {
   const { email, password } = req.body;
   const user = await AuthService.login({ email, password });
-  const token = AuthService.generateAuthToken(user.id);
+  const token = generateAuthToken(user.id);
 
   return sendSuccess(
     res,

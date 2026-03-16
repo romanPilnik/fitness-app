@@ -141,7 +141,7 @@ model Exercise {
   equipment        Equipment        @default(none)
   movementPattern  MovementPattern
   primaryMuscle    MuscleGroup
-  secondaryMuscles MuscleGroup[]
+  secondaryMuscles MuscleGroup[]    @default([])
   instructions     String?
   createdByUserId  String?
   createdAt        DateTime         @default(now())

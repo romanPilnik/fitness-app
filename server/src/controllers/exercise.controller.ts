@@ -1,58 +1,80 @@
-import { ExerciseService } from '../services/exercise/exercise.service';
-import type { RequestWithQuery } from '../types/express.types';
-import { sendSuccess } from '../utils/response';
-import type { GetExercisesInput } from '../validations/exercise.validation';
+import { ExerciseService } from "../services/exercise/exercise.service";
+import { sendSuccess } from "../utils/response";
+import { AppError } from "../errors/AppError";
+import { ERROR_CODES } from "../types/error.types";
+import type { Request, Response } from "express";
+import {
+  type CreateExerciseBody,
+  type DeleteExerciseParams,
+  type GetExerciseByIdParams,
+  type GetExercisesQuery,
+  type UpdateExerciseBody,
+  type UpdateExerciseParams,
+} from "../validations/exercise.validation";
 
-type GetExercisesQuery = GetExercisesInput['query'];
-type ExerciseFilters = {
-  primaryMuscle?: string;
-  equipment?: string;
-  category?: string;
-  movementPattern?: string;
-};
+async function getExercises(req: Request, res: Response) {
+  const query = req.query as unknown as GetExercisesQuery;
+  const result = await ExerciseService.getExercises({
+    ...query,
+    userId: req.user?.id,
+  });
+  return sendSuccess(res, result, 200, "Exercises retrieved successfully");
+}
 
-async function getExercises(req: RequestWithQuery<GetExercisesQuery>, res: Response){
-  const filters: ExerciseFilters = {};
-  if (req.query.primaryMuscle && req.query.primaryMuscle!== undefined) {
-    filters.primaryMuscle = req.query.primaryMuscle;
-  }
-  if (req.query.equipment) {
-    filters.equipment = req.query.equipment;
-  }
-  if (req.query.category) {
-    filters.category = req.query.category;
-  }
-  if (req.query.movementPattern) {
-    filters.movementPattern = req.query.movementPattern;
-  }
+async function getExerciseById(
+  req: Request<GetExerciseByIdParams>,
+  res: Response,
+) {
+  const { id } = req.params;
+  const exercise = await ExerciseService.getExerciseById({ id });
+  return sendSuccess(res, exercise, 200, "Exercise retrieved successfully");
+}
 
-  const result = await ExerciseService.getExercises({ filters, req.query });
-  return sendSuccess(res, result, 200, 'Exercises retrieved successfully');
-};
+async function createExercise(
+  req: Request<object, object, CreateExerciseBody>,
+  res: Response,
+) {
+  if (!req.user)
+    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+  const createdByUserId = req.user.role === "admin" ? null : req.user.id;
+  const newExercise = await ExerciseService.createExercise({
+    ...req.body,
+    createdByUserId,
+  });
+  return sendSuccess(res, newExercise, 201, "Exercise created successfully");
+}
 
-const getExerciseById = async (req, res) => {
-  const exercise = await ExerciseService.getExerciseById(req.params.id);
+async function updateExercise(
+  req: Request<UpdateExerciseParams, object, UpdateExerciseBody>,
+  res: Response,
+) {
+  if (!req.user)
+    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+  const { id } = req.params;
+  const { body } = req;
+  const updatedExercise = await ExerciseService.updateExercise({
+    id,
+    userId: req.user.id,
+    ...body,
+  });
+  return sendSuccess(
+    res,
+    updatedExercise,
+    200,
+    "Exercise updated successfully",
+  );
+}
 
-  return sendSuccess(res, exercise, 200, 'Exercise retrieved successfully');
-};
-
-const createExercise = async (req, res) => {
-  const newExercise = await ExerciseService.createExercise(req.body);
-
-  return sendSuccess(res, newExercise, 201, 'Exercise created successfully');
-};
-
-const updateExercise = async(req: RequestWithQuery<GetExercisesQuery>, res: Response) => {
-  const updatedExercise = await ExerciseService.updateExercise(req.params.id, req.body);
-
-  return sendSuccess(res, updatedExercise, 200, 'Exercise updated successfully');
-};
-
-const deleteExercise = async (req, res) => {
-  await ExerciseService.deleteExercise(req.params.id);
-
+async function deleteExercise(
+  req: Request<DeleteExerciseParams>,
+  res: Response,
+) {
+  if (!req.user)
+    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+  const { id } = req.params;
+  await ExerciseService.deleteExercise({ id, userId: req.user.id });
   return sendSuccess(res, null, 204);
-};
+}
 
 export const ExerciseController = {
   getExercises,

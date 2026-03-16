@@ -1,16 +1,13 @@
 import { z } from "zod";
-import { passwordRegex, unitsEnum, weekStartsOnEnum } from "./shared.js";
+import { passwordRegex } from "./shared";
+import { Units, WeekStartsOn } from "../generated/prisma/enums";
 
 export const updateUser = z.object({
   body: z
     .object({
       name: z.string().min(2).max(50).trim().optional(),
-      preferences: z
-        .object({
-          units: unitsEnum.optional(),
-          weekStartsOn: weekStartsOnEnum.optional(),
-        })
-        .optional(),
+      units: z.enum(Units).optional(),
+      weekStartsOn: z.enum(WeekStartsOn).optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided",
@@ -28,5 +25,5 @@ export const changePassword = z.object({
   }),
 });
 
-export type UpdateUserInput = z.infer<typeof updateUser>;
-export type ChangePasswordInput = z.infer<typeof changePassword>;
+export type UpdateUserBody = z.infer<typeof updateUser>["body"];
+export type ChangePasswordBody = z.infer<typeof changePassword>["body"];

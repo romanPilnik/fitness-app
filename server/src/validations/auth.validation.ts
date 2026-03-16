@@ -1,16 +1,16 @@
-import { z } from "zod";
+import * as z from "zod";
 import { passwordRegex } from "./shared.js";
 
-export const login = z.object({
+export const loginSchema = z.object({
   body: z.object({
-    email: z.string().z.email(),
+    email: z.email(),
     password: z.string(),
   }),
 });
 
-export const register = z.object({
+export const registerSchema = z.object({
   body: z.object({
-    email: z.string().z.email(),
+    email: z.email(),
     password: z
       .string()
       .min(8)
@@ -20,5 +20,5 @@ export const register = z.object({
   }),
 });
 
-export type LoginUserInput = z.infer<typeof login>;
-export type RegisterUserInput = z.infer<typeof register>;
+export type LoginUserBody = z.infer<typeof loginSchema>["body"];
+export type RegisterUserBody = z.infer<typeof registerSchema>["body"];
