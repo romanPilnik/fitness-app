@@ -1,37 +1,49 @@
 import { z } from "zod";
-import { splitTypeEnum, difficultyEnum, goalEnum } from "./shared.js";
+import { SplitType, Difficulty, Goal } from "../generated/prisma/enums";
+import { cursorPaginationSchema } from "../lib/pagination";
 
-export const getProgramTemplates = z.object({
-  query: z.object({
-    splitType: splitTypeEnum.optional(),
-    createdBy: z.string().optional(),
-    difficulty: difficultyEnum.optional(),
-    daysPerWeek: z.coerce.number().int().min(1).max(14).optional(),
-  }),
+export const getTemplatesSchema = z.object({
+  query: z
+    .object({
+      splitType: z.enum(SplitType).optional(),
+      myTemplatesOnly: z.coerce.boolean().optional(),
+      difficulty: z.enum(Difficulty).optional(),
+      daysPerWeek: z.coerce.number().int().min(1).max(14).optional(),
+    })
+    .extend(cursorPaginationSchema.shape),
 });
 
-export const getProgramTemplateById = z.object({
+export const getTemplateByIdSchema = z.object({
   params: z.object({
     id: z.string(),
   }),
 });
 
-export const createProgramTemplate = z.object({
+const templateWorkoutExerciseSchema = z.object({
+  exerciseId: z.string(),
+  order: z.number().int().min(1),
+  notes: z.string().max(500).optional(),
+});
+
+const templateWorkoutSchema = z.object({
+  name: z.string().max(50).trim(),
+  dayNumber: z.number().int().min(1).max(14),
+  exercises: z.array(templateWorkoutExerciseSchema).min(1),
+});
+
+export const createTemplateSchema = z.object({
   body: z.object({
     name: z.string().max(50).trim(),
-    createdBy: z.string().min(2).max(50).trim(),
-    splitType: splitTypeEnum,
-    daysPerWeek: z.number().int().min(1).max(14),
-    periodization: z.object({}).passthrough(),
-    workouts: z.array(z.any()),
     description: z.string().max(500).optional(),
-    difficulty: difficultyEnum,
-    goals: z.array(goalEnum).max(3).optional(),
-    isActive: z.boolean().optional(),
+    daysPerWeek: z.number().int().min(1).max(14),
+    difficulty: z.enum(Difficulty),
+    splitType: z.enum(SplitType),
+    goal: z.enum(Goal),
+    workouts: z.array(templateWorkoutSchema).min(1),
   }),
 });
 
-export const updateProgramTemplate = z.object({
+export const updateTemplateSchema = z.object({
   params: z.object({
     id: z.string(),
   }),
@@ -39,28 +51,32 @@ export const updateProgramTemplate = z.object({
     .object({
       name: z.string().max(50).trim().optional(),
       description: z.string().max(500).optional(),
-      difficulty: difficultyEnum.optional(),
-      goals: z.array(goalEnum).max(3).optional(),
-      workouts: z.array(z.any()).optional(),
-      periodization: z.object({}).passthrough().optional(),
       daysPerWeek: z.number().int().min(1).max(14).optional(),
-      splitType: splitTypeEnum.optional(),
+      difficulty: z.enum(Difficulty).optional(),
+      splitType: z.enum(SplitType).optional(),
+      goal: z.enum(Goal).optional(),
+      workouts: z.array(templateWorkoutSchema).min(1).optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: "At least one field must be provided",
     }),
 });
 
-export const deleteProgramTemplate = z.object({
+export const deleteTemplateSchema = z.object({
   params: z.object({
     id: z.string(),
   }),
 });
 
-export type GetProgramTemplatesInput = z.infer<typeof getProgramTemplates>;
-export type GetProgramTemplateByIdInput = z.infer<
-  typeof getProgramTemplateById
->;
-export type CreateProgramTemplateInput = z.infer<typeof createProgramTemplate>;
-export type UpdateProgramTemplateInput = z.infer<typeof updateProgramTemplate>;
-export type DeleteProgramTemplateInput = z.infer<typeof deleteProgramTemplate>;
+export type GetTemplatesQuery = z.infer<typeof getTemplatesSchema>["query"];
+export type GetTemplateByIdParams = z.infer<
+  typeof getTemplateByIdSchema
+>["params"];
+export type CreateTemplateBody = z.infer<typeof createTemplateSchema>["body"];
+export type UpdateTemplateParams = z.infer<
+  typeof updateTemplateSchema
+>["params"];
+export type UpdateTemplateBody = z.infer<typeof updateTemplateSchema>["body"];
+export type DeleteTemplateParams = z.infer<
+  typeof deleteTemplateSchema
+>["params"];

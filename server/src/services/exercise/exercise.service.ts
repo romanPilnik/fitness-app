@@ -1,10 +1,10 @@
 import type { ExerciseModel } from "../../generated/prisma/models/Exercise";
 import type {
-  getExercisesDTO,
-  getExerciseByIdDTO,
-  createExerciseDTO,
-  updateExerciseDTO,
-  deleteExerciseDTO,
+  GetExercisesDTO,
+  GetExerciseByIdDTO,
+  CreateExerciseDTO,
+  UpdateExerciseDTO,
+  DeleteExerciseDTO,
 } from "./exercise.dtos";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../errors/AppError";
@@ -17,7 +17,7 @@ import {
 } from "../../lib/pagination";
 
 async function getExercises(
-  input: getExercisesDTO,
+  input: GetExercisesDTO,
 ): Promise<CursorPage<ExerciseModel>> {
   const { primaryMuscle, equipment, category, movementPattern, userId } = input;
   const { cursor, limit } = input;
@@ -37,7 +37,7 @@ async function getExercises(
 }
 
 async function getExerciseById(
-  input: getExerciseByIdDTO,
+  input: GetExerciseByIdDTO,
 ): Promise<ExerciseModel> {
   const { id } = input;
 
@@ -49,7 +49,7 @@ async function getExerciseById(
 }
 
 async function createExercise(
-  input: createExerciseDTO,
+  input: CreateExerciseDTO,
 ): Promise<ExerciseModel> {
   const data: Prisma.ExerciseUncheckedCreateInput = input;
   const exercise = await prisma.exercise.create({ data });
@@ -57,7 +57,7 @@ async function createExercise(
 }
 
 async function updateExercise(
-  input: updateExerciseDTO,
+  input: UpdateExerciseDTO,
 ): Promise<ExerciseModel> {
   const { id, userId } = input;
 
@@ -93,7 +93,7 @@ async function updateExercise(
   return updatedExercise;
 }
 
-async function deleteExercise(input: deleteExerciseDTO): Promise<void> {
+async function deleteExercise(input: DeleteExerciseDTO): Promise<void> {
   const { id, userId } = input;
 
   const existing = await prisma.exercise.findUnique({ where: { id } });

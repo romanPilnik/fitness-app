@@ -6,7 +6,7 @@ import {
 } from "../../generated/prisma/enums";
 import type { CursorPaginationParams } from "../../lib/pagination";
 
-export interface getExercisesDTO extends CursorPaginationParams {
+export interface GetExercisesDTO extends CursorPaginationParams {
   primaryMuscle?: MuscleGroup;
   equipment?: Equipment;
   category?: ExerciseCategory;
@@ -14,11 +14,11 @@ export interface getExercisesDTO extends CursorPaginationParams {
   userId?: string;
 }
 
-export interface getExerciseByIdDTO {
+export interface GetExerciseByIdDTO {
   id: string;
 }
 
-export interface createExerciseDTO {
+export interface CreateExerciseDTO {
   createdByUserId?: string | null;
   name: string;
   equipment: Equipment;
@@ -29,7 +29,7 @@ export interface createExerciseDTO {
   instructions?: string;
 }
 
-export interface updateExerciseDTO {
+export interface UpdateExerciseDTO {
   id: string;
   userId: string;
   name?: string;
@@ -41,7 +41,7 @@ export interface updateExerciseDTO {
   instructions?: string;
 }
 
-export interface deleteExerciseDTO {
+export interface DeleteExerciseDTO {
   id: string;
   userId: string;
 }

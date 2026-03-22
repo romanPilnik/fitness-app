@@ -3,13 +3,13 @@ import { sendSuccess } from "../utils/response";
 import { AppError } from "../errors/AppError";
 import { ERROR_CODES } from "../types/error.types";
 import type { Request, Response } from "express";
-import {
-  type CreateExerciseBody,
-  type DeleteExerciseParams,
-  type GetExerciseByIdParams,
-  type GetExercisesQuery,
-  type UpdateExerciseBody,
-  type UpdateExerciseParams,
+import type {
+  CreateExerciseBody,
+  DeleteExerciseParams,
+  GetExerciseByIdParams,
+  GetExercisesQuery,
+  UpdateExerciseBody,
+  UpdateExerciseParams,
 } from "../validations/exercise.validation";
 
 async function getExercises(req: Request, res: Response) {
@@ -52,17 +52,12 @@ async function updateExercise(
     throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
   const { id } = req.params;
   const { body } = req;
-  const updatedExercise = await ExerciseService.updateExercise({
+  const exercise = await ExerciseService.updateExercise({
     id,
     userId: req.user.id,
     ...body,
   });
-  return sendSuccess(
-    res,
-    updatedExercise,
-    200,
-    "Exercise updated successfully",
-  );
+  return sendSuccess(res, exercise, 200, "Exercise updated successfully");
 }
 
 async function deleteExercise(
@@ -71,6 +66,7 @@ async function deleteExercise(
 ) {
   if (!req.user)
     throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+
   const { id } = req.params;
   await ExerciseService.deleteExercise({ id, userId: req.user.id });
   return sendSuccess(res, null, 204);

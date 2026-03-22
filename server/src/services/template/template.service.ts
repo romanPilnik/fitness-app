@@ -1,100 +1,183 @@
 import { AppError } from "../../errors/AppError";
+import type { TemplateModel } from "../../generated/prisma/models";
+import {
+  buildCursorArgs,
+  paginateCursorResult,
+  type CursorPage,
+} from "../../lib/pagination";
+import { prisma } from "../../lib/prisma";
 import { ERROR_CODES } from "../../types/error.types";
+import type {
+  GetTemplatesDTO,
+  GetTemplateByIdDTO,
+  CreateTemplateDTO,
+  UpdateTemplateDTO,
+  DeleteTemplateDTO,
+} from "./template.dtos";
 
 async function getTemplates(
-  input: GetTemplatesInputDTO = {},
-): Promise<PaginateResult<TemplateSummaryDTO>> {
-  const { filters = {}, pagination = {} } = input;
+  input: GetTemplatesDTO,
+): Promise<CursorPage<TemplateModel>> {
+  const { splitType, difficulty, daysPerWeek, userId, myTemplatesOnly } = input;
+  const { cursor, limit } = input;
+  const items = await prisma.template.findMany({
+    where: {
+      splitType,
+      difficulty,
+      daysPerWeek,
+      ...(myTemplatesOnly && userId
+        ? { createdByUserId: userId }
+        : { OR: [{ createdByUserId: null }, { createdByUserId: userId }] }),
+    },
+    orderBy: { id: "asc" },
+    ...buildCursorArgs({ cursor, limit }),
+  });
 
-  const query: Record<string, unknown> = {};
-
-  if (filters.splitType) query.splitType = filters.splitType;
-  if (filters.difficulty) query.difficulty = filters.difficulty;
-  if (filters.daysPerWeek) query.daysPerWeek = filters.daysPerWeek;
-  if (filters.goals && filters.goals.length > 0) {
-    query.goals = { $in: filters.goals };
-  }
-
-  const textFilter = pagination.q ? { $text: { $search: pagination.q } } : {};
-  const queryOptions = { ...query, ...textFilter };
-
-  const paginateOptions = {
-    page: pagination.page ?? 1,
-    limit: pagination.limit ?? 20,
-    select: "-__v",
-    sort: { createdAt: -1 },
-  };
-
-  const result = await TemplateModel.paginate(queryOptions, paginateOptions);
-  return mapPaginatedTemplates(result);
+  return paginateCursorResult(items, limit);
 }
 
 async function getTemplateById(
-  input: GetTemplateByIdInputDTO,
-): Promise<TemplateDTO> {
-  const { templateId } = input;
+  input: GetTemplateByIdDTO,
+): Promise<TemplateModel> {
+  const { id } = input;
 
-  const template = await TemplateModel.findById(templateId)
-    .populate("workouts.exercises.exerciseId", "name")
-    .select("-__v");
+  const template = await prisma.template.findUnique({
+    where: { id },
+    include: { workouts: { include: { exercises: true } } },
+  });
 
   if (!template) {
     throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  return toTemplateDTO(template);
+  return template;
 }
 
 async function createTemplate(
-  input: CreateTemplateInputDTO,
-): Promise<TemplateDTO> {
-  const existing = await TemplateModel.findOne({
-    name: input.name,
+  input: CreateTemplateDTO,
+): Promise<TemplateModel> {
+  const { workouts, ...rest } = input;
+  const template = await prisma.template.create({
+    data: {
+      ...rest,
+      workouts: {
+        create: workouts.map((workout) => ({
+          name: workout.name,
+          dayNumber: workout.dayNumber,
+          exercises: {
+            create: workout.exercises.map((exercise) => ({
+              exerciseId: exercise.exerciseId,
+              order: exercise.order,
+              notes: exercise.notes,
+            })),
+          },
+        })),
+      },
+    },
+    include: { workouts: { include: { exercises: true } } },
   });
-
-  if (existing) {
-    throw new AppError(
-      "Template with this name already exists",
-      409,
-      ERROR_CODES.DUPLICATE_VALUE,
-    );
-  }
-
-  const template = new TemplateModel(input);
-  const saved = await template.save();
-  await saved.populate("workouts.exercises.exerciseId", "name");
-
-  return toTemplateDTO(saved);
+  return template;
 }
 
 async function updateTemplate(
-  input: UpdateTemplateInputDTO,
-): Promise<TemplateDTO> {
-  const { templateId, updates } = input;
-
-  const template = await TemplateModel.findByIdAndUpdate(
+  input: UpdateTemplateDTO,
+): Promise<TemplateModel> {
+  const {
     templateId,
-    { $set: updates },
-    { new: true, runValidators: true },
-  )
-    .select("-__v")
-    .populate("workouts.exercises.exerciseId", "name");
+    userId,
+    userRole,
+    name,
+    description,
+    daysPerWeek,
+    difficulty,
+    splitType,
+    goal,
+    workouts,
+  } = input;
+  const existing = await prisma.template.findUnique({
+    where: { id: templateId },
+  });
 
-  if (!template) {
+  if (!existing) {
     throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  return toTemplateDTO(template);
+  const isSystemTemplate = existing.createdByUserId === null;
+  if (isSystemTemplate && userRole !== "admin") {
+    throw new AppError(
+      "Insufficient permissions",
+      403,
+      ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+    );
+  }
+  if (!isSystemTemplate && existing.createdByUserId !== userId) {
+    throw new AppError(
+      "Insufficient permissions",
+      403,
+      ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+    );
+  }
+
+  const template = await prisma.template.update({
+    where: { id: templateId },
+    data: {
+      name,
+      description,
+      daysPerWeek,
+      difficulty,
+      splitType,
+      goal,
+      workouts: workouts
+        ? {
+            deleteMany: {}, // Delete existing workouts and exercises
+            create: workouts.map((workout) => ({
+              name: workout.name,
+              dayNumber: workout.dayNumber,
+              exercises: {
+                create: workout.exercises.map((exercise) => ({
+                  exerciseId: exercise.exerciseId,
+                  order: exercise.order,
+                  notes: exercise.notes,
+                })),
+              },
+            })),
+          }
+        : undefined,
+    },
+    include: { workouts: { include: { exercises: true } } },
+  });
+
+  return template;
 }
 
-async function deleteTemplate(input: DeleteTemplateInputDTO): Promise<void> {
-  const { templateId } = input;
+async function deleteTemplate(input: DeleteTemplateDTO): Promise<void> {
+  const { templateId, userId, userRole } = input;
 
-  const template = await TemplateModel.findByIdAndDelete(templateId);
+  const existing = await prisma.template.findUnique({
+    where: { id: templateId },
+  });
 
-  if (!template) {
+  if (!existing) {
     throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
+
+  const isSystemTemplate = existing.createdByUserId === null;
+  if (isSystemTemplate && userRole !== "admin") {
+    throw new AppError(
+      "Insufficient permissions",
+      403,
+      ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+    );
+  }
+  if (!isSystemTemplate && existing.createdByUserId !== userId) {
+    throw new AppError(
+      "Insufficient permissions",
+      403,
+      ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+    );
+  }
+
+  await prisma.template.delete({ where: { id: templateId } });
 }
 
 export const TemplateService = {
