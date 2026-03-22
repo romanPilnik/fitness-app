@@ -16,7 +16,8 @@ async function updateCurrentUser(
   req: Request<object, object, UpdateUserBody>,
   res: Response,
 ) {
-  if (!req.user) throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+  if (!req.user)
+    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
   const { id } = req.user;
   const { name, units, weekStartsOn } = req.body;
   const user = await UserService.updateUser({
@@ -32,7 +33,8 @@ async function changePassword(
   req: Request<object, object, ChangePasswordBody>,
   res: Response,
 ) {
-  if (!req.user) throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+  if (!req.user)
+    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
   const { id } = req.user;
   const { oldPassword, newPassword } = req.body;
   await UserService.changePassword({ id, oldPassword, newPassword });

@@ -66,7 +66,11 @@ async function updateExercise(
     throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
   }
   if (existing.createdByUserId !== userId) {
-    throw new AppError("Insufficient permissions", 403, ERROR_CODES.INSUFFICIENT_PERMISSIONS);
+    throw new AppError(
+      "Insufficient permissions",
+      403,
+      ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+    );
   }
 
   const {
@@ -101,7 +105,11 @@ async function deleteExercise(input: DeleteExerciseDTO): Promise<void> {
     throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
   }
   if (existing.createdByUserId !== userId) {
-    throw new AppError("Insufficient permissions", 403, ERROR_CODES.INSUFFICIENT_PERMISSIONS);
+    throw new AppError(
+      "Insufficient permissions",
+      403,
+      ERROR_CODES.INSUFFICIENT_PERMISSIONS,
+    );
   }
 
   await prisma.exercise.delete({ where: { id } });

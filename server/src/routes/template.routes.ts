@@ -10,7 +10,6 @@ import { TemplateController } from "../controllers/template.controller";
 import { validate } from "../middlewares/validate";
 import { verifyToken } from "../middlewares/auth.middleware";
 
-
 const templateRouter = Router();
 
 templateRouter.get(
