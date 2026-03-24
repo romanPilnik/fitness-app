@@ -191,6 +191,7 @@ model TemplateWorkoutExercise {
   templateWorkoutId String
   exerciseId        String
   order             Int
+  targetSets        Int
   notes             String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -240,10 +241,11 @@ model ProgramWorkoutExercise {
   exerciseId       String
   order            Int
   targetSets       Int
-  targetWeight     Int?
+  targetWeight     Float?
   targetTotalReps  Int?
   targetTopSetReps Int?
   targetRir        Int?
+  notes            String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

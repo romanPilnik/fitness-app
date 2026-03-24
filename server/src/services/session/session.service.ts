@@ -3,7 +3,7 @@ import { AppError } from "../../errors/AppError.js";
 import { ERROR_CODES } from "../../types/error.types.js";
 import { SessionModel } from "../../models/Session.model.js";
 import { ExerciseStatsService } from "../exerciseStats/exerciseStats.service.js";
-import { ProgramService } from "../program/Program.service.js";
+import { ProgramService } from "../program/program.service.js";
 import type {
   GetSessionsInputDTO,
   GetSessionByIdInputDTO,
@@ -96,7 +96,10 @@ async function createSession(
 async function deleteSession(input: DeleteSessionInputDTO): Promise<void> {
   const { sessionId, userId } = input;
 
-  const session = await SessionModel.findOneAndDelete({ _id: sessionId, userId });
+  const session = await SessionModel.findOneAndDelete({
+    _id: sessionId,
+    userId,
+  });
 
   if (!session) {
     throw new AppError("Session not found", 404, ERROR_CODES.NOT_FOUND);

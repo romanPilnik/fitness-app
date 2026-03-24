@@ -22,6 +22,7 @@ export const getTemplateByIdSchema = z.object({
 const templateWorkoutExerciseSchema = z.object({
   exerciseId: z.string(),
   order: z.number().int().min(1),
+  targetSets: z.number().int().min(1),
   notes: z.string().max(500).optional(),
 });
 

@@ -1,12 +1,12 @@
+import { prisma } from "../../lib/prisma";
 import { AppError } from "../../errors/AppError";
+import { ERROR_CODES } from "../../types/error.types";
 import type { TemplateModel } from "../../generated/prisma/models";
 import {
   buildCursorArgs,
   paginateCursorResult,
   type CursorPage,
 } from "../../lib/pagination";
-import { prisma } from "../../lib/prisma";
-import { ERROR_CODES } from "../../types/error.types";
 import type {
   GetTemplatesDTO,
   GetTemplateByIdDTO,
@@ -68,6 +68,7 @@ async function createTemplate(
             create: workout.exercises.map((exercise) => ({
               exerciseId: exercise.exerciseId,
               order: exercise.order,
+              targetSets: exercise.targetSets,
               notes: exercise.notes,
             })),
           },
@@ -137,6 +138,7 @@ async function updateTemplate(
                 create: workout.exercises.map((exercise) => ({
                   exerciseId: exercise.exerciseId,
                   order: exercise.order,
+                  targetSets: exercise.targetSets,
                   notes: exercise.notes,
                 })),
               },

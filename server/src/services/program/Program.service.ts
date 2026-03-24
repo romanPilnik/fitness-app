@@ -1,69 +1,67 @@
-import type { PaginateResult } from "mongoose";
+import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../errors/AppError.js";
 import { ERROR_CODES } from "../../types/error.types.js";
-import { ProgramModel } from "../../models/Program.model.js";
-import { TemplateModel } from "../../models/Template.model.js";
+import {
+  buildCursorArgs,
+  paginateCursorResult,
+  type CursorPage,
+} from "../../lib/pagination.js";
+import type { ProgramModel } from "../../generated/prisma/models.js";
 import type {
-  CreateCustomProgramInputDTO,
-  CreateFromTemplateInputDTO,
-  DeleteProgramInputDTO,
-  GetActiveProgramInputDTO,
-  GetProgramByIdInputDTO,
-  GetProgramsInputDTO,
-  UpdateProgramInputDTO,
-  UpdateProgressInputDTO,
-  ProgramDTO,
-  ProgramSummaryDTO,
-} from "./program.dto.js";
-import { mapPaginatedPrograms, toProgramDTO } from "./program.mapper.js";
+  GetProgramsDTO,
+  GetProgramByIdDTO,
+  UpdateProgramDTO,
+  DeleteProgramDTO,
+  CreateCustomProgramDTO,
+  CreateFromTemplateDTO,
+  GetActiveProgramDTO,
+  AddProgramWorkoutDTO,
+  UpdateProgramWorkoutDTO,
+  DeleteProgramWorkoutDTO,
+  AddWorkoutExerciseDTO,
+  UpdateWorkoutExerciseDTO,
+  DeleteWorkoutExerciseDTO,
+  BulkReorderWorkoutExercisesDTO,
+} from "./program.dtos.js";
 
 async function getPrograms(
-  input: GetProgramsInputDTO,
-): Promise<PaginateResult<ProgramSummaryDTO>> {
-  const { userId, filters = {}, pagination = {} } = input;
-  const allowedStatuses = ["active", "paused", "completed"];
-
-  if (filters.status && !allowedStatuses.includes(filters.status)) {
-    throw new AppError("Invalid status filter", 400, ERROR_CODES.INVALID_INPUT);
-  }
-
-  const query: Record<string, unknown> = { userId };
-  if (filters.status) {
-    query.status = filters.status;
-  }
-
-  const paginateOptions = {
-    page: pagination.page ?? 1,
-    limit: pagination.limit ?? 20,
-    select: "-__v",
-    sort: { createdAt: -1 },
-    lean: true,
-  };
-
-  const result = await ProgramModel.paginate(query, paginateOptions);
-  return mapPaginatedPrograms(result);
+  input: GetProgramsDTO,
+): Promise<CursorPage<ProgramModel>> {
+  const { userId, difficulty, goal, splitType, status, createdFrom } = input;
+  const { cursor, limit } = input;
+  const items = await prisma.program.findMany({
+    where: {
+      userId,
+      difficulty,
+      goal,
+      splitType,
+      status,
+      createdFrom,
+    },
+    orderBy: { createdAt: "desc" },
+    ...buildCursorArgs({ cursor, limit }),
+  });
+  return paginateCursorResult(items, limit);
 }
 
 async function createFromTemplate(
-  input: CreateFromTemplateInputDTO,
-): Promise<ProgramDTO> {
-  const { userId, templateId, startDate, customizations } = input;
+  input: CreateFromTemplateDTO,
+): Promise<ProgramModel> {
+  const { userId, templateId, name, startDate } = input;
 
-  const template = await TemplateModel.findById(templateId).lean();
+  const template = await prisma.template.findUnique({
+    where: { id: templateId },
+    include: { workouts: { include: { exercises: true } } },
+  });
   if (!template) {
     throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  const workoutOverrides = customizations?.workouts;
-  const workouts = template.workouts.map((workout, index) => {
-    const override = workoutOverrides?.[index];
-    return override ? { ...workout, ...override } : { ...workout };
+  const programName = name ?? template.name;
+
+  const existing = await prisma.program.findFirst({
+    where: { userId, name: programName },
   });
-
-  const programName = customizations?.name ?? template.name;
-
-  const existing = await ProgramModel.findOne({ userId, name: programName }).lean();
-
   if (existing) {
     throw new AppError(
       "Program with this name already exists",
@@ -72,37 +70,51 @@ async function createFromTemplate(
     );
   }
 
-  const programData = {
-    userId,
-    sourceTemplateId: templateId,
-    sourceTemplateName: template.name,
-    createdFrom: "template" as const,
-    name: programName,
-    description: template.description,
-    difficulty: template.difficulty,
-    goals: template.goals,
-    splitType: template.splitType,
-    daysPerWeek: template.daysPerWeek,
-    workouts,
-    status: "active" as const,
-    startDate: startDate ?? new Date(),
-    currentWeek: 1,
-    nextWorkoutIndex: 0,
-    hasBeenModified: false,
-  };
-
-  const program = new ProgramModel(programData);
-  const saved = await program.save();
-  return toProgramDTO(saved);
+  return prisma.program.create({
+    data: {
+      userId,
+      sourceTemplateId: templateId,
+      sourceTemplateName: template.name,
+      createdFrom: "template",
+      name: programName,
+      description: template.description,
+      difficulty: template.difficulty,
+      goal: template.goal,
+      splitType: template.splitType,
+      daysPerWeek: template.daysPerWeek,
+      status: "active",
+      startDate: startDate ? new Date(startDate) : new Date(),
+      programWorkouts: {
+        create: template.workouts.map((workout) => ({
+          name: workout.name,
+          dayNumber: workout.dayNumber,
+          programWorkoutExercises: {
+            create: workout.exercises.map((ex) => ({
+              exerciseId: ex.exerciseId,
+              order: ex.order,
+              targetSets: ex.targetSets,
+              notes: ex.notes,
+            })),
+          },
+        })),
+      },
+    },
+    include: {
+      programWorkouts: {
+        include: { programWorkoutExercises: true },
+      },
+    },
+  });
 }
 
 async function createCustomProgram(
-  input: CreateCustomProgramInputDTO,
-): Promise<ProgramDTO> {
+  input: CreateCustomProgramDTO,
+): Promise<ProgramModel> {
   const { userId, name } = input;
 
-  const existing = await ProgramModel.findOne({ userId, name }).lean();
-
+  const existing = await prisma.program.findFirst({
+    where: { userId, name },
+  });
   if (existing) {
     throw new AppError(
       "Program with this name already exists",
@@ -111,113 +123,383 @@ async function createCustomProgram(
     );
   }
 
-  const programData = {
-    ...input,
-    createdFrom: "scratch" as const,
-    status: "active" as const,
-    startDate: input.startDate ?? new Date(),
-    currentWeek: 1,
-    nextWorkoutIndex: 0,
-    hasBeenModified: false,
-  };
-
-  const program = new ProgramModel(programData);
-  const saved = await program.save();
-  return toProgramDTO(saved);
+  return prisma.program.create({
+    data: {
+      userId,
+      name,
+      description: input.description,
+      difficulty: input.difficulty,
+      goal: input.goal,
+      splitType: input.splitType,
+      daysPerWeek: input.daysPerWeek,
+      createdFrom: "scratch",
+      status: "active",
+      startDate: input.startDate ? new Date(input.startDate) : new Date(),
+      programWorkouts: {
+        create: input.workouts.map((workout) => ({
+          name: workout.name,
+          dayNumber: workout.dayNumber,
+          programWorkoutExercises: {
+            create: workout.exercises.map((ex) => ({
+              exerciseId: ex.exerciseId,
+              order: ex.order,
+              targetSets: ex.targetSets,
+              targetWeight: ex.targetWeight,
+              targetTotalReps: ex.targetTotalReps,
+              targetTopSetReps: ex.targetTopSetReps,
+              targetRir: ex.targetRir,
+            })),
+          },
+        })),
+      },
+    },
+    include: {
+      programWorkouts: {
+        include: { programWorkoutExercises: true },
+      },
+    },
+  });
 }
 
 async function getActiveProgram(
-  input: GetActiveProgramInputDTO,
-): Promise<ProgramDTO> {
+  input: GetActiveProgramDTO,
+): Promise<ProgramModel[]> {
   const { userId } = input;
-  const program = await ProgramModel.findOne({
-    userId,
-    status: "active",
-  })
-    .select("-__v")
-    .lean();
+  return prisma.program.findMany({
+    where: {
+      userId,
+      status: "active",
+    },
+    include: {
+      programWorkouts: {
+        include: { programWorkoutExercises: true },
+      },
+    },
+  });
+}
 
+async function getProgramById(input: GetProgramByIdDTO): Promise<ProgramModel> {
+  const { programId, userId } = input;
+  const program = await prisma.program.findUnique({
+    where: { id: programId, userId },
+    include: {
+      programWorkouts: {
+        include: { programWorkoutExercises: true },
+      },
+    },
+  });
   if (!program) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+  return program;
+}
+
+async function updateProgram(input: UpdateProgramDTO): Promise<ProgramModel> {
+  const {
+    programId,
+    userId,
+    name,
+    description,
+    difficulty,
+    goal,
+    splitType,
+    daysPerWeek,
+    status,
+    startDate,
+  } = input;
+
+  const existing = await prisma.program.findUnique({
+    where: { id: programId },
+  });
+  if (existing?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  return prisma.program.update({
+    where: { id: programId },
+    data: {
+      name,
+      description,
+      difficulty,
+      goal,
+      splitType,
+      daysPerWeek,
+      status,
+      startDate: startDate ? new Date(startDate) : undefined,
+    },
+    include: {
+      programWorkouts: {
+        include: { programWorkoutExercises: true },
+      },
+    },
+  });
+}
+
+async function deleteProgram(input: DeleteProgramDTO): Promise<void> {
+  const { programId, userId } = input;
+
+  const existing = await prisma.program.findUnique({
+    where: { id: programId },
+  });
+  if (existing?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  await prisma.program.delete({ where: { id: programId } });
+}
+
+async function addProgramWorkout(input: AddProgramWorkoutDTO) {
+  const { programId, userId, name, dayNumber } = input;
+
+  const existing = await prisma.program.findUnique({
+    where: { id: programId },
+  });
+  if (existing?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  return prisma.programWorkout.create({
+    data: {
+      programId,
+      name,
+      dayNumber,
+    },
+  });
+}
+
+async function updateProgramWorkout(input: UpdateProgramWorkoutDTO) {
+  const { programId, workoutId, userId, name, dayNumber } = input;
+
+  const existing = await prisma.program.findUnique({
+    where: { id: programId },
+  });
+  if (existing?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const workout = await prisma.programWorkout.findUnique({
+    where: { id: workoutId, programId },
+  });
+  if (!workout) {
+    throw new AppError("Workout not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  return prisma.programWorkout.update({
+    where: { id: workoutId },
+    data: {
+      name,
+      dayNumber,
+    },
+  });
+}
+
+async function deleteProgramWorkout(input: DeleteProgramWorkoutDTO) {
+  const { programId, workoutId, userId } = input;
+
+  const existing = await prisma.program.findUnique({
+    where: { id: programId },
+  });
+  if (existing?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const workout = await prisma.programWorkout.findUnique({
+    where: { id: workoutId, programId },
+  });
+  if (!workout) {
+    throw new AppError("Workout not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  await prisma.programWorkout.delete({ where: { id: workoutId } });
+}
+
+async function addWorkoutExercise(input: AddWorkoutExerciseDTO) {
+  const {
+    programId,
+    workoutId,
+    userId,
+    exerciseId,
+    order,
+    targetSets,
+    targetWeight,
+    targetTotalReps,
+    targetTopSetReps,
+    targetRir,
+  } = input;
+
+  const existing = await prisma.program.findUnique({
+    where: { id: programId },
+  });
+  if (existing?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const workout = await prisma.programWorkout.findUnique({
+    where: { id: workoutId, programId },
+  });
+  if (!workout) {
+    throw new AppError("Workout not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const orderConflict = await prisma.programWorkoutExercise.findFirst({
+    where: { programWorkoutId: workoutId, order },
+  });
+  if (orderConflict) {
     throw new AppError(
-      "No active program found for user",
-      404,
-      ERROR_CODES.NOT_FOUND,
+      "An exercise with this order already exists in the workout",
+      409,
+      ERROR_CODES.DUPLICATE_VALUE,
     );
   }
-  return toProgramDTO(program);
-}
 
-async function getProgramById(
-  input: GetProgramByIdInputDTO,
-): Promise<ProgramDTO> {
-  const { programId, userId } = input;
-  const program = await ProgramModel.findOne({
-    _id: programId,
-    userId,
-  })
-    .populate("workouts.exercises.exerciseId", "name")
-    .select("-__v")
-    .lean();
-
-  if (!program) {
-    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
-  }
-  return toProgramDTO(program);
-}
-
-async function updateProgramById(
-  input: UpdateProgramInputDTO,
-): Promise<ProgramDTO> {
-  const { programId, userId, updates } = input;
-  const updatedProgram = await ProgramModel.findOneAndUpdate(
-    { _id: programId, userId },
-    { $set: { ...updates, hasBeenModified: true } },
-    { new: true, runValidators: true },
-  ).lean();
-
-  if (!updatedProgram) {
-    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
-  }
-
-  return toProgramDTO(updatedProgram);
-}
-
-async function deleteProgramById(input: DeleteProgramInputDTO): Promise<void> {
-  const { programId, userId } = input;
-
-  const deletedProgram = await ProgramModel.findOneAndDelete({ _id: programId, userId });
-
-  if (!deletedProgram) {
-    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
-  }
-}
-
-async function updateProgress(
-  input: UpdateProgressInputDTO,
-): Promise<ProgramDTO> {
-  const { programId, userId } = input;
-
-  const program = await ProgramModel.findOne({
-    _id: programId,
-    userId,
-    status: "active",
+  return prisma.programWorkoutExercise.create({
+    data: {
+      programWorkoutId: workoutId,
+      exerciseId,
+      order,
+      targetSets,
+      targetWeight,
+      targetTotalReps,
+      targetTopSetReps,
+      targetRir,
+    },
   });
+}
 
-  if (!program) {
-    throw new AppError("Active program not found", 404, ERROR_CODES.NOT_FOUND);
+async function updateWorkoutExercise(input: UpdateWorkoutExerciseDTO) {
+  const {
+    programId,
+    workoutId,
+    workoutExerciseId,
+    userId,
+    order,
+    targetSets,
+    targetWeight,
+    targetTotalReps,
+    targetTopSetReps,
+    targetRir,
+  } = input;
+
+  const existing = await prisma.program.findUnique({
+    where: { id: programId },
+  });
+  if (existing?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  program.nextWorkoutIndex++;
-
-  if (program.nextWorkoutIndex >= program.workouts.length) {
-    program.nextWorkoutIndex = 0;
-    program.currentWeek++;
+  const workout = await prisma.programWorkout.findUnique({
+    where: { id: workoutId, programId },
+  });
+  if (!workout) {
+    throw new AppError("Workout not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  program.lastCompletedWorkoutDate = new Date();
+  const exercise = await prisma.programWorkoutExercise.findUnique({
+    where: { id: workoutExerciseId, programWorkoutId: workoutId },
+  });
+  if (!exercise) {
+    throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
+  }
 
-  await program.save();
-  return toProgramDTO(program);
+  return prisma.programWorkoutExercise.update({
+    where: { id: workoutExerciseId },
+    data: {
+      order,
+      targetSets,
+      targetWeight,
+      targetTotalReps,
+      targetTopSetReps,
+      targetRir,
+    },
+  });
+}
+
+async function bulkReorderWorkoutExercises(
+  input: BulkReorderWorkoutExercisesDTO,
+) {
+  const { programId, workoutId, userId, exercises } = input;
+
+  const program = await prisma.program.findUnique({ where: { id: programId } });
+  if (program?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const workout = await prisma.programWorkout.findUnique({
+    where: { id: workoutId, programId },
+  });
+  if (!workout) {
+    throw new AppError("Workout not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const existingExercises = await prisma.programWorkoutExercise.findMany({
+    where: { programWorkoutId: workoutId },
+    select: { id: true },
+  });
+  const existingIds = new Set(existingExercises.map((e) => e.id));
+
+  if (exercises.length !== existingIds.size) {
+    throw new AppError(
+      "All exercises in the workout must be included in the reorder",
+      400,
+      ERROR_CODES.INVALID_INPUT,
+    );
+  }
+
+  const invalidId = exercises.find((e) => !existingIds.has(e.id));
+  if (invalidId) {
+    throw new AppError(
+      `Exercise ${invalidId.id} does not belong to this workout`,
+      400,
+      ERROR_CODES.INVALID_INPUT,
+    );
+  }
+
+  const orders = exercises.map((e) => e.order);
+  if (new Set(orders).size !== orders.length) {
+    throw new AppError(
+      "Duplicate order values are not allowed",
+      400,
+      ERROR_CODES.INVALID_INPUT,
+    );
+  }
+
+  return prisma.$transaction(
+    exercises.map((e) =>
+      prisma.programWorkoutExercise.update({
+        where: { id: e.id },
+        data: { order: e.order },
+      }),
+    ),
+  );
+}
+
+async function deleteWorkoutExercise(input: DeleteWorkoutExerciseDTO) {
+  const { programId, workoutId, workoutExerciseId, userId } = input;
+
+  const existing = await prisma.program.findUnique({
+    where: { id: programId },
+  });
+  if (existing?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const workout = await prisma.programWorkout.findUnique({
+    where: { id: workoutId, programId },
+  });
+  if (!workout) {
+    throw new AppError("Workout not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const exercise = await prisma.programWorkoutExercise.findUnique({
+    where: { id: workoutExerciseId, programWorkoutId: workoutId },
+  });
+  if (!exercise) {
+    throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  await prisma.programWorkoutExercise.delete({
+    where: { id: workoutExerciseId },
+  });
 }
 
 export const ProgramService = {
@@ -226,7 +508,13 @@ export const ProgramService = {
   createCustomProgram,
   getActiveProgram,
   getProgramById,
-  updateProgramById,
-  deleteProgramById,
-  updateProgress,
+  updateProgram,
+  deleteProgram,
+  addProgramWorkout,
+  updateProgramWorkout,
+  deleteProgramWorkout,
+  addWorkoutExercise,
+  updateWorkoutExercise,
+  deleteWorkoutExercise,
+  bulkReorderWorkoutExercises,
 };

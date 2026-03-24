@@ -18,6 +18,19 @@ export interface GetTemplateByIdDTO {
   id: string;
 }
 
+interface TemplateWorkoutExerciseDTO {
+  exerciseId: string;
+  order: number;
+  targetSets: number;
+  notes?: string;
+}
+
+interface TemplateWorkoutDTO {
+  name: string;
+  dayNumber: number;
+  exercises: TemplateWorkoutExerciseDTO[];
+}
+
 export interface CreateTemplateDTO {
   name: string;
   description?: string;
@@ -25,15 +38,7 @@ export interface CreateTemplateDTO {
   difficulty: Difficulty;
   splitType: SplitType;
   goal: Goal;
-  workouts: {
-    name: string;
-    dayNumber: number;
-    exercises: {
-      exerciseId: string;
-      order: number;
-      notes?: string;
-    }[];
-  }[];
+  workouts: TemplateWorkoutDTO[];
   createdByUserId: string | null;
 }
 
@@ -46,15 +51,7 @@ export interface UpdateTemplateDTO {
   difficulty?: Difficulty;
   splitType?: SplitType;
   goal?: Goal;
-  workouts?: {
-    name: string;
-    dayNumber: number;
-    exercises: {
-      exerciseId: string;
-      order: number;
-      notes?: string;
-    }[];
-  }[];
+  workouts?: TemplateWorkoutDTO[];
   userRole: Role;
 }
 
