@@ -284,9 +284,9 @@ model SessionExercise {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  session             Session              @relation(fields: [sessionId], references: [id])
-  exercise            Exercise             @relation(fields: [exerciseId], references: [id])
-  user                User                 @relation(fields: [userId], references: [id])
+  session             Session              @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise            Exercise             @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessionExerciseSets SessionExerciseSet[]
 }
 
@@ -301,6 +301,6 @@ model SessionExerciseSet {
   rir               Int
   setCompleted      Boolean
 
-  sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id])
-  user            User            @relation(fields: [userId], references: [id])
+  sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

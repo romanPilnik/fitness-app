@@ -1,3 +1,5 @@
+/*
+
 import { type PaginateModel, Document, model, Schema, Types } from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
@@ -155,4 +157,7 @@ export interface ExerciseStatsDocument extends IExerciseStats, Document {}
 export const ExerciseStatsModel = model<
   ExerciseStatsDocument,
   PaginateModel<ExerciseStatsDocument>
->("ExerciseStats", exerciseStatsSchema, "ExerciseStats");
+  >("ExerciseStats", exerciseStatsSchema, "ExerciseStats");
+
+
+*/

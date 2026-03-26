@@ -219,7 +219,11 @@ async function deleteWorkoutExercise(
 }
 
 async function bulkReorderWorkoutExercises(
-  req: Request<BulkReorderWorkoutExercisesParams, object, BulkReorderWorkoutExercisesBody>,
+  req: Request<
+    BulkReorderWorkoutExercisesParams,
+    object,
+    BulkReorderWorkoutExercisesBody
+  >,
   res: Response,
 ) {
   if (!req.user)

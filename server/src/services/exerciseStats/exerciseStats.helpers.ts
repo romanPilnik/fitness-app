@@ -1,3 +1,4 @@
+/*
 import type { Types } from "mongoose";
 
 import type { IExerciseStats } from "../../models/ExerciseStats.model.js";
@@ -59,3 +60,4 @@ export function resolvePersonalRecord(
     date: new Date(),
   };
 }
+*/

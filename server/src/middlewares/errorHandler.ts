@@ -6,19 +6,9 @@ import {
   InternalServerError,
   ERROR_CODES,
 } from "../errors/index";
-import type { ZodValidationError } from "../types/error.types";
 
 const isAppError = (err: unknown): err is AppError => {
   return err instanceof AppError;
-};
-
-const isZodValidationError = (err: unknown): err is ZodValidationError => {
-  return (
-    err instanceof Error &&
-    "code" in err &&
-    (err as { code: unknown }).code === "VALIDATION_ERROR" &&
-    "issues" in err
-  );
 };
 
 const isDevelopment = () => process.env.NODE_ENV === "development";
@@ -74,12 +64,8 @@ export const errorHandler = (
     );
   }
 
-  if (isZodValidationError(err)) {
-    return sendError(res, 400, err.message, "VALIDATION_ERROR", err.issues);
-  }
-
   const internalError = new InternalServerError(
-    err.message || "Internal server error",
+    err.message || "An unexpected error occurred",
     ERROR_CODES.INTERNAL_ERROR,
   );
   const serialized = internalError.serialize(isDevelopment());

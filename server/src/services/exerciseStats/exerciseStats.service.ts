@@ -1,3 +1,4 @@
+/*
 import { type PaginateResult, Types } from "mongoose";
 
 import type { SetDTO } from "../session/session.dto.js";
@@ -182,3 +183,4 @@ export const ExerciseStatsService = {
   updateExerciseStats,
   updateFromSession,
 };
+*/

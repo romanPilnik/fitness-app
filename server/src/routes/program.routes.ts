@@ -27,11 +27,7 @@ programRouter.get(
   ProgramController.getPrograms,
 );
 
-programRouter.get(
-  "/active",
-  verifyToken,
-  ProgramController.getActiveProgram,
-);
+programRouter.get("/active", verifyToken, ProgramController.getActiveProgram);
 
 programRouter.get(
   "/:id",

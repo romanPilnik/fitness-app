@@ -1,3 +1,4 @@
+/*
 const express = require("express");
 const { verifyToken } = require("../middlewares/auth");
 const exerciseProfileController = require("../controllers/exerciseProfile.controller");
@@ -28,3 +29,4 @@ exerciseProfileRouter.patch(
 );
 
 module.exports = exerciseProfileRouter;
+*/

@@ -1,3 +1,4 @@
+/*
 const exerciseProfileService = require("../services/exerciseProfile/exerciseProfile.service");
 const { sendSuccess } = require("../utils/response");
 
@@ -30,3 +31,4 @@ module.exports = {
   getExerciseProfileById,
   updateExerciseProfile,
 };
+*/

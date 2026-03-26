@@ -1,72 +1,57 @@
-import type { PaginateResult } from "mongoose";
-import { AppError } from "../../errors/AppError.js";
-import { ERROR_CODES } from "../../types/error.types.js";
-import { SessionModel } from "../../models/Session.model.js";
-import { ExerciseStatsService } from "../exerciseStats/exerciseStats.service.js";
-import { ProgramService } from "../program/program.service.js";
+import { AppError } from "../../errors/AppError";
+import { ERROR_CODES } from "../../types/error.types";
+import type { SessionModel } from "../../generated/prisma/models";
 import type {
-  GetSessionsInputDTO,
-  GetSessionByIdInputDTO,
-  CreateSessionInputDTO,
-  DeleteSessionInputDTO,
-  SessionDTO,
-  SessionSummaryDTO,
-} from "./session.dto.js";
-import { mapPaginatedSessions, toSessionDTO } from "./session.mapper.js";
+  GetSessionsDTO,
+  GetSessionByIdDTO,
+  CreateSessionDTO,
+  DeleteSessionDTO,
+} from "./session.dtos.js";
+import { prisma } from "../../lib/prisma";
+import {
+  buildCursorArgs,
+  paginateCursorResult,
+  type CursorPage,
+} from "../../lib/pagination.js";
 
 async function getSessions(
-  input: GetSessionsInputDTO,
-): Promise<PaginateResult<SessionSummaryDTO>> {
-  const { userId, pagination = {} } = input;
+  input: GetSessionsDTO,
+): Promise<CursorPage<SessionModel>> {
+  const { userId, sessionStatus, cursor, limit } = input;
 
-  const query = { userId };
-
-  const paginateOptions = {
-    page: pagination.page || 1,
-    limit: pagination.limit || 20,
-    select: "-__v",
-    sort: { datePerformed: -1 },
-    lean: true,
-  };
-
-  const result = await SessionModel.paginate(query, paginateOptions);
-  return mapPaginatedSessions(result);
+  const items = await prisma.session.findMany({
+    where: {
+      userId,
+      sessionStatus,
+    },
+    orderBy: { datePerformed: "desc" },
+    ...buildCursorArgs({ cursor, limit }),
+  });
+  return paginateCursorResult(items, limit);
 }
 
-async function getSessionById(
-  input: GetSessionByIdInputDTO,
-): Promise<SessionDTO> {
+async function getSessionById(input: GetSessionByIdDTO): Promise<SessionModel> {
   const { sessionId, userId } = input;
 
-  const session = await SessionModel.findOne({
-    _id: sessionId,
-    userId,
-  })
-    .select("-__v")
-    .lean();
-
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId, userId },
+    include: {
+      program: true,
+      sessionExercises: {
+        orderBy: { order: "asc" },
+        include: { exercise: true, sessionExerciseSets: true },
+      },
+    },
+  });
   if (!session) {
     throw new AppError("Session not found", 404, ERROR_CODES.NOT_FOUND);
   }
 
-  return toSessionDTO(session);
+  return session;
 }
 
-async function createSession(
-  input: CreateSessionInputDTO,
-): Promise<SessionDTO> {
-  const { userId, sessionData } = input;
+async function createSession(input: CreateSessionDTO): Promise<SessionModel> {
   const {
-    programId,
-    workoutName,
-    dayNumber,
-    sessionStatus,
-    exercises,
-    sessionDuration,
-    notes,
-  } = sessionData;
-
-  const session = await SessionModel.create({
     userId,
     programId,
     workoutName,
@@ -74,36 +59,72 @@ async function createSession(
     sessionStatus,
     exercises,
     sessionDuration,
-    notes,
-    datePerformed: new Date(),
+  } = input;
+
+  // Prevent logging sessions against programs that don't belong to the user.
+  const program = await prisma.program.findUnique({
+    where: { id: programId },
+    select: { userId: true },
   });
+  if (program?.userId !== userId) {
+    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+  }
 
-  const sessionDTO = toSessionDTO(session);
+  const session = await prisma.session.create({
+    data: {
+      userId,
+      programId,
+      workoutName,
+      dayNumber,
+      sessionStatus,
+      sessionDuration,
+      datePerformed: new Date(),
+      sessionExercises: {
+        create: exercises.map((exercise) => ({
+          exerciseId: exercise.exerciseId,
+          userId,
 
-  await ExerciseStatsService.updateFromSession({
-    userId,
-    session: sessionDTO,
+          order: exercise.order,
+          targetSets: exercise.targetSets,
+          targetWeight: exercise.targetWeight,
+          targetTotalReps: exercise.targetTotalReps,
+          targetTopSetReps: exercise.targetTopSetReps,
+          targetRir: exercise.targetRir,
+
+          sessionExerciseSets: {
+            create: exercise.sets.map((set) => ({
+              userId,
+              targetWeight: set.targetWeight,
+              targetReps: set.targetReps,
+              reps: set.reps,
+              weight: set.weight,
+              rir: set.rir,
+              setCompleted: set.setCompleted,
+            })),
+          },
+        })),
+      },
+    },
+    include: {
+      sessionExercises: {
+        include: { exercise: true, sessionExerciseSets: true },
+      },
+    },
   });
-
-  await ProgramService.updateProgress({
-    programId,
-    userId,
-  });
-
-  return sessionDTO;
+  return session;
 }
 
-async function deleteSession(input: DeleteSessionInputDTO): Promise<void> {
+async function deleteSession(input: DeleteSessionDTO): Promise<void> {
   const { sessionId, userId } = input;
 
-  const session = await SessionModel.findOneAndDelete({
-    _id: sessionId,
-    userId,
+  const session = await prisma.session.findUnique({
+    where: { id: sessionId, userId },
   });
-
-  if (!session) {
+  if (session?.userId !== userId) {
     throw new AppError("Session not found", 404, ERROR_CODES.NOT_FOUND);
   }
+
+  await prisma.session.delete({ where: { id: sessionId } });
 }
 
 export const SessionService = {

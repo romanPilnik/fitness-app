@@ -1,9 +1,9 @@
 import { type Response } from "express";
 import type { ApiSuccess, ApiError } from "../types/api.types.js";
 
-function sendSuccess<T>(
+function sendSuccess(
   res: Response,
-  data: T,
+  data: unknown,
   statusCode = 200,
   message?: string,
 ): Response {
@@ -11,7 +11,7 @@ function sendSuccess<T>(
     return res.status(204).send();
   }
 
-  const response: ApiSuccess<T> = {
+  const response: ApiSuccess<unknown> = {
     success: true,
     data,
     ...(message && { message }),
