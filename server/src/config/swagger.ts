@@ -69,8 +69,8 @@ const options: swaggerJSDoc.Options = {
     },
   },
   apis: [
-    `${import.meta.dirname}/../routes/*.ts`,
-    `${import.meta.dirname}/../routes/*.js`,
+    `${import.meta.dirname}/../features/**/*.routes.ts`,
+    `${import.meta.dirname}/../features/**/*.routes.js`,
   ],
 };
 

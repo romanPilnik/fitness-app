@@ -3,12 +3,12 @@ import cors from "cors";
 import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
-import authRoutes from "./routes/auth.routes";
-import userRoutes from "./routes/user.routes";
-import exerciseRoutes from "./routes/exercise.routes";
-import templateRoutes from "./routes/template.routes";
-import programRoutes from "./routes/program.routes";
-import sessionRoutes from "./routes/session.routes";
+import { authRoutes } from "@/features/auth";
+import { userRoutes } from "@/features/users";
+import { exerciseRoutes } from "@/features/exercises";
+import { templateRoutes } from "@/features/templates";
+import { programRoutes } from "@/features/programs";
+import { sessionRoutes } from "@/features/sessions";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
 import { httpLogger } from "./middlewares/httpLogger.middleware";
 

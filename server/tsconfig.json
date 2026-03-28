@@ -25,10 +25,14 @@
     "module": "preserve",
     "target": "esnext",
     "lib": ["esnext"],
-    "moduleResolution": "bundler"
-  },
-  "paths": {
-    "@/*": ["./src/*"]
+    "moduleResolution": "bundler",
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/features": ["./src/features"],
+      "@/features/*": ["./src/features/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "build"]
