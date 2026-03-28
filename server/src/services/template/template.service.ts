@@ -47,7 +47,10 @@ async function getTemplateById(
   });
 
   if (!template) {
-    throw new NotFoundError("Template not found", ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND);
+    throw new NotFoundError(
+      "Template not found",
+      ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND,
+    );
   }
 
   return template;
@@ -100,7 +103,10 @@ async function updateTemplate(
   });
 
   if (!existing) {
-    throw new NotFoundError("Template not found", ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND);
+    throw new NotFoundError(
+      "Template not found",
+      ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND,
+    );
   }
 
   const isSystemTemplate = existing.createdByUserId === null;
@@ -158,7 +164,10 @@ async function deleteTemplate(input: DeleteTemplateDTO): Promise<void> {
   });
 
   if (!existing) {
-    throw new NotFoundError("Template not found", ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND);
+    throw new NotFoundError(
+      "Template not found",
+      ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND,
+    );
   }
 
   const isSystemTemplate = existing.createdByUserId === null;

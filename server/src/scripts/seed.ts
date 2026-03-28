@@ -194,20 +194,12 @@ const templateDefinitions: TemplateDef[] = [
       {
         name: "Pull",
         dayNumber: 2,
-        exercises: [
-          tplEx(4, 1, 4),
-          tplEx(5, 2, 4),
-          tplEx(7, 3, 3),
-        ],
+        exercises: [tplEx(4, 1, 4), tplEx(5, 2, 4), tplEx(7, 3, 3)],
       },
       {
         name: "Legs",
         dayNumber: 3,
-        exercises: [
-          tplEx(1, 1, 4),
-          tplEx(2, 2, 3),
-          tplEx(9, 3, 3),
-        ],
+        exercises: [tplEx(1, 1, 4), tplEx(2, 2, 3), tplEx(9, 3, 3)],
       },
     ],
   },
@@ -339,7 +331,9 @@ async function seed(): Promise<void> {
 
     console.log("Creating program templates...");
     await seedTemplates(exerciseIds);
-    console.log(`Created ${String(templateDefinitions.length)} program templates`);
+    console.log(
+      `Created ${String(templateDefinitions.length)} program templates`,
+    );
 
     console.log("\n--- Seed Complete ---");
     console.log("Test user credentials:");

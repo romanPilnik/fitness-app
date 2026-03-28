@@ -58,7 +58,10 @@ async function createFromTemplate(
     include: { workouts: { include: { exercises: true } } },
   });
   if (!template) {
-    throw new NotFoundError("Template not found", ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND);
+    throw new NotFoundError(
+      "Template not found",
+      ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND,
+    );
   }
 
   const programName = name ?? template.name;

@@ -43,7 +43,10 @@ async function getExerciseById(
 
   const exercise = await prisma.exercise.findUnique({ where: { id } });
   if (!exercise) {
-    throw new NotFoundError("Exercise not found", ERROR_CODES.EXERCISE_NOT_FOUND);
+    throw new NotFoundError(
+      "Exercise not found",
+      ERROR_CODES.EXERCISE_NOT_FOUND,
+    );
   }
   return exercise;
 }
@@ -63,7 +66,10 @@ async function updateExercise(
 
   const existing = await prisma.exercise.findUnique({ where: { id } });
   if (!existing) {
-    throw new NotFoundError("Exercise not found", ERROR_CODES.EXERCISE_NOT_FOUND);
+    throw new NotFoundError(
+      "Exercise not found",
+      ERROR_CODES.EXERCISE_NOT_FOUND,
+    );
   }
   if (existing.createdByUserId !== userId) {
     throw new AuthorizationError(
@@ -101,7 +107,10 @@ async function deleteExercise(input: DeleteExerciseDTO): Promise<void> {
 
   const existing = await prisma.exercise.findUnique({ where: { id } });
   if (!existing) {
-    throw new NotFoundError("Exercise not found", ERROR_CODES.EXERCISE_NOT_FOUND);
+    throw new NotFoundError(
+      "Exercise not found",
+      ERROR_CODES.EXERCISE_NOT_FOUND,
+    );
   }
   if (existing.createdByUserId !== userId) {
     throw new AuthorizationError(
