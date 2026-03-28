@@ -22,8 +22,22 @@ export const validate =
       params?: typeof req.params;
     };
     if (body !== undefined) req.body = body;
-    if (query !== undefined) req.query = query;
-    if (params !== undefined) req.params = params;
+    if (query !== undefined) {
+      Object.defineProperty(req, "query", {
+        enumerable: true,
+        value: query,
+        writable: true,
+        configurable: true,
+      });
+    }
+    if (params !== undefined) {
+      Object.defineProperty(req, "params", {
+        enumerable: true,
+        value: params,
+        writable: true,
+        configurable: true,
+      });
+    }
 
     next();
   };

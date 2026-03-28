@@ -30,10 +30,11 @@ CLAUDE.md
 dist/
 build/
 
+# Prisma (generated — run `prisma generate` or `npm install`)
+src/generated/prisma/
+
 # Testing
 coverage/
 
 # Misc
 .cache/
-```
-/src/generated/prisma
