@@ -7,7 +7,7 @@
     "postinstall": "prisma generate",
     "dev": "tsx --watch --env-file .env src/index.ts",
     "start": "node --env-file .env build/index.js",
-    "build": "tsc && tsc-alias -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
