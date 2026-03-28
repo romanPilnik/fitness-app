@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { AppError } from "../../errors/AppError";
+import { NotFoundError, AuthorizationError } from "../../errors/index";
 import { ERROR_CODES } from "../../types/error.types";
 import type { TemplateModel } from "../../generated/prisma/models";
 import {
@@ -47,7 +47,7 @@ async function getTemplateById(
   });
 
   if (!template) {
-    throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Template not found", ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND);
   }
 
   return template;
@@ -100,21 +100,19 @@ async function updateTemplate(
   });
 
   if (!existing) {
-    throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Template not found", ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND);
   }
 
   const isSystemTemplate = existing.createdByUserId === null;
   if (isSystemTemplate && userRole !== "admin") {
-    throw new AppError(
+    throw new AuthorizationError(
       "Insufficient permissions",
-      403,
       ERROR_CODES.INSUFFICIENT_PERMISSIONS,
     );
   }
   if (!isSystemTemplate && existing.createdByUserId !== userId) {
-    throw new AppError(
+    throw new AuthorizationError(
       "Insufficient permissions",
-      403,
       ERROR_CODES.INSUFFICIENT_PERMISSIONS,
     );
   }
@@ -160,21 +158,19 @@ async function deleteTemplate(input: DeleteTemplateDTO): Promise<void> {
   });
 
   if (!existing) {
-    throw new AppError("Template not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Template not found", ERROR_CODES.PROGRAM_TEMPLATE_NOT_FOUND);
   }
 
   const isSystemTemplate = existing.createdByUserId === null;
   if (isSystemTemplate && userRole !== "admin") {
-    throw new AppError(
+    throw new AuthorizationError(
       "Insufficient permissions",
-      403,
       ERROR_CODES.INSUFFICIENT_PERMISSIONS,
     );
   }
   if (!isSystemTemplate && existing.createdByUserId !== userId) {
-    throw new AppError(
+    throw new AuthorizationError(
       "Insufficient permissions",
-      403,
       ERROR_CODES.INSUFFICIENT_PERMISSIONS,
     );
   }

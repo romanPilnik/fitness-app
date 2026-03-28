@@ -1,6 +1,6 @@
 import { sendSuccess } from "../utils/response";
 import { UserService } from "../services/user/user.service";
-import { AppError } from "../errors/AppError";
+import { AuthenticationError } from "../errors/index";
 import { ERROR_CODES } from "../types/error.types";
 import type { Request, Response } from "express";
 import type {
@@ -17,7 +17,7 @@ async function updateCurrentUser(
   res: Response,
 ) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   const { id } = req.user;
   const { name, units, weekStartsOn } = req.body;
   const user = await UserService.updateUser({
@@ -34,7 +34,7 @@ async function changePassword(
   res: Response,
 ) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   const { id } = req.user;
   const { oldPassword, newPassword } = req.body;
   await UserService.changePassword({ id, oldPassword, newPassword });

@@ -1,4 +1,4 @@
-import { AppError } from "../errors/AppError";
+import { AuthenticationError } from "../errors/index";
 import { SessionService } from "../services/session/session.service";
 import { ERROR_CODES } from "../types/error.types";
 import { sendSuccess } from "../utils/response";
@@ -12,7 +12,7 @@ import type {
 
 async function getSessions(req: Request, res: Response) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   const query = req.query as unknown as GetSessionsQuery;
   const sessions = await SessionService.getSessions({
     userId: req.user.id,
@@ -26,7 +26,7 @@ async function getSessionById(
   res: Response,
 ) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   const session = await SessionService.getSessionById({
     sessionId: req.params.id,
     userId: req.user.id,
@@ -39,7 +39,7 @@ async function createSession(
   res: Response,
 ) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   const session = await SessionService.createSession({
     userId: req.user.id,
     ...req.body,
@@ -49,7 +49,7 @@ async function createSession(
 
 async function deleteSession(req: Request<DeleteSessionParams>, res: Response) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   await SessionService.deleteSession({
     sessionId: req.params.id,
     userId: req.user.id,

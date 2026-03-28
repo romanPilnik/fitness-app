@@ -1,6 +1,6 @@
 import { TemplateService } from "../services/template/template.service";
 import { sendSuccess } from "../utils/response";
-import { AppError } from "../errors/AppError";
+import { AuthenticationError } from "../errors/index";
 import { ERROR_CODES } from "../types/error.types";
 import type { Request, Response } from "express";
 import type {
@@ -47,7 +47,7 @@ async function createTemplate(
   res: Response,
 ) {
   if (!req.user) {
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   }
   const createdByUserId = req.user.role === "admin" ? null : req.user.id;
   const template = await TemplateService.createTemplate({
@@ -67,7 +67,7 @@ async function updateTemplate(
   res: Response,
 ) {
   if (!req.user) {
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   }
   const { id } = req.params;
   const { body } = req;
@@ -92,7 +92,7 @@ async function deleteTemplate(
   res: Response,
 ) {
   if (!req.user) {
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   }
 
   const { id } = req.params;

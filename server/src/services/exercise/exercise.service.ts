@@ -7,7 +7,7 @@ import type {
   DeleteExerciseDTO,
 } from "./exercise.dtos";
 import { prisma } from "../../lib/prisma";
-import { AppError } from "../../errors/AppError";
+import { NotFoundError, AuthorizationError } from "../../errors/index";
 import { ERROR_CODES } from "../../types/error.types";
 import type { Prisma } from "../../generated/prisma/client";
 import {
@@ -43,7 +43,7 @@ async function getExerciseById(
 
   const exercise = await prisma.exercise.findUnique({ where: { id } });
   if (!exercise) {
-    throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Exercise not found", ERROR_CODES.EXERCISE_NOT_FOUND);
   }
   return exercise;
 }
@@ -63,12 +63,11 @@ async function updateExercise(
 
   const existing = await prisma.exercise.findUnique({ where: { id } });
   if (!existing) {
-    throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Exercise not found", ERROR_CODES.EXERCISE_NOT_FOUND);
   }
   if (existing.createdByUserId !== userId) {
-    throw new AppError(
+    throw new AuthorizationError(
       "Insufficient permissions",
-      403,
       ERROR_CODES.INSUFFICIENT_PERMISSIONS,
     );
   }
@@ -102,12 +101,11 @@ async function deleteExercise(input: DeleteExerciseDTO): Promise<void> {
 
   const existing = await prisma.exercise.findUnique({ where: { id } });
   if (!existing) {
-    throw new AppError("Exercise not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Exercise not found", ERROR_CODES.EXERCISE_NOT_FOUND);
   }
   if (existing.createdByUserId !== userId) {
-    throw new AppError(
+    throw new AuthorizationError(
       "Insufficient permissions",
-      403,
       ERROR_CODES.INSUFFICIENT_PERMISSIONS,
     );
   }

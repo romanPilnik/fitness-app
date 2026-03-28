@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../errors/AppError";
+import { AuthenticationError, AuthorizationError } from "../errors/index";
 import { ERROR_CODES } from "../types/error.types";
 import { Role } from "../generated/prisma/enums";
 
@@ -7,17 +7,15 @@ function requireRole(...allowedRoles: Role[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {
-        throw new AppError(
+        throw new AuthenticationError(
           "Authentication required",
-          401,
           ERROR_CODES.TOKEN_REQUIRED,
         );
       }
 
       if (!allowedRoles.includes(req.user.role)) {
-        throw new AppError(
+        throw new AuthorizationError(
           "Insufficient permissions",
-          403,
           ERROR_CODES.INSUFFICIENT_PERMISSIONS,
         );
       }

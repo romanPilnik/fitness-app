@@ -2,21 +2,33 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./build",
+    "strict": true,
+
+    "moduleDetection": "force",
+
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnusedLabels": false,
+    "noUncheckedSideEffectImports": true,
+    "allowUnreachableCode": false,
+
+    "noUncheckedIndexedAccess": true,
+    "erasableSyntaxOnly": true,
+    "noErrorTruncation": false,
+    "noImplicitReturns": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "module": "preserve",
     "target": "esnext",
     "lib": ["esnext"],
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "bundler",
-    "moduleDetection": "force",
-    "strict": true,
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "esModuleInterop": true,
-    "verbatimModuleSyntax": true,
-    "noUncheckedSideEffectImports": true,
-    "skipLibCheck": true
+    "moduleResolution": "bundler"
+  },
+  "paths": {
+    "@/*": ["./src/*"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "build"]

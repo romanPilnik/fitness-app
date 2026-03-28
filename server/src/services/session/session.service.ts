@@ -1,4 +1,4 @@
-import { AppError } from "../../errors/AppError";
+import { NotFoundError } from "../../errors/index";
 import { ERROR_CODES } from "../../types/error.types";
 import type { SessionModel } from "../../generated/prisma/models";
 import type {
@@ -44,7 +44,7 @@ async function getSessionById(input: GetSessionByIdDTO): Promise<SessionModel> {
     },
   });
   if (!session) {
-    throw new AppError("Session not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Session not found", ERROR_CODES.SESSION_NOT_FOUND);
   }
 
   return session;
@@ -67,7 +67,7 @@ async function createSession(input: CreateSessionDTO): Promise<SessionModel> {
     select: { userId: true },
   });
   if (program?.userId !== userId) {
-    throw new AppError("Program not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Program not found", ERROR_CODES.PROGRAM_NOT_FOUND);
   }
 
   const session = await prisma.session.create({
@@ -121,7 +121,7 @@ async function deleteSession(input: DeleteSessionDTO): Promise<void> {
     where: { id: sessionId, userId },
   });
   if (session?.userId !== userId) {
-    throw new AppError("Session not found", 404, ERROR_CODES.NOT_FOUND);
+    throw new NotFoundError("Session not found", ERROR_CODES.SESSION_NOT_FOUND);
   }
 
   await prisma.session.delete({ where: { id: sessionId } });

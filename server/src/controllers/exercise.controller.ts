@@ -1,6 +1,6 @@
 import { ExerciseService } from "../services/exercise/exercise.service";
 import { sendSuccess } from "../utils/response";
-import { AppError } from "../errors/AppError";
+import { AuthenticationError } from "../errors/index";
 import { ERROR_CODES } from "../types/error.types";
 import type { Request, Response } from "express";
 import type {
@@ -35,7 +35,7 @@ async function createExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   const createdByUserId = req.user.role === "admin" ? null : req.user.id;
   const newExercise = await ExerciseService.createExercise({
     ...req.body,
@@ -49,7 +49,7 @@ async function updateExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   const { id } = req.params;
   const { body } = req;
   const exercise = await ExerciseService.updateExercise({
@@ -65,7 +65,7 @@ async function deleteExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AppError("Unauthorized", 401, ERROR_CODES.UNAUTHORIZED_ACCESS);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
 
   const { id } = req.params;
   await ExerciseService.deleteExercise({ id, userId: req.user.id });
