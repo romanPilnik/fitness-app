@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { passwordRegex } from "@/validations/shared";
+import { passwordRegex } from "@/features/auth/auth.validation.js";
 import { Units, WeekStartsOn } from "@/generated/prisma/enums";
 
 export const updateUser = z.object({

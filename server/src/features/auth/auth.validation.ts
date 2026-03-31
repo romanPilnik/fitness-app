@@ -1,5 +1,6 @@
 import * as z from "zod";
-import { passwordRegex } from "@/validations/shared.js";
+
+export const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)/;
 
 export const loginSchema = z.object({
   body: z.object({
