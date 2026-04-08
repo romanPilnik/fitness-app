@@ -89,7 +89,17 @@ describe("TemplateService", () => {
 
       expect(prismaMock.template.findUnique).toHaveBeenCalledWith({
         where: { id: "t-1" },
-        include: { workouts: { include: { exercises: true } } },
+        include: {
+          workouts: {
+            include: {
+              exercises: {
+                include: {
+                  exercise: { select: { id: true, name: true } },
+                },
+              },
+            },
+          },
+        },
       });
       expect(result).toEqual(tmpl);
     });
@@ -136,15 +146,30 @@ describe("TemplateService", () => {
         throw new Error("expected template.create mock call");
       }
       const createArgs = templateCreateCall[0] as {
-        data: {
-          name: string;
-          workouts: { create: unknown };
+        data: { name: string; workouts: { create: unknown } };
+        include: {
+          workouts: {
+            include: {
+              exercises: {
+                include: { exercise: { select: { id: true; name: true } } };
+              };
+            };
+          };
         };
-        include: { workouts: { include: { exercises: boolean } } };
       };
       expect(createArgs.data.name).toBe("PPL");
       expect(Array.isArray(createArgs.data.workouts.create)).toBe(true);
-      expect(createArgs.include.workouts.include.exercises).toBe(true);
+      expect(createArgs.include).toEqual({
+        workouts: {
+          include: {
+            exercises: {
+              include: {
+                exercise: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+      });
       expect(result).toEqual(created);
     });
   });

@@ -315,9 +315,9 @@ async function seed(): Promise<void> {
     const exerciseIds = createdExercises.map((e) => e.id);
     console.log(`Created ${String(createdExercises.length)} exercises`);
 
-    console.log("Creating test user...");
+    console.log("Creating test users...");
     const hashedPassword = await bcrypt.hash("password123", 10);
-    const createdUser = await prisma.user.create({
+    const regularUser = await prisma.user.create({
       data: {
         email: "test@test.com",
         password: hashedPassword,
@@ -327,7 +327,17 @@ async function seed(): Promise<void> {
         weekStartsOn: WeekStartsOn.monday,
       },
     });
-    console.log(`Created user: ${createdUser.email}`);
+    const adminUser = await prisma.user.create({
+      data: {
+        email: "admin@test.com",
+        password: hashedPassword,
+        name: "Admin User",
+        role: Role.admin,
+        units: Units.metric,
+        weekStartsOn: WeekStartsOn.monday,
+      },
+    });
+    console.log(`Created users: ${regularUser.email} (user), ${adminUser.email} (admin)`);
 
     console.log("Creating program templates...");
     await seedTemplates(exerciseIds);
@@ -336,8 +346,11 @@ async function seed(): Promise<void> {
     );
 
     console.log("\n--- Seed Complete ---");
-    console.log("Test user credentials:");
+    console.log("Regular user:");
     console.log("  Email: test@test.com");
+    console.log("  Password: password123");
+    console.log("Admin user:");
+    console.log("  Email: admin@test.com");
     console.log("  Password: password123");
 
     process.exit(0);

@@ -14,7 +14,11 @@ describe("exercises integration", () => {
   const agent = testAgent();
 
   it("GET /api/v1/exercises returns 200 with empty page after truncate", async () => {
-    const res = await agent.get("/api/v1/exercises").expect(200);
+    const { token } = await registerTestUser(agent);
+    const res = await agent
+      .get("/api/v1/exercises")
+      .set(bearerAuth(token))
+      .expect(200);
 
     const body = res.body as ApiSuccess<ExerciseListPayload>;
     expect(body.success).toBe(true);

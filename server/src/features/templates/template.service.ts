@@ -15,6 +15,18 @@ import type {
   DeleteTemplateDTO,
 } from "./template.dtos";
 
+const templateWithWorkoutsInclude = {
+  workouts: {
+    include: {
+      exercises: {
+        include: {
+          exercise: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+} as const;
+
 async function getTemplates(
   input: GetTemplatesDTO,
 ): Promise<CursorPage<TemplateModel>> {
@@ -43,7 +55,7 @@ async function getTemplateById(
 
   const template = await prisma.template.findUnique({
     where: { id },
-    include: { workouts: { include: { exercises: true } } },
+    include: templateWithWorkoutsInclude,
   });
 
   if (!template) {
@@ -78,7 +90,7 @@ async function createTemplate(
         })),
       },
     },
-    include: { workouts: { include: { exercises: true } } },
+    include: templateWithWorkoutsInclude,
   });
   return template;
 }
@@ -150,7 +162,7 @@ async function updateTemplate(
           }
         : undefined,
     },
-    include: { workouts: { include: { exercises: true } } },
+    include: templateWithWorkoutsInclude,
   });
 
   return template;

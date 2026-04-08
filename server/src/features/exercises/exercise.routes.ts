@@ -21,8 +21,9 @@ const exerciseRouter = Router();
  *     tags:
  *       - Exercises
  *     summary: List exercises (cursor pagination)
- *     description: Public. Filter by optional query params; supports cursor-based pagination.
- *     security: []
+ *     description: Filter by optional query params; supports cursor-based pagination.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: primaryMuscle
@@ -60,9 +61,12 @@ const exerciseRouter = Router();
  *         description: Paginated exercises
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Unauthorized
  */
 exerciseRouter.get(
   "/",
+  verifyToken,
   validate(getExercisesSchema),
   ExerciseController.getExercises,
 );
@@ -74,7 +78,8 @@ exerciseRouter.get(
  *     tags:
  *       - Exercises
  *     summary: Get exercise by id
- *     security: []
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -86,11 +91,14 @@ exerciseRouter.get(
  *         description: Exercise found
  *       400:
  *         description: Invalid id
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Not found
  */
 exerciseRouter.get(
   "/:id",
+  verifyToken,
   validate(getExerciseByIdSchema),
   ExerciseController.getExerciseById,
 );

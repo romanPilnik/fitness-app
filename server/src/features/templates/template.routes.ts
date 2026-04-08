@@ -20,7 +20,8 @@ const templateRouter = Router();
  *     tags:
  *       - Templates
  *     summary: List program templates
- *     security: []
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: splitType
@@ -58,9 +59,12 @@ const templateRouter = Router();
  *         description: Paginated templates
  *       400:
  *         description: Validation error
+ *       401:
+ *         description: Unauthorized
  */
 templateRouter.get(
   "/",
+  verifyToken,
   validate(getTemplatesSchema),
   TemplateController.getTemplates,
 );
@@ -166,7 +170,8 @@ templateRouter.post(
  *     tags:
  *       - Templates
  *     summary: Get template by id
- *     security: []
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -176,11 +181,14 @@ templateRouter.post(
  *     responses:
  *       200:
  *         description: Template with workouts
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Not found
  */
 templateRouter.get(
   "/:id",
+  verifyToken,
   validate(getTemplateByIdSchema),
   TemplateController.getTemplateById,
 );

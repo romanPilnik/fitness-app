@@ -11,8 +11,8 @@ interface Config {
   nodeEnv: string;
 }
 
-const parsedPort = Number(process.env.PORT ?? 5001);
-const port = Number.isFinite(parsedPort) ? parsedPort : 5001;
+const parsedPort = Number(process.env.PORT ?? 5002);
+const port = Number.isFinite(parsedPort) ? parsedPort : 5002;
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {

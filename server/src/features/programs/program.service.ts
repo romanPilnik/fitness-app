@@ -28,6 +28,19 @@ import type {
   BulkReorderWorkoutExercisesDTO,
 } from "./program.dtos.js";
 
+/** Nested exercise id+name for program workout slots (API responses). */
+const programWithWorkoutsInclude = {
+  programWorkouts: {
+    include: {
+      programWorkoutExercises: {
+        include: {
+          exercise: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+} as const;
+
 async function getPrograms(
   input: GetProgramsDTO,
 ): Promise<CursorPage<ProgramModel>> {
@@ -105,11 +118,7 @@ async function createFromTemplate(
         })),
       },
     },
-    include: {
-      programWorkouts: {
-        include: { programWorkoutExercises: true },
-      },
-    },
+    include: programWithWorkoutsInclude,
   });
 }
 
@@ -158,11 +167,7 @@ async function createCustomProgram(
         })),
       },
     },
-    include: {
-      programWorkouts: {
-        include: { programWorkoutExercises: true },
-      },
-    },
+    include: programWithWorkoutsInclude,
   });
 }
 
@@ -175,11 +180,7 @@ async function getActiveProgram(
       userId,
       status: "active",
     },
-    include: {
-      programWorkouts: {
-        include: { programWorkoutExercises: true },
-      },
-    },
+    include: programWithWorkoutsInclude,
   });
 }
 
@@ -187,11 +188,7 @@ async function getProgramById(input: GetProgramByIdDTO): Promise<ProgramModel> {
   const { programId, userId } = input;
   const program = await prisma.program.findUnique({
     where: { id: programId, userId },
-    include: {
-      programWorkouts: {
-        include: { programWorkoutExercises: true },
-      },
-    },
+    include: programWithWorkoutsInclude,
   });
   if (!program) {
     throw new NotFoundError("Program not found", ERROR_CODES.PROGRAM_NOT_FOUND);
@@ -232,11 +229,7 @@ async function updateProgram(input: UpdateProgramDTO): Promise<ProgramModel> {
       status,
       startDate: startDate ? new Date(startDate) : undefined,
     },
-    include: {
-      programWorkouts: {
-        include: { programWorkoutExercises: true },
-      },
-    },
+    include: programWithWorkoutsInclude,
   });
 }
 

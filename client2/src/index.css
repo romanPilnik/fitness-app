@@ -1,0 +1,87 @@
+@import 'tailwindcss';
+
+:root {
+  --text: #737373;
+  --text-h: #fafafa;
+  --bg: #09090b;
+  --border: #27272a;
+  --code-bg: #18181b;
+  --accent: #d4d4d4;
+  --accent-bg: rgba(255, 255, 255, 0.08);
+  --accent-border: rgba(255, 255, 255, 0.2);
+  --social-bg: rgba(255, 255, 255, 0.03);
+  --shadow:
+    rgba(0, 0, 0, 0.5) 0 10px 15px -3px,
+    rgba(0, 0, 0, 0.3) 0 4px 6px -2px;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    font-size: 20px;
+    letter-spacing: 0.2px;
+  }
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  margin-inline: auto;
+  max-width: 48rem;
+  min-height: 100dvh;
+  width: 100%;
+}
+
+html[data-live-session] #root {
+  max-width: none;
+}
+
+.no-spinner {
+  -moz-appearance: textfield;
+}
+
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Preflight zeros margin on * — restore UA centering for modal <dialog> */
+dialog {
+  margin: auto;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+}
+
+.font-mono-ui {
+  font-family: var(--mono);
+}
