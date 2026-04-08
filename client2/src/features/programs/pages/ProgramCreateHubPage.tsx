@@ -1,22 +1,20 @@
 import { BookOpen, PenLine } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 
 export function ProgramCreateHubPage() {
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/programs"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Programs
-      </Link>
-      <header className="border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">Create program</h1>
-        <p className="mt-1 text-sm text-(--text)">
+    <>
+      <SubpageHeader
+        fallbackTo="/programs"
+        title="Create program"
+        backLabel="Back to programs"
+      />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
+        <p className="text-sm text-(--text)">
           Start from scratch or pick a template from the library, then customize it into your
           program.
         </p>
-      </header>
 
       <ul className="flex flex-col gap-3">
         <li>
@@ -52,6 +50,7 @@ export function ProgramCreateHubPage() {
           </Link>
         </li>
       </ul>
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,14 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
-import { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/button';
-import {
-  API_VALIDATION_ERROR_CODE,
-  applyApiValidationErrors,
-} from '@/lib/applyApiValidationErrors';
-import { changePassword } from '../api';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
+import { authClient } from '@/lib/auth-client';
 import { changePasswordFormSchema, type ChangePasswordForm } from '../schemas';
 
 export function ChangePasswordPage() {
@@ -22,21 +17,20 @@ export function ChangePasswordPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (body: { oldPassword: string; newPassword: string }) => changePassword(body),
+    mutationFn: async (body: { oldPassword: string; newPassword: string }) => {
+      const { error } = await authClient.changePassword({
+        currentPassword: body.oldPassword,
+        newPassword: body.newPassword,
+        revokeOtherSessions: true,
+      });
+      if (error) throw new Error(error.message ?? 'Failed to change password');
+    },
   });
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/account"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Account
-      </Link>
-      <header className="border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">Change password</h1>
-      </header>
-
+    <>
+      <SubpageHeader fallbackTo="/account" title="Change password" backLabel="Back to account" />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <form
         className="flex flex-col gap-4"
         onSubmit={form.handleSubmit(async (values) => {
@@ -51,9 +45,9 @@ export function ChangePasswordPage() {
               confirmPassword: '',
             });
           } catch (e) {
-            if (e instanceof ApiError && e.code === API_VALIDATION_ERROR_CODE) {
-              applyApiValidationErrors(e, form.setError);
-            }
+            form.setError('root', {
+              message: e instanceof Error ? e.message : 'Failed to change password',
+            });
           }
         })}
       >
@@ -116,9 +110,9 @@ export function ChangePasswordPage() {
             Password updated.
           </p>
         ) : null}
-        {mutation.isError && mutation.error instanceof ApiError ? (
+        {mutation.isError ? (
           <p className="text-sm text-red-600" role="alert">
-            {mutation.error.message}
+            {mutation.error instanceof Error ? mutation.error.message : 'Failed to change password'}
           </p>
         ) : null}
 
@@ -126,6 +120,7 @@ export function ChangePasswordPage() {
           {mutation.isPending ? 'Saving…' : 'Update password'}
         </Button>
       </form>
-    </div>
+      </div>
+    </>
   );
 }

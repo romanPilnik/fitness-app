@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import {
   Difficulty,
@@ -103,6 +104,126 @@ const exerciseSeeds: ExerciseSeedRow[] = [
     category: ExerciseCategory.isolation,
     movementPattern: MovementPattern.hamstring_isolation,
   },
+  {
+    name: "Romanian Deadlift",
+    equipment: Equipment.barbell,
+    primaryMuscle: MuscleGroup.hamstrings,
+    secondaryMuscles: [MuscleGroup.glutes, MuscleGroup.back],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.hip_hinge,
+  },
+  {
+    name: "Front Squat",
+    equipment: Equipment.barbell,
+    primaryMuscle: MuscleGroup.quads,
+    secondaryMuscles: [MuscleGroup.glutes, MuscleGroup.abs],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.squat,
+  },
+  {
+    name: "Incline Dumbbell Press",
+    equipment: Equipment.dumbbell,
+    primaryMuscle: MuscleGroup.chest,
+    secondaryMuscles: [MuscleGroup.shoulders, MuscleGroup.triceps],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.incline_push,
+  },
+  {
+    name: "Lat Pulldown",
+    equipment: Equipment.cable,
+    primaryMuscle: MuscleGroup.lats,
+    secondaryMuscles: [MuscleGroup.biceps],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.vertical_pull,
+  },
+  {
+    name: "Face Pull",
+    equipment: Equipment.cable,
+    primaryMuscle: MuscleGroup.shoulders,
+    secondaryMuscles: [MuscleGroup.traps],
+    category: ExerciseCategory.isolation,
+    movementPattern: MovementPattern.rear_shoulder_isolation,
+  },
+  {
+    name: "Plank",
+    equipment: Equipment.bodyweight,
+    primaryMuscle: MuscleGroup.abs,
+    secondaryMuscles: [],
+    category: ExerciseCategory.isolation,
+    movementPattern: MovementPattern.core,
+  },
+  {
+    name: "Bulgarian Split Squat",
+    equipment: Equipment.dumbbell,
+    primaryMuscle: MuscleGroup.quads,
+    secondaryMuscles: [MuscleGroup.glutes],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.squat,
+  },
+  {
+    name: "Cable Fly",
+    equipment: Equipment.cable,
+    primaryMuscle: MuscleGroup.chest,
+    secondaryMuscles: [],
+    category: ExerciseCategory.isolation,
+    movementPattern: MovementPattern.horizontal_push,
+  },
+  {
+    name: "Dumbbell Shrug",
+    equipment: Equipment.dumbbell,
+    primaryMuscle: MuscleGroup.traps,
+    secondaryMuscles: [],
+    category: ExerciseCategory.isolation,
+    movementPattern: MovementPattern.carry,
+  },
+  {
+    name: "Kettlebell Swing",
+    equipment: Equipment.kettlebell,
+    primaryMuscle: MuscleGroup.glutes,
+    secondaryMuscles: [MuscleGroup.hamstrings, MuscleGroup.back],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.hip_hinge,
+  },
+  {
+    name: "Leg Press",
+    equipment: Equipment.machine,
+    primaryMuscle: MuscleGroup.quads,
+    secondaryMuscles: [MuscleGroup.glutes],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.squat,
+  },
+  {
+    name: "Standing Calf Raise",
+    equipment: Equipment.machine,
+    primaryMuscle: MuscleGroup.calves,
+    secondaryMuscles: [],
+    category: ExerciseCategory.isolation,
+    movementPattern: MovementPattern.calf_isolation,
+  },
+  {
+    name: "Hanging Leg Raise",
+    equipment: Equipment.bodyweight,
+    primaryMuscle: MuscleGroup.abs,
+    secondaryMuscles: [],
+    category: ExerciseCategory.isolation,
+    movementPattern: MovementPattern.core,
+  },
+  {
+    name: "Arnold Press",
+    equipment: Equipment.dumbbell,
+    primaryMuscle: MuscleGroup.shoulders,
+    secondaryMuscles: [MuscleGroup.triceps],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.vertical_push,
+  },
+  {
+    name: "Barbell Hip Thrust",
+    equipment: Equipment.barbell,
+    primaryMuscle: MuscleGroup.glutes,
+    secondaryMuscles: [MuscleGroup.hamstrings],
+    category: ExerciseCategory.compound,
+    movementPattern: MovementPattern.hip_hinge,
+  },
 ];
 
 /** Exercise list index → Prisma exercise id (filled after insert). */
@@ -112,8 +233,22 @@ function tplEx(
   exerciseIndex: number,
   order: number,
   targetSets: number,
-): { exerciseIndex: number; order: number; targetSets: number } {
-  return { exerciseIndex, order, targetSets };
+  targets?: {
+    targetWeight?: number;
+    targetTopSetReps?: number;
+    targetTotalReps?: number;
+    targetRir?: number;
+  },
+): {
+  exerciseIndex: number;
+  order: number;
+  targetSets: number;
+  targetWeight?: number;
+  targetTopSetReps?: number;
+  targetTotalReps?: number;
+  targetRir?: number;
+} {
+  return { exerciseIndex, order, targetSets, ...targets };
 }
 
 interface TemplateWorkoutDef {
@@ -145,30 +280,30 @@ const templateDefinitions: TemplateDef[] = [
         name: "Full Body A",
         dayNumber: 1,
         exercises: [
-          tplEx(0, 1, 4),
-          tplEx(1, 2, 4),
-          tplEx(4, 3, 3),
-          tplEx(7, 4, 3),
+          tplEx(0, 1, 4, { targetWeight: 80, targetTopSetReps: 5, targetTotalReps: 20, targetRir: 2 }),
+          tplEx(1, 2, 4, { targetWeight: 100, targetTopSetReps: 5, targetTotalReps: 20, targetRir: 2 }),
+          tplEx(4, 3, 3, { targetWeight: 70, targetTopSetReps: 8, targetTotalReps: 24, targetRir: 2 }),
+          tplEx(7, 4, 3, { targetWeight: 14, targetTopSetReps: 12, targetTotalReps: 36, targetRir: 1 }),
         ],
       },
       {
         name: "Full Body B",
         dayNumber: 2,
         exercises: [
-          tplEx(2, 1, 4),
-          tplEx(3, 2, 4),
-          tplEx(5, 3, 3),
-          tplEx(8, 4, 3),
+          tplEx(2, 1, 4, { targetWeight: 140, targetTopSetReps: 5, targetTotalReps: 20, targetRir: 2 }),
+          tplEx(3, 2, 4, { targetWeight: 50, targetTopSetReps: 5, targetTotalReps: 20, targetRir: 2 }),
+          tplEx(5, 3, 3, { targetTopSetReps: 8, targetTotalReps: 24, targetRir: 2 }),
+          tplEx(8, 4, 3, { targetWeight: 25, targetTopSetReps: 12, targetTotalReps: 36, targetRir: 1 }),
         ],
       },
       {
         name: "Full Body C",
         dayNumber: 3,
         exercises: [
-          tplEx(0, 1, 3),
-          tplEx(1, 2, 3),
-          tplEx(6, 3, 3),
-          tplEx(9, 4, 3),
+          tplEx(0, 1, 3, { targetWeight: 75, targetTopSetReps: 8, targetTotalReps: 24, targetRir: 2 }),
+          tplEx(1, 2, 3, { targetWeight: 90, targetTopSetReps: 8, targetTotalReps: 24, targetRir: 2 }),
+          tplEx(6, 3, 3, { targetWeight: 10, targetTopSetReps: 15, targetTotalReps: 45, targetRir: 1 }),
+          tplEx(9, 4, 3, { targetWeight: 40, targetTopSetReps: 12, targetTotalReps: 36, targetRir: 1 }),
         ],
       },
     ],
@@ -185,21 +320,29 @@ const templateDefinitions: TemplateDef[] = [
         name: "Push",
         dayNumber: 1,
         exercises: [
-          tplEx(0, 1, 4),
-          tplEx(3, 2, 4),
-          tplEx(6, 3, 3),
-          tplEx(8, 4, 3),
+          tplEx(0, 1, 4, { targetWeight: 85, targetTopSetReps: 8, targetTotalReps: 32, targetRir: 2 }),
+          tplEx(3, 2, 4, { targetWeight: 55, targetTopSetReps: 8, targetTotalReps: 32, targetRir: 2 }),
+          tplEx(6, 3, 3, { targetWeight: 12, targetTopSetReps: 15, targetTotalReps: 45, targetRir: 1 }),
+          tplEx(8, 4, 3, { targetWeight: 30, targetTopSetReps: 12, targetTotalReps: 36, targetRir: 1 }),
         ],
       },
       {
         name: "Pull",
         dayNumber: 2,
-        exercises: [tplEx(4, 1, 4), tplEx(5, 2, 4), tplEx(7, 3, 3)],
+        exercises: [
+          tplEx(4, 1, 4, { targetWeight: 75, targetTopSetReps: 8, targetTotalReps: 32, targetRir: 2 }),
+          tplEx(5, 2, 4, { targetTopSetReps: 10, targetTotalReps: 40, targetRir: 2 }),
+          tplEx(7, 3, 3, { targetWeight: 16, targetTopSetReps: 12, targetTotalReps: 36, targetRir: 1 }),
+        ],
       },
       {
         name: "Legs",
         dayNumber: 3,
-        exercises: [tplEx(1, 1, 4), tplEx(2, 2, 3), tplEx(9, 3, 3)],
+        exercises: [
+          tplEx(1, 1, 4, { targetWeight: 110, targetTopSetReps: 8, targetTotalReps: 32, targetRir: 2 }),
+          tplEx(2, 2, 3, { targetWeight: 150, targetTopSetReps: 5, targetTotalReps: 15, targetRir: 2 }),
+          tplEx(9, 3, 3, { targetWeight: 45, targetTopSetReps: 12, targetTotalReps: 36, targetRir: 1 }),
+        ],
       },
     ],
   },
@@ -215,33 +358,40 @@ const templateDefinitions: TemplateDef[] = [
         name: "Upper A",
         dayNumber: 1,
         exercises: [
-          tplEx(0, 1, 4),
-          tplEx(4, 2, 4),
-          tplEx(3, 3, 3),
-          tplEx(7, 4, 3),
-          tplEx(8, 5, 3),
+          tplEx(0, 1, 4, { targetWeight: 90, targetTopSetReps: 5, targetTotalReps: 20, targetRir: 2 }),
+          tplEx(4, 2, 4, { targetWeight: 80, targetTopSetReps: 5, targetTotalReps: 20, targetRir: 2 }),
+          tplEx(3, 3, 3, { targetWeight: 55, targetTopSetReps: 8, targetTotalReps: 24, targetRir: 2 }),
+          tplEx(7, 4, 3, { targetWeight: 16, targetTopSetReps: 10, targetTotalReps: 30, targetRir: 1 }),
+          tplEx(8, 5, 3, { targetWeight: 28, targetTopSetReps: 10, targetTotalReps: 30, targetRir: 1 }),
         ],
       },
       {
         name: "Lower A",
         dayNumber: 2,
-        exercises: [tplEx(1, 1, 4), tplEx(2, 2, 3), tplEx(9, 3, 3)],
+        exercises: [
+          tplEx(1, 1, 4, { targetWeight: 120, targetTopSetReps: 5, targetTotalReps: 20, targetRir: 2 }),
+          tplEx(2, 2, 3, { targetWeight: 160, targetTopSetReps: 5, targetTotalReps: 15, targetRir: 2 }),
+          tplEx(9, 3, 3, { targetWeight: 50, targetTopSetReps: 10, targetTotalReps: 30, targetRir: 1 }),
+        ],
       },
       {
         name: "Upper B",
         dayNumber: 3,
         exercises: [
-          tplEx(0, 1, 3),
-          tplEx(5, 2, 4),
-          tplEx(6, 3, 3),
-          tplEx(7, 4, 3),
-          tplEx(8, 5, 3),
+          tplEx(0, 1, 3, { targetWeight: 80, targetTopSetReps: 10, targetTotalReps: 30, targetRir: 2 }),
+          tplEx(5, 2, 4, { targetTopSetReps: 8, targetTotalReps: 32, targetRir: 2 }),
+          tplEx(6, 3, 3, { targetWeight: 12, targetTopSetReps: 15, targetTotalReps: 45, targetRir: 1 }),
+          tplEx(7, 4, 3, { targetWeight: 14, targetTopSetReps: 12, targetTotalReps: 36, targetRir: 1 }),
+          tplEx(8, 5, 3, { targetWeight: 25, targetTopSetReps: 12, targetTotalReps: 36, targetRir: 1 }),
         ],
       },
       {
         name: "Lower B",
         dayNumber: 4,
-        exercises: [tplEx(1, 1, 3), tplEx(9, 2, 4)],
+        exercises: [
+          tplEx(1, 1, 3, { targetWeight: 100, targetTopSetReps: 10, targetTotalReps: 30, targetRir: 2 }),
+          tplEx(9, 2, 4, { targetWeight: 45, targetTopSetReps: 12, targetTotalReps: 48, targetRir: 1 }),
+        ],
       },
     ],
   },
@@ -258,7 +408,83 @@ async function clearDatabase(): Promise<void> {
   await prisma.templateWorkout.deleteMany();
   await prisma.template.deleteMany();
   await prisma.exercise.deleteMany();
+  await prisma.verification.deleteMany();
+  await prisma.account.deleteMany();
+  await prisma.authSession.deleteMany();
   await prisma.user.deleteMany();
+}
+
+/** Better Auth email/password uses `account` rows (`providerId: "credential"`), same hash as legacy `User.password`. */
+async function createCredentialAccount(
+  userId: string,
+  passwordHash: string,
+): Promise<void> {
+  await prisma.account.create({
+    data: {
+      id: randomUUID(),
+      userId,
+      providerId: "credential",
+      accountId: userId,
+      password: passwordHash,
+    },
+  });
+}
+
+const EXTRA_PAGINATION_TEMPLATES = 22;
+
+async function seedExtraTemplatesForPagination(ids: ExerciseIds): Promise<void> {
+  for (let i = 1; i <= EXTRA_PAGINATION_TEMPLATES; i++) {
+    await prisma.template.create({
+      data: {
+        name: `Pagination seed template ${String(i)}`,
+        description: "Minimal template for client pagination testing",
+        daysPerWeek: 1,
+        difficulty: Difficulty.beginner,
+        splitType: SplitType.full_body,
+        goal: Goal.hypertrophy,
+        createdByUserId: null,
+        workouts: {
+          create: [
+            {
+              name: "Day 1",
+              dayNumber: 1,
+              exercises: {
+                create: [
+                  {
+                    exerciseId: exerciseIdAt(ids, 0),
+                    order: 1,
+                    targetSets: 3,
+                    targetWeight: 60,
+                    targetTopSetReps: 8,
+                    targetTotalReps: 24,
+                    targetRir: 2,
+                  },
+                  {
+                    exerciseId: exerciseIdAt(ids, 1),
+                    order: 2,
+                    targetSets: 3,
+                    targetWeight: 80,
+                    targetTopSetReps: 8,
+                    targetTotalReps: 24,
+                    targetRir: 2,
+                  },
+                  {
+                    exerciseId: exerciseIdAt(ids, 2),
+                    order: 3,
+                    targetSets: 3,
+                    targetWeight: 120,
+                    targetTopSetReps: 5,
+                    targetTotalReps: 15,
+                    targetRir: 2,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    });
+  }
 }
 
 function exerciseIdAt(ids: ExerciseIds, index: number): string {
@@ -289,6 +515,10 @@ async function seedTemplates(ids: ExerciseIds): Promise<void> {
                 exerciseId: exerciseIdAt(ids, ex.exerciseIndex),
                 order: ex.order,
                 targetSets: ex.targetSets,
+                targetWeight: ex.targetWeight ?? null,
+                targetTopSetReps: ex.targetTopSetReps ?? null,
+                targetTotalReps: ex.targetTotalReps ?? null,
+                targetRir: ex.targetRir ?? null,
               })),
             },
           })),
@@ -339,11 +569,16 @@ async function seed(): Promise<void> {
     });
     console.log(`Created users: ${regularUser.email} (user), ${adminUser.email} (admin)`);
 
+    await createCredentialAccount(regularUser.id, hashedPassword);
+    await createCredentialAccount(adminUser.id, hashedPassword);
+    console.log("Created Better Auth credential accounts for seeded users");
+
     console.log("Creating program templates...");
     await seedTemplates(exerciseIds);
-    console.log(
-      `Created ${String(templateDefinitions.length)} program templates`,
-    );
+    await seedExtraTemplatesForPagination(exerciseIds);
+    const templateCount =
+      templateDefinitions.length + EXTRA_PAGINATION_TEMPLATES;
+    console.log(`Created ${String(templateCount)} program templates`);
 
     console.log("\n--- Seed Complete ---");
     console.log("Regular user:");

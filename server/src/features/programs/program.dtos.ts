@@ -7,6 +7,15 @@ import {
 } from "@/generated/prisma/enums";
 import type { CursorPaginationParams } from "@/lib/pagination";
 
+export const programListSortValues = [
+  "created_desc",
+  "created_asc",
+  "name_asc",
+  "name_desc",
+] as const;
+
+export type ProgramListSort = (typeof programListSortValues)[number];
+
 interface ProgramWorkoutExerciseDTO {
   exerciseId: string;
   order: number;
@@ -25,6 +34,7 @@ interface ProgramWorkoutDTO {
 
 export interface GetProgramsDTO extends CursorPaginationParams {
   userId: string;
+  sort: ProgramListSort;
   status?: ProgramStatuses;
   difficulty?: Difficulty;
   goal?: Goal;

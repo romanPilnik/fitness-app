@@ -16,6 +16,7 @@ export interface GetExercisesDTO extends CursorPaginationParams {
 
 export interface GetExerciseByIdDTO {
   id: string;
+  userId: string;
 }
 
 export interface CreateExerciseDTO {

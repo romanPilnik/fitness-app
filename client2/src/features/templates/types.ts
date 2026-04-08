@@ -17,6 +17,10 @@ export type TemplateWorkoutExercise = {
   exerciseId: string;
   order: number;
   targetSets: number;
+  targetWeight: number | null;
+  targetTotalReps: number | null;
+  targetTopSetReps: number | null;
+  targetRir: number | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;

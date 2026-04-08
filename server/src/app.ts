@@ -3,6 +3,8 @@ import cors from "cors";
 import "dotenv/config";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./lib/auth";
 import { authRoutes } from "@/features/auth";
 import { userRoutes } from "@/features/users";
 import { exerciseRoutes } from "@/features/exercises";
@@ -23,8 +25,17 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// Middleware
-app.use(cors());
+// Middleware — CORS must be before Better Auth handler
+app.use(
+  cors({
+    origin: process.env.CLIENT_ORIGIN ?? "http://localhost:5173",
+    credentials: true,
+  }),
+);
+
+// Better Auth handler — must be before express.json()
+app.all("/api/auth/*splat", toNodeHandler(auth));
+
 app.use(express.json());
 app.use(httpLogger);
 

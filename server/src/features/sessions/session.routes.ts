@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyToken } from "@/middlewares/auth.middleware";
+import { verifySession } from "@/middlewares/betterAuth.middleware";
 import { SessionController } from "./session.controller";
 import { validate } from "@/middlewares/validate.middleware";
 import {
@@ -26,6 +26,23 @@ const sessionRouter = Router();
  *           type: string
  *           enum: [completed, partially, skipped]
  *       - in: query
+ *         name: programId
+ *         description: Filter by program id
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: dateFrom
+ *         description: Inclusive lower bound on datePerformed (ISO 8601)
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
+ *         name: dateTo
+ *         description: Inclusive upper bound on datePerformed (ISO 8601). Must be >= dateFrom when both are set.
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *       - in: query
  *         name: cursor
  *         schema:
  *           type: string
@@ -38,7 +55,7 @@ const sessionRouter = Router();
  *           default: 20
  *     responses:
  *       200:
- *         description: Paginated sessions
+ *         description: Paginated sessions; each item includes program id and name when present
  *       400:
  *         description: Validation error
  *       401:
@@ -46,7 +63,7 @@ const sessionRouter = Router();
  */
 sessionRouter.get(
   "/",
-  verifyToken,
+  verifySession,
   validate(getSessionsSchema),
   SessionController.getSessions,
 );
@@ -74,7 +91,7 @@ sessionRouter.get(
  */
 sessionRouter.get(
   "/:id",
-  verifyToken,
+  verifySession,
   validate(getSessionByIdSchema),
   SessionController.getSessionById,
 );
@@ -186,7 +203,7 @@ sessionRouter.get(
  */
 sessionRouter.post(
   "/",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(createSessionSchema),
   SessionController.createSession,
@@ -215,7 +232,7 @@ sessionRouter.post(
  */
 sessionRouter.delete(
   "/:id",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(deleteSessionSchema),
   SessionController.deleteSession,

@@ -6,6 +6,7 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import type { ProgramListSort } from '../types';
 import { fetchProgramsPage, programQueryKeys } from '../api';
 import { ProgramAdvancedFiltersDialog } from '../components/ProgramAdvancedFiltersDialog';
 import { ProgramListFiltersBar } from '../components/ProgramListFiltersBar';
@@ -19,6 +20,7 @@ export function ProgramsPage() {
   const [goal, setGoal] = useState('');
   const [splitType, setSplitType] = useState('');
   const [createdFrom, setCreatedFrom] = useState('');
+  const [sort, setSort] = useState<ProgramListSort>('created_desc');
 
   const statusForApi = activeOnly ? 'active' : advStatus || undefined;
 
@@ -31,11 +33,13 @@ export function ProgramsPage() {
       goal,
       splitType,
       createdFrom,
+      sort,
     ],
     queryFn: ({ pageParam }) =>
       fetchProgramsPage({
         cursor: pageParam,
         limit: DEFAULT_LIST_LIMIT,
+        sort,
         ...(statusForApi ? { status: statusForApi } : {}),
         ...(difficulty ? { difficulty } : {}),
         ...(goal ? { goal } : {}),
@@ -87,6 +91,8 @@ export function ProgramsPage() {
         }}
         advancedCount={advancedCount}
         onOpenAdvanced={openAdvanced}
+        sort={sort}
+        onSortChange={setSort}
       />
 
       <ProgramAdvancedFiltersDialog

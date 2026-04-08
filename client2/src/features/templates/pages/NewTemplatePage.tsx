@@ -1,15 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useFieldArray, useForm, type Resolver, type UseFormReturn } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { useFieldArray, useForm, useFormState, type Resolver, type UseFormReturn } from 'react-hook-form';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/button';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import {
   API_VALIDATION_ERROR_CODE,
   applyApiValidationErrors,
 } from '@/lib/applyApiValidationErrors';
+import { isFromLibraryState, libraryLocationState } from '@/lib/libraryNav';
 import { errorMessageFromUnknown } from '@/lib/utils';
 import { ExerciseIdSelect } from '@/features/exercises/components/ExerciseIdSelect';
+import { useConfirmLeaveWhenDirty } from '@/hooks/useConfirmLeaveWhenDirty';
 import { createTemplate, templateQueryKeys } from '../api';
 import { templateFormSchema, type TemplateForm } from '../schemas';
 
@@ -20,6 +23,8 @@ const defaultWorkout: TemplateForm['workouts'][number] = {
 };
 
 export function NewTemplatePage() {
+  const location = useLocation();
+  const fromLibrary = isFromLibraryState(location.state);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -36,6 +41,9 @@ export function NewTemplatePage() {
     },
   });
 
+  const { isDirty } = useFormState({ control: form.control });
+  const prepareLeave = useConfirmLeaveWhenDirty(isDirty);
+
   const workoutsFA = useFieldArray({
     control: form.control,
     name: 'workouts',
@@ -44,23 +52,20 @@ export function NewTemplatePage() {
   const mutation = useMutation({
     mutationFn: createTemplate,
     onSuccess: (t) => {
+      prepareLeave();
       qc.invalidateQueries({ queryKey: templateQueryKeys.all });
-      navigate(`/templates/${t.id}`);
+      navigate(`/templates/${t.id}`, { state: fromLibrary ? libraryLocationState : undefined });
     },
   });
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/templates"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Templates
-      </Link>
-      <header className="border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">New template</h1>
-      </header>
-
+    <>
+      <SubpageHeader
+        fallbackTo={fromLibrary ? '/library' : '/templates'}
+        title="New template"
+        backLabel={fromLibrary ? 'Back to library' : 'Back to templates'}
+      />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <form
         className="flex flex-col gap-6"
         onSubmit={form.handleSubmit(async (values) => {
@@ -194,7 +199,8 @@ export function NewTemplatePage() {
           {mutation.isPending ? 'Saving…' : 'Create template'}
         </Button>
       </form>
-    </div>
+      </div>
+    </>
   );
 }
 

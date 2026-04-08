@@ -4,6 +4,7 @@ import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useAuth } from '@/features/auth/useAuth';
 import { fetchActivePrograms, programQueryKeys } from '@/features/programs/api';
+import { WorkoutCalendar } from '@/features/sessions/components/WorkoutCalendar';
 import { fetchSessionsPage, sessionQueryKeys } from '@/features/sessions/api';
 
 export function HomePage() {
@@ -16,7 +17,7 @@ export function HomePage() {
   });
 
   const recentSessionsQuery = useQuery({
-    queryKey: sessionQueryKeys.list('dashboard-preview'),
+    queryKey: sessionQueryKeys.list('dashboard-preview', {}),
     queryFn: () => fetchSessionsPage({ limit: 5 }),
     staleTime: 30_000,
   });
@@ -47,6 +48,8 @@ export function HomePage() {
         </h1>
       </header>
 
+      <WorkoutCalendar />
+
       <section className="flex flex-col gap-4">
         <div className={sectionHead}>
           <h2 className={sectionTitle}>Active programs</h2>
@@ -67,11 +70,11 @@ export function HomePage() {
             description="Start from a template, create a custom program, or open an existing program and set its status to active."
             action={
               <div className={btnGroup}>
-                <Link to="/templates" className={secondaryBtn}>
-                  Browse templates
-                </Link>
                 <Link to="/programs/new" className={primaryBtn}>
                   New program
+                </Link>
+                <Link to="/templates" className={secondaryBtn}>
+                  Browse templates
                 </Link>
                 <Link to="/programs" className={secondaryBtn}>
                   My programs
@@ -112,10 +115,10 @@ export function HomePage() {
         ) : recentSessions.length === 0 ? (
           <EmptyState
             title="No sessions yet"
-            description="Log a workout from a program day, or open Sessions and start a log."
+            description="Start a workout from a program day, or open Sessions and start a log."
             action={
               <Link to="/sessions/start" className={primaryBtn}>
-                Log workout
+                Start workout
               </Link>
             }
           />

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyToken } from "@/middlewares/auth.middleware";
+import { verifySession } from "@/middlewares/betterAuth.middleware";
 import { UserController } from "./user.controller";
 import { validate } from "@/middlewares/validate.middleware";
 import { updateUser, changePassword } from "./user.validation";
@@ -20,7 +20,7 @@ const userRouter = Router();
  *       401:
  *         description: Unauthorized
  */
-userRouter.get("/me", verifyToken, UserController.getCurrentUser);
+userRouter.get("/me", verifySession, UserController.getCurrentUser);
 
 /**
  * @openapi
@@ -57,7 +57,7 @@ userRouter.get("/me", verifyToken, UserController.getCurrentUser);
  */
 userRouter.patch(
   "/me",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(updateUser),
   UserController.updateCurrentUser,
@@ -97,7 +97,7 @@ userRouter.patch(
  */
 userRouter.post(
   "/change-password",
-  verifyToken,
+  verifySession,
   authLimiter,
   validate(changePassword),
   UserController.changePassword,

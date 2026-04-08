@@ -8,6 +8,7 @@ import {
 import { DEFAULT_LIST_LIMIT, type CursorPage } from '@/api/pagination';
 import type {
   ProgramDetail,
+  ProgramListSort,
   ProgramSummary,
   ProgramWorkout,
   ProgramWorkoutExercise,
@@ -23,6 +24,7 @@ export const programQueryKeys = {
 export type ProgramListParams = {
   cursor?: string;
   limit?: number;
+  sort?: ProgramListSort;
   status?: string;
   difficulty?: string;
   goal?: string;
@@ -36,6 +38,7 @@ export async function fetchProgramsPage(
   const {
     cursor,
     limit = DEFAULT_LIST_LIMIT,
+    sort,
     status,
     difficulty,
     goal,
@@ -46,6 +49,7 @@ export async function fetchProgramsPage(
     params: {
       ...(cursor ? { cursor } : {}),
       limit,
+      ...(sort ? { sort } : {}),
       ...(status ? { status } : {}),
       ...(difficulty ? { difficulty } : {}),
       ...(goal ? { goal } : {}),

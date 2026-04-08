@@ -24,6 +24,12 @@ interface SessionExerciseDTO {
 export interface GetSessionsDTO extends CursorPaginationParams {
   userId: string;
   sessionStatus?: SessionStatuses;
+  /** Filter sessions logged for this program (must belong to the user’s sessions). */
+  programId?: string;
+  /** Inclusive lower bound on `datePerformed` (ISO 8601). */
+  dateFrom?: string;
+  /** Inclusive upper bound on `datePerformed` (ISO 8601). */
+  dateTo?: string;
 }
 
 export interface GetSessionByIdDTO {

@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import { formatEnumLabel, formatEnumList } from '@/lib/formatEnumLabel';
+import { isFromLibraryState, libraryLocationState } from '@/lib/libraryNav';
 import { errorMessageFromUnknown } from '@/lib/utils';
 import { exercisePerformanceQueryKeys } from '@/features/exercise-performance/api';
 import { useCurrentUser } from '@/features/users/useCurrentUser';
@@ -10,6 +12,8 @@ import { exerciseQueryKeys, deleteExercise, fetchExerciseById } from '../api';
 export function ExerciseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const exerciseId = id ?? '';
+  const location = useLocation();
+  const fromLibrary = isFromLibraryState(location.state);
   const navigate = useNavigate();
   const qc = useQueryClient();
   const me = useCurrentUser();
@@ -29,56 +33,72 @@ export function ExerciseDetailPage() {
         exact: true,
       });
       await qc.invalidateQueries({ queryKey: exerciseQueryKeys.all });
-      navigate('/exercises');
+      navigate('/exercises', { state: fromLibrary ? libraryLocationState : undefined });
     },
   });
 
   const isAdmin = me.data?.role === 'admin';
 
+  const exercisesFallback = fromLibrary ? '/library' : '/exercises';
+
   if (!exerciseId) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Missing exercise id.</p>
-        <Link to="/exercises" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Back to exercises
-        </Link>
-      </div>
+      <>
+        <SubpageHeader
+          fallbackTo={exercisesFallback}
+          title="Exercises"
+          backLabel={fromLibrary ? 'Back to library' : 'Back to exercises'}
+        />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Missing exercise id.</p>
+        </div>
+      </>
     );
   }
 
   if (query.isError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
-        <Link to="/exercises" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Back to exercises
-        </Link>
-      </div>
+      <>
+        <SubpageHeader
+          fallbackTo={exercisesFallback}
+          title="Exercises"
+          backLabel={fromLibrary ? 'Back to library' : 'Back to exercises'}
+        />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
+        </div>
+      </>
     );
   }
 
   if (query.isPending) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Loading…</p>
-      </div>
+      <>
+        <SubpageHeader
+          fallbackTo={exercisesFallback}
+          title="Exercise"
+          backLabel={fromLibrary ? 'Back to library' : 'Back to exercises'}
+        />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Loading…</p>
+        </div>
+      </>
     );
   }
 
   const ex = query.data;
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/exercises"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Exercises
-      </Link>
+    <>
+      <SubpageHeader
+        fallbackTo={exercisesFallback}
+        title={ex.name}
+        backLabel={fromLibrary ? 'Back to library' : 'Back to exercises'}
+      />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <header className="flex flex-col gap-3">
         <div>
-          <h1 className="text-2xl font-medium text-(--text-h)">{ex.name}</h1>
-          <p className="mt-2 text-sm text-(--text)">
+          <p className="text-sm text-(--text)">
             {formatEnumLabel(ex.primaryMuscle)} · {formatEnumLabel(ex.equipment)} ·{' '}
             {formatEnumLabel(ex.category)}
           </p>
@@ -137,6 +157,7 @@ export function ExerciseDetailPage() {
           ) : null}
         </section>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }

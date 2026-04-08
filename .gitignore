@@ -7,6 +7,9 @@ CLAUDE.md
 AGENTS.md
 .DS_Store
 .cursor
+.agents
+.claude
+skills-lock.json
 
 # dependencies
 node_modules

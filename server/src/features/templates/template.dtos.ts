@@ -17,6 +17,10 @@ interface TemplateWorkoutExerciseDTO {
   exerciseId: string;
   order: number;
   targetSets: number;
+  targetWeight?: number;
+  targetTotalReps?: number;
+  targetTopSetReps?: number;
+  targetRir?: number;
   notes?: string;
 }
 

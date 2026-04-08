@@ -49,8 +49,12 @@ describe("SessionService", () => {
       if (sessionFindCall === undefined) {
         throw new Error("expected session.findMany mock call");
       }
-      const findArgs = sessionFindCall[0] as { where: { userId: string } };
+      const findArgs = sessionFindCall[0] as {
+        where: { userId: string };
+        include: { program: { select: { id: boolean; name: boolean } } };
+      };
       expect(findArgs.where.userId).toBe("u-1");
+      expect(findArgs.include.program.select).toEqual({ id: true, name: true });
       expect(result.data).toHaveLength(1);
       expect(result.hasMore).toBe(false);
     });
@@ -73,6 +77,46 @@ describe("SessionService", () => {
         where: { sessionStatus: string };
       };
       expect(filterArgs.where.sessionStatus).toBe("completed");
+    });
+
+    it("filters by programId when provided", async () => {
+      prismaMock.session.findMany.mockResolvedValue([]);
+
+      await SessionService.getSessions({
+        userId: "u-1",
+        programId: "p-99",
+        limit: 20,
+      });
+
+      const call = prismaMock.session.findMany.mock.calls[0];
+      if (call === undefined) {
+        throw new Error("expected session.findMany mock call");
+      }
+      const filterArgs = call[0] as { where: { programId: string } };
+      expect(filterArgs.where.programId).toBe("p-99");
+    });
+
+    it("filters by dateFrom and dateTo when provided", async () => {
+      prismaMock.session.findMany.mockResolvedValue([]);
+      const from = "2025-01-01T00:00:00.000Z";
+      const to = "2025-01-31T23:59:59.999Z";
+
+      await SessionService.getSessions({
+        userId: "u-1",
+        dateFrom: from,
+        dateTo: to,
+        limit: 20,
+      });
+
+      const call = prismaMock.session.findMany.mock.calls[0];
+      if (call === undefined) {
+        throw new Error("expected session.findMany mock call");
+      }
+      const filterArgs = call[0] as {
+        where: { datePerformed: { gte: Date; lte: Date } };
+      };
+      expect(filterArgs.where.datePerformed.gte).toEqual(new Date(from));
+      expect(filterArgs.where.datePerformed.lte).toEqual(new Date(to));
     });
   });
 

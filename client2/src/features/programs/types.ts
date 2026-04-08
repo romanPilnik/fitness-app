@@ -1,3 +1,9 @@
+export type ProgramListSort =
+  | "created_desc"
+  | "created_asc"
+  | "name_asc"
+  | "name_desc";
+
 export type ProgramWorkoutExercise = {
   id: string;
   programWorkoutId: string;

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import { errorMessageFromUnknown } from '@/lib/utils';
 import { exercisePerformanceQueryKeys } from '@/features/exercise-performance/api';
 import { deleteSession, fetchSessionById, sessionQueryKeys } from '../api';
@@ -32,31 +33,34 @@ export function SessionDetailPage() {
 
   if (!sessionId) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Missing session id.</p>
-        <Link to="/sessions" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Back to sessions
-        </Link>
-      </div>
+      <>
+        <SubpageHeader showBack={false} title="Sessions" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Missing session id.</p>
+        </div>
+      </>
     );
   }
 
   if (query.isError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
-        <Link to="/sessions" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Back to sessions
-        </Link>
-      </div>
+      <>
+        <SubpageHeader showBack={false} title="Sessions" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
+        </div>
+      </>
     );
   }
 
   if (query.isPending) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Loading…</p>
-      </div>
+      <>
+        <SubpageHeader showBack={false} title="Session" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Loading…</p>
+        </div>
+      </>
     );
   }
 
@@ -64,21 +68,16 @@ export function SessionDetailPage() {
   const exercises = [...s.sessionExercises].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/sessions"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Sessions
-      </Link>
-      <header>
-        <h1 className="text-2xl font-medium text-(--text-h)">{s.workoutName}</h1>
-        <p className="mt-2 text-sm capitalize text-(--text)">
+    <>
+      <SubpageHeader showBack={false} title={s.workoutName} />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
+      <header className="flex flex-col gap-2">
+        <p className="text-sm capitalize text-(--text)">
           Day {s.dayNumber} · {s.sessionStatus} · {Math.round(s.sessionDuration)} min
         </p>
-        <p className="mt-1 text-sm text-(--text)">{new Date(s.datePerformed).toLocaleString()}</p>
+        <p className="text-sm text-(--text)">{new Date(s.datePerformed).toLocaleString()}</p>
         {s.program ? (
-          <p className="mt-2 text-sm text-(--text)">
+          <p className="text-sm text-(--text)">
             Program:{' '}
             <Link
               to={`/programs/${s.program.id}`}
@@ -136,6 +135,17 @@ export function SessionDetailPage() {
           </div>
         ))}
       </section>
-    </div>
+
+      <div className="border-t border-(--border) pt-8">
+        <Button
+          type="button"
+          className="w-full"
+          onClick={() => navigate('/home', { replace: true })}
+        >
+          Back to home
+        </Button>
+      </div>
+      </div>
+    </>
   );
 }

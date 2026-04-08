@@ -23,6 +23,10 @@ const templateWorkoutExerciseSchema = z.object({
   exerciseId: z.string(),
   order: z.number().int().min(1),
   targetSets: z.number().int().min(1),
+  targetWeight: z.number().optional(),
+  targetTotalReps: z.number().int().optional(),
+  targetTopSetReps: z.number().int().optional(),
+  targetRir: z.number().int().optional(),
   notes: z.string().max(500).optional(),
 });
 

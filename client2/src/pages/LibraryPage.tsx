@@ -1,44 +1,44 @@
-import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { libraryLocationState } from '@/lib/libraryNav';
 
 export function LibraryPage() {
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-8 px-4 py-8">
-      <header className="border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">Library</h1>
+    <PageContainer className="gap-4 py-6 sm:gap-6 sm:py-8">
+      <header className="border-b border-(--border) pb-3 sm:pb-4">
+        <div className="min-w-0 border-l-2 border-(--accent) pl-3 sm:pl-4">
+          <h1 className="text-3xl font-semibold leading-[1.1] tracking-tight text-(--text-h) sm:text-4xl">
+            Library
+          </h1>
+        </div>
       </header>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium text-(--text-h)">Exercises</h2>
-        <Link
-          to="/exercises"
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-(--border) bg-transparent px-4 py-2.5 text-base font-medium text-(--text-h) hover:bg-(--code-bg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
-        >
-          Browse exercises
-        </Link>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-3">
-          <h2 className="text-lg font-medium text-(--text-h)">Templates</h2>
+      <ul className="flex flex-col gap-2">
+        <li>
           <Link
-            to="/templates/new"
-            aria-label="Add template"
-            title="New template"
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-(--text-h) text-(--bg) transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
+            to="/exercises"
+            state={libraryLocationState}
+            className="block rounded-xl border border-(--border) bg-(--bg) px-4 py-3 transition-colors hover:bg-(--code-bg)/50"
           >
-            <Plus className="size-5" aria-hidden />
+            <span className="font-medium text-(--text-h)">Exercises</span>
+            <p className="font-mono-ui mt-0.5 text-xs tracking-tight text-(--text)">
+              Browse by muscle group
+            </p>
           </Link>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        </li>
+        <li>
           <Link
             to="/templates"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-(--border) bg-transparent px-4 py-2.5 text-base font-medium text-(--text-h) hover:bg-(--code-bg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
+            state={libraryLocationState}
+            className="block rounded-xl border border-(--border) bg-(--bg) px-4 py-3 transition-colors hover:bg-(--code-bg)/50"
           >
-            Browse templates
+            <span className="font-medium text-(--text-h)">Templates</span>
+            <p className="font-mono-ui mt-0.5 text-xs tracking-tight text-(--text)">
+              Program templates to build from
+            </p>
           </Link>
-        </div>
-      </section>
-    </div>
+        </li>
+      </ul>
+    </PageContainer>
   );
 }

@@ -15,8 +15,13 @@ export function defaultSets(
   }));
 }
 
-export function oneEmptySet(): LogSessionForm['exercises'][number]['sets'][number] {
+export function oneEmptySet(
+  targetWeight?: number,
+  targetReps?: number,
+): LogSessionForm['exercises'][number]['sets'][number] {
   return {
+    targetWeight: targetWeight ?? undefined,
+    targetReps: targetReps ?? undefined,
     reps: 0,
     weight: 0,
     rir: undefined,

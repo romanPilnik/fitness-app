@@ -49,6 +49,27 @@ describe("getSessionsSchema", () => {
     });
     expect(r.success).toBe(false);
   });
+
+  it("accepts programId and date range", () => {
+    const r = getSessionsSchema.safeParse({
+      query: {
+        programId: "prog-1",
+        dateFrom: "2025-01-01T00:00:00.000Z",
+        dateTo: "2025-01-31T23:59:59.999Z",
+      },
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects dateFrom after dateTo", () => {
+    const r = getSessionsSchema.safeParse({
+      query: {
+        dateFrom: "2025-02-01T00:00:00.000Z",
+        dateTo: "2025-01-01T00:00:00.000Z",
+      },
+    });
+    expect(r.success).toBe(false);
+  });
 });
 
 describe("getSessionByIdSchema", () => {

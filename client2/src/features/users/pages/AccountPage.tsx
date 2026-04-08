@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { LogOut } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/useAuth';
 import {
@@ -29,7 +31,8 @@ function weekStartLabel(day: string) {
 }
 
 export function AccountPage() {
-  const { setAuthUser } = useAuth();
+  const confirm = useConfirm();
+  const { setAuthUser, logout } = useAuth();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
 
@@ -67,12 +70,6 @@ export function AccountPage() {
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/home"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Home
-      </Link>
       <header className="border-b border-(--border) pb-4">
         <h1 className="text-2xl font-medium text-(--text-h)">Account</h1>
         {q.data?.role === 'admin' ? (
@@ -236,6 +233,24 @@ export function AccountPage() {
           </div>
         </form>
       ) : null}
+
+      <div className="border-t border-(--border) pt-6">
+        <Button
+          type="button"
+          variant="secondary"
+          className="inline-flex items-center gap-2"
+          onClick={() => {
+            void confirm('Sign out?', { confirmLabel: 'Sign out', cancelLabel: 'Cancel' }).then(
+              (ok) => {
+                if (ok) void logout();
+              },
+            );
+          }}
+        >
+          <LogOut className="size-4 shrink-0" aria-hidden />
+          Sign out
+        </Button>
+      </div>
     </div>
   );
 }

@@ -10,6 +10,8 @@ const GROUP_LIMIT = 80;
 
 type Props = {
   muscle: string;
+  /** Forwarded to exercise detail links (e.g. when opened from Library). */
+  linkState?: { from: string };
   equipment?: string;
   category?: string;
   movementPattern?: string;
@@ -17,6 +19,7 @@ type Props = {
 
 export function ExerciseMuscleGroupSection({
   muscle,
+  linkState,
   equipment,
   category,
   movementPattern,
@@ -80,6 +83,7 @@ export function ExerciseMuscleGroupSection({
                 <li key={ex.id}>
                   <Link
                     to={`/exercises/${ex.id}`}
+                    {...(linkState ? { state: linkState } : {})}
                     className="flex min-h-11 items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-(--code-bg)/50"
                   >
                     <span className="min-w-0 flex-1 font-medium text-(--text-h)">{ex.name}</span>

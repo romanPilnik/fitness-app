@@ -31,6 +31,7 @@ function unwrapEnvelope<T>(data: unknown): T {
 export const api: AxiosInstance = axios.create({
   baseURL: getApiV1BaseUrl(),
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {

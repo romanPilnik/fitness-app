@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -115,16 +116,18 @@ enum SessionStatuses {
 }
 
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  name         String
-  password     String
-  role         Role         @default(user)
-  isActive     Boolean      @default(true)
-  units        Units        @default(metric)
-  weekStartsOn WeekStartsOn @default(sunday)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  email         String       @unique
+  name          String
+  password      String       @default("")
+  role          Role         @default(user)
+  isActive      Boolean      @default(true)
+  units         Units        @default(metric)
+  weekStartsOn  WeekStartsOn @default(sunday)
+  emailVerified Boolean      @default(false)
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   exercises           Exercise[]
   templates           Template[]
@@ -132,6 +135,8 @@ model User {
   sessions            Session[]
   sessionExerciseSets SessionExerciseSet[]
   sessionExercises    SessionExercise[]
+  accounts            Account[]
+  authSessions        AuthSession[]
 }
 
 model Exercise {
@@ -192,6 +197,10 @@ model TemplateWorkoutExercise {
   exerciseId        String
   order             Int
   targetSets        Int
+  targetWeight      Float?
+  targetTotalReps   Int?
+  targetTopSetReps  Int?
+  targetRir         Int?
   notes             String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -270,6 +279,21 @@ model Session {
   sessionExercises SessionExercise[]
 }
 
+model AuthSession {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("session")
+}
+
 model SessionExercise {
   id               String   @id @default(cuid())
   sessionId        String
@@ -303,4 +327,36 @@ model SessionExerciseSet {
 
   sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

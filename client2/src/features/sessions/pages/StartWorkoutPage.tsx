@@ -1,16 +1,33 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { DEFAULT_LIST_LIMIT } from '@/api/pagination';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { Button } from '@/components/ui/button';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import { EmptyState } from '@/components/ui/empty-state';
 import { fetchProgramById, fetchProgramsPage, programQueryKeys } from '@/features/programs/api';
 
 export function StartWorkoutPage() {
   const navigate = useNavigate();
-  const [programId, setProgramId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const programId = searchParams.get('programId')?.trim() || null;
+
+  const setProgramSelection = (id: string | null) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id) {
+          next.set('programId', id);
+        } else {
+          next.delete('programId');
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   const programsQ = useInfiniteQuery({
     queryKey: [...programQueryKeys.all, 'list', 'start-picker'],
@@ -38,21 +55,22 @@ export function StartWorkoutPage() {
 
   if (programsQ.isError) {
     return (
-      <PageContainer className="gap-4 py-8">
-        <QueryErrorMessage error={programsQ.error} refetch={() => programsQ.refetch()} />
-      </PageContainer>
+      <>
+        <SubpageHeader fallbackTo="/home" title="Start workout" backLabel="Back to home" />
+        <PageContainer className="gap-4 py-8">
+          <QueryErrorMessage error={programsQ.error} refetch={() => programsQ.refetch()} />
+        </PageContainer>
+      </>
     );
   }
 
   if (!programId) {
     return (
-      <PageContainer className="gap-6 py-8">
+      <>
+        <SubpageHeader fallbackTo="/home" title="Start workout" backLabel="Back to home" />
+        <PageContainer className="gap-6 py-8">
         <header className="border-b border-(--border) pb-4">
-          <Link to="/home" className="text-sm font-medium text-(--accent)">
-            ← Home
-          </Link>
-          <h1 className="mt-3 text-2xl font-medium text-(--text-h)">Start workout</h1>
-          <p className="mt-1 text-sm text-(--text)">Choose a program, then pick a workout day.</p>
+          <p className="text-sm text-(--text)">Choose a program, then pick a workout day.</p>
         </header>
 
         {programsQ.isPending ? (
@@ -84,7 +102,7 @@ export function StartWorkoutPage() {
               <li key={p.id}>
                 <button
                   type="button"
-                  onClick={() => setProgramId(p.id)}
+                  onClick={() => setProgramSelection(p.id)}
                   className="flex w-full min-h-11 flex-col items-start rounded-lg border border-(--border) px-4 py-3 text-left transition-colors hover:bg-(--code-bg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
                 >
                   <span className="text-sm font-medium text-(--text-h)">{p.name}</span>
@@ -108,18 +126,24 @@ export function StartWorkoutPage() {
             {programsQ.isFetchingNextPage ? 'Loading…' : 'Load more'}
           </Button>
         ) : null}
-      </PageContainer>
+        </PageContainer>
+      </>
     );
   }
 
   if (programDetailQ.isError) {
     return (
-      <PageContainer className="gap-4 py-8">
-        <QueryErrorMessage error={programDetailQ.error} refetch={() => programDetailQ.refetch()} />
-        <Button type="button" variant="secondary" onClick={() => setProgramId(null)}>
-          Back to programs
-        </Button>
-      </PageContainer>
+      <>
+        <SubpageHeader
+          fallbackTo="/sessions/start"
+          title="Start workout"
+          backLabel="Back to program list"
+          onBack={() => setProgramSelection(null)}
+        />
+        <PageContainer className="gap-4 py-8">
+          <QueryErrorMessage error={programDetailQ.error} refetch={() => programDetailQ.refetch()} />
+        </PageContainer>
+      </>
     );
   }
 
@@ -129,19 +153,16 @@ export function StartWorkoutPage() {
     : [];
 
   return (
-    <PageContainer className="gap-6 py-8">
+    <>
+      <SubpageHeader
+        fallbackTo="/programs"
+        title={programDetailQ.isPending ? 'Program' : (program?.name ?? 'Program')}
+        backLabel="Back to program list"
+        onBack={() => setProgramSelection(null)}
+      />
+      <PageContainer className="gap-6 py-8">
       <header className="border-b border-(--border) pb-4">
-        <button
-          type="button"
-          onClick={() => setProgramId(null)}
-          className="text-sm font-medium text-(--accent)"
-        >
-          ← Programs
-        </button>
-        <h1 className="mt-3 text-2xl font-medium text-(--text-h)">
-          {programDetailQ.isPending ? 'Loading…' : (program?.name ?? 'Program')}
-        </h1>
-        <p className="mt-1 text-sm text-(--text)">Pick a workout to begin logging.</p>
+        <p className="text-sm text-(--text)">Pick a workout to begin logging.</p>
       </header>
 
       {programDetailQ.isPending ? (
@@ -183,6 +204,7 @@ export function StartWorkoutPage() {
           ))}
         </ul>
       )}
-    </PageContainer>
+      </PageContainer>
+    </>
   );
 }

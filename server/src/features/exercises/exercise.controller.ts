@@ -25,8 +25,13 @@ async function getExerciseById(
   req: Request<GetExerciseByIdParams>,
   res: Response,
 ) {
+  if (!req.user)
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
   const { id } = req.params;
-  const exercise = await ExerciseService.getExerciseById({ id });
+  const exercise = await ExerciseService.getExerciseById({
+    id,
+    userId: req.user.id,
+  });
   return sendSuccess(res, exercise, 200, "Exercise retrieved successfully");
 }
 

@@ -1,14 +1,19 @@
+import { Plus } from 'lucide-react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { DEFAULT_LIST_LIMIT } from '@/api/pagination';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import { useAuth } from '@/features/auth/useAuth';
+import { isFromLibraryState, libraryLocationState } from '@/lib/libraryNav';
 import { fetchTemplatesPage, templateQueryKeys } from '../api';
 
 export function TemplatesPage() {
+  const location = useLocation();
+  const fromLibrary = isFromLibraryState(location.state);
   const { isAuthenticated } = useAuth();
   const [mineOnly, setMineOnly] = useState(false);
   const listScope = mineOnly ? 'mine' : 'all';
@@ -37,18 +42,24 @@ export function TemplatesPage() {
   const items = query.data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
+    <>
+      {fromLibrary ? (
+        <SubpageHeader fallbackTo="/library" title="Templates" backLabel="Back to library" />
+      ) : null}
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <header className="flex flex-col gap-3 border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">Templates</h1>
+        {!fromLibrary ? <h1 className="text-2xl font-medium text-(--text-h)">Templates</h1> : null}
         <p className="text-sm text-(--text)">Browse program templates you can start from later.</p>
         <div className="flex flex-wrap items-center gap-3">
           {isAuthenticated ? (
             <>
               <Link
                 to="/templates/new"
-                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-(--text-h) px-4 text-base font-medium text-(--bg) hover:opacity-90"
+                {...(fromLibrary ? { state: libraryLocationState } : {})}
+                aria-label="New template"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-(--text-h) text-(--bg) shadow-(--shadow) transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
               >
-                New template
+                <Plus className="size-5" aria-hidden />
               </Link>
               <label className="flex items-center gap-2 text-sm text-(--text)">
                 <input
@@ -74,6 +85,7 @@ export function TemplatesPage() {
             <li key={t.id}>
               <Link
                 to={`/templates/${t.id}`}
+                {...(fromLibrary ? { state: libraryLocationState } : {})}
                 className="block rounded-xl border border-(--border) bg-(--bg) px-4 py-3 transition-colors hover:bg-(--code-bg)/50"
               >
                 <span className="font-medium text-(--text-h)">{t.name}</span>
@@ -97,6 +109,7 @@ export function TemplatesPage() {
           {query.isFetchingNextPage ? 'Loading…' : 'Load more'}
         </Button>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }

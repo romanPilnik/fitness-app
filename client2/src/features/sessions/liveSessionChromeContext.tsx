@@ -5,7 +5,7 @@ export type LiveSessionChromeApi = {
   workoutTitleLine: string;
   elapsedLabel: string;
   isPaused: boolean;
-  onQuit: () => void;
+  onQuit: () => void | Promise<void>;
   onPauseToggle: () => void;
   onOpenGear: () => void;
   onComplete: () => void;

@@ -1,12 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import { useAuth } from '@/features/auth/useAuth';
+import { isFromLibraryState, libraryLocationState } from '@/lib/libraryNav';
 import { cn } from '@/lib/utils';
 import { fetchTemplateById, templateQueryKeys } from '../api';
 
 export function TemplateDetailPage() {
   const { user, isAuthenticated } = useAuth();
+  const location = useLocation();
+  const fromLibrary = isFromLibraryState(location.state);
   const { id } = useParams<{ id: string }>();
   const templateId = id ?? '';
 
@@ -19,48 +23,51 @@ export function TemplateDetailPage() {
 
   if (!templateId) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Missing template id.</p>
-        <Link to="/templates" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Back to templates
-        </Link>
-      </div>
+      <>
+        <SubpageHeader fallbackTo="/templates" title="Templates" backLabel="Back to templates" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Missing template id.</p>
+        </div>
+      </>
     );
   }
 
   if (query.isError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
-        <Link to="/templates" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Back to templates
-        </Link>
-      </div>
+      <>
+        <SubpageHeader fallbackTo="/templates" title="Templates" backLabel="Back to templates" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
+        </div>
+      </>
     );
   }
 
   if (query.isPending) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Loading…</p>
-      </div>
+      <>
+        <SubpageHeader fallbackTo="/templates" title="Template" backLabel="Back to templates" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Loading…</p>
+        </div>
+      </>
     );
   }
 
   const t = query.data;
   const workouts = [...t.workouts].sort((a, b) => a.dayNumber - b.dayNumber);
   const isOwner = Boolean(user?.id && t.createdByUserId && t.createdByUserId === user.id);
+  const backFallback = fromLibrary ? '/library' : '/templates';
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/templates"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Templates
-      </Link>
+    <>
+      <SubpageHeader
+        fallbackTo={backFallback}
+        title={t.name}
+        backLabel={fromLibrary ? 'Back to library' : 'Back to templates'}
+      />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <header>
-        <h1 className="text-2xl font-medium text-(--text-h)">{t.name}</h1>
         {t.description ? <p className="mt-2 text-sm text-(--text)">{t.description}</p> : null}
         <p className="mt-2 text-sm text-(--text)">
           {t.daysPerWeek} days per week · {t.difficulty} · {t.goal} · {t.splitType}
@@ -80,6 +87,7 @@ export function TemplateDetailPage() {
           {isAuthenticated && isOwner ? (
             <Link
               to={`/templates/${t.id}/edit`}
+              {...(fromLibrary ? { state: libraryLocationState } : {})}
               className={cn(
                 'inline-flex min-h-11 items-center justify-center rounded-lg bg-(--text-h) px-4 text-base font-medium text-(--bg) hover:opacity-90',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)',
@@ -119,6 +127,7 @@ export function TemplateDetailPage() {
           </div>
         ))}
       </section>
-    </div>
+      </div>
+    </>
   );
 }

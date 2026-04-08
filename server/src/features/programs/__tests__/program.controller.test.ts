@@ -86,13 +86,17 @@ describe("ProgramController", () => {
       await ProgramController.getPrograms(
         asReqFor(
           ProgramController.getPrograms,
-          mockReq({ query: { status: "active" } as never }),
+          mockReq({ query: { status: "active", sort: "created_desc" } as never }),
         ),
         res,
       );
 
       expect(mockProgramService.getPrograms).toHaveBeenCalledWith(
-        expect.objectContaining({ status: "active", userId: "u-1" }),
+        expect.objectContaining({
+          status: "active",
+          userId: "u-1",
+          sort: "created_desc",
+        }),
       );
       expect(mockSendSuccess).toHaveBeenCalledWith(
         res,

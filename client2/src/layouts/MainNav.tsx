@@ -1,12 +1,11 @@
-import { LogOut } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '@/features/auth/useAuth';
 import { useCurrentUser } from '@/features/users/useCurrentUser';
 import { cn } from '@/lib/utils';
-import { topNavLinkClassName, topNavSignOutClassName } from './navStyles';
+import { topNavLinkClassName } from './navStyles';
 
 export function MainNav() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
   const me = useCurrentUser();
 
   return (
@@ -15,24 +14,21 @@ export function MainNav() {
         <Link
           to={isAuthenticated ? '/home' : '/exercises'}
           className={cn(
-            'inline-flex min-h-11 min-w-[44px] items-center rounded-lg text-lg font-semibold uppercase tracking-[0.18em] text-(--text-h)',
+            'inline-flex min-h-11 min-w-[44px] items-center gap-2 rounded-lg text-lg font-semibold uppercase tracking-[0.18em] text-(--text-h)',
             'hover:text-(--accent)',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)',
           )}
         >
-          OnlyFitness
+          <img
+            src="/logo.svg"
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 object-contain"
+            aria-hidden
+          />
+          <span>OnlyFitness</span>
         </Link>
-
-        {isAuthenticated && (
-          <button
-            type="button"
-            onClick={() => logout()}
-            className={cn(topNavSignOutClassName, 'md:hidden')}
-            aria-label="Sign out"
-          >
-            <LogOut className="size-5 shrink-0" aria-hidden />
-          </button>
-        )}
 
         <nav className="hidden flex-wrap items-center gap-1 md:flex" aria-label="Main">
           {isAuthenticated && (
@@ -66,20 +62,11 @@ export function MainNav() {
               Admin
             </NavLink>
           )}
-          {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={() => logout()}
-              className={topNavSignOutClassName}
-              aria-label="Sign out"
-            >
-              <LogOut className="size-5 shrink-0" aria-hidden />
-            </button>
-          ) : (
+          {!isAuthenticated ? (
             <NavLink to="/login" className={({ isActive }) => topNavLinkClassName(isActive)}>
               Sign in
             </NavLink>
-          )}
+          ) : null}
         </nav>
       </div>
     </header>

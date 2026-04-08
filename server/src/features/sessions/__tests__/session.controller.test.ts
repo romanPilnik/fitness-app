@@ -76,7 +76,14 @@ describe("SessionController", () => {
       await SessionController.getSessions(
         asReqFor(
           SessionController.getSessions,
-          mockReq({ query: { sessionStatus: "completed" } as never }),
+          mockReq({
+            query: {
+              sessionStatus: "completed",
+              programId: "p-1",
+              dateFrom: "2025-06-01T00:00:00.000Z",
+              dateTo: "2025-06-30T23:59:59.999Z",
+            } as never,
+          }),
         ),
         res,
       );
@@ -84,6 +91,9 @@ describe("SessionController", () => {
       expect(mockSessionService.getSessions).toHaveBeenCalledWith(
         expect.objectContaining({
           sessionStatus: "completed",
+          programId: "p-1",
+          dateFrom: "2025-06-01T00:00:00.000Z",
+          dateTo: "2025-06-30T23:59:59.999Z",
           userId: "u-1",
         }),
       );

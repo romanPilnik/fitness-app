@@ -13,6 +13,7 @@ import {
 import type { ProgramModel } from "@/generated/prisma/models.js";
 import type {
   GetProgramsDTO,
+  ProgramListSort,
   GetProgramByIdDTO,
   UpdateProgramDTO,
   DeleteProgramDTO,
@@ -41,10 +42,34 @@ const programWithWorkoutsInclude = {
   },
 } as const;
 
+function programListOrderBy(
+  sort: ProgramListSort,
+):
+  | [{ createdAt: "desc" }, { id: "desc" }]
+  | [{ createdAt: "asc" }, { id: "asc" }]
+  | [{ name: "asc" }, { id: "asc" }]
+  | [{ name: "desc" }, { id: "desc" }] {
+  switch (sort) {
+    case "created_desc":
+      return [{ createdAt: "desc" }, { id: "desc" }];
+    case "created_asc":
+      return [{ createdAt: "asc" }, { id: "asc" }];
+    case "name_asc":
+      return [{ name: "asc" }, { id: "asc" }];
+    case "name_desc":
+      return [{ name: "desc" }, { id: "desc" }];
+    default: {
+      const _exhaustive: never = sort;
+      return _exhaustive;
+    }
+  }
+}
+
 async function getPrograms(
   input: GetProgramsDTO,
 ): Promise<CursorPage<ProgramModel>> {
-  const { userId, difficulty, goal, splitType, status, createdFrom } = input;
+  const { userId, difficulty, goal, splitType, status, createdFrom, sort } =
+    input;
   const { cursor, limit } = input;
   const items = await prisma.program.findMany({
     where: {
@@ -55,7 +80,7 @@ async function getPrograms(
       status,
       createdFrom,
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: programListOrderBy(sort),
     ...buildCursorArgs({ cursor, limit }),
   });
   return paginateCursorResult(items, limit);
@@ -112,6 +137,10 @@ async function createFromTemplate(
               exerciseId: ex.exerciseId,
               order: ex.order,
               targetSets: ex.targetSets,
+              targetWeight: ex.targetWeight,
+              targetTotalReps: ex.targetTotalReps,
+              targetTopSetReps: ex.targetTopSetReps,
+              targetRir: ex.targetRir,
               notes: ex.notes,
             })),
           },

@@ -1,6 +1,7 @@
 import { NotFoundError } from "@/errors/index";
 import { ERROR_CODES } from "@/types/error.types";
 import type { SessionModel } from "@/generated/prisma/models";
+import type { Prisma } from "@/generated/prisma/client";
 import type {
   GetSessionsDTO,
   GetSessionByIdDTO,
@@ -14,16 +15,47 @@ import {
   type CursorPage,
 } from "@/lib/pagination.js";
 
+const sessionListInclude = {
+  program: { select: { id: true, name: true } },
+} as const;
+
+export type SessionListItem = Prisma.SessionGetPayload<{
+  include: typeof sessionListInclude;
+}>;
+
 async function getSessions(
   input: GetSessionsDTO,
-): Promise<CursorPage<SessionModel>> {
-  const { userId, sessionStatus, cursor, limit } = input;
+): Promise<CursorPage<SessionListItem>> {
+  const {
+    userId,
+    sessionStatus,
+    programId,
+    dateFrom,
+    dateTo,
+    cursor,
+    limit,
+  } = input;
+
+  const where: Prisma.SessionWhereInput = { userId };
+  if (sessionStatus !== undefined) {
+    where.sessionStatus = sessionStatus;
+  }
+  if (programId !== undefined) {
+    where.programId = programId;
+  }
+  if (dateFrom !== undefined || dateTo !== undefined) {
+    where.datePerformed = {};
+    if (dateFrom !== undefined) {
+      where.datePerformed.gte = new Date(dateFrom);
+    }
+    if (dateTo !== undefined) {
+      where.datePerformed.lte = new Date(dateTo);
+    }
+  }
 
   const items = await prisma.session.findMany({
-    where: {
-      userId,
-      sessionStatus,
-    },
+    where,
+    include: sessionListInclude,
     orderBy: { datePerformed: "desc" },
     ...buildCursorArgs({ cursor, limit }),
   });

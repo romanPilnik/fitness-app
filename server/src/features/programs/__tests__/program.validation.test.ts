@@ -44,9 +44,12 @@ const customProgramBody = {
 };
 
 describe("getProgramsSchema", () => {
-  it("accepts empty query", () => {
+  it("accepts empty query and defaults sort", () => {
     const r = getProgramsSchema.safeParse({ query: {} });
     expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.query.sort).toBe("created_desc");
+    }
   });
 
   it("accepts filters", () => {
@@ -57,6 +60,22 @@ describe("getProgramsSchema", () => {
       },
     });
     expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.query.sort).toBe("created_desc");
+    }
+  });
+
+  it("accepts sort name_asc", () => {
+    const r = getProgramsSchema.safeParse({ query: { sort: "name_asc" } });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.query.sort).toBe("name_asc");
+    }
+  });
+
+  it("rejects invalid sort", () => {
+    const r = getProgramsSchema.safeParse({ query: { sort: "bogus" } });
+    expect(r.success).toBe(false);
   });
 
   it("rejects invalid status enum", () => {

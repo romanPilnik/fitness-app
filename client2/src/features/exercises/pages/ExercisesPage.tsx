@@ -1,7 +1,8 @@
 import { Plus } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import {
   EQUIPMENT_VALUES,
@@ -10,6 +11,7 @@ import {
   MUSCLE_GROUP_VALUES,
 } from '@/lib/apiFilterOptions';
 import { formatEnumLabel } from '@/lib/formatEnumLabel';
+import { isFromLibraryState, libraryLocationState } from '@/lib/libraryNav';
 import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/features/users/useCurrentUser';
 import { ExerciseMuscleGroupSection } from '../components/ExerciseMuscleGroupSection';
@@ -19,6 +21,9 @@ const selectClass =
 
 export function ExercisesPage() {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const location = useLocation();
+  const fromLibrary = isFromLibraryState(location.state);
+  const exerciseLinkState = fromLibrary ? libraryLocationState : undefined;
   const me = useCurrentUser();
   const [equipment, setEquipment] = useState('');
   const [category, setCategory] = useState('');
@@ -31,34 +36,22 @@ export function ExercisesPage() {
     dialogRef.current?.showModal();
   };
 
-  const isAdmin = me.data?.role === 'admin';
-
   const filterEquipment = equipment || undefined;
   const filterCategory = category || undefined;
   const filterMovement = movementPattern || undefined;
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
+    <>
+      {fromLibrary ? (
+        <SubpageHeader fallbackTo="/library" title="Exercises" backLabel="Back to library" />
+      ) : null}
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       {me.isError ? (
         <QueryErrorMessage error={me.error} refetch={() => me.refetch()} />
       ) : null}
 
       <header className="flex flex-col gap-4 border-b border-(--border) pb-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-medium text-(--text-h)">Exercises</h1>
-            <p className="mt-1 text-sm text-(--text)">Browse the exercise library by muscle group.</p>
-          </div>
-          {isAdmin ? (
-            <Link
-              to="/exercises/new"
-              aria-label="Add exercise"
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-(--text-h) text-(--bg) transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
-            >
-              <Plus className="size-5" aria-hidden />
-            </Link>
-          ) : null}
-        </div>
+        {!fromLibrary ? <h1 className="text-2xl font-medium text-(--text-h)">Exercises</h1> : null}
 
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -81,6 +74,14 @@ export function ExercisesPage() {
               </span>
             ) : null}
           </button>
+          <Link
+            to="/exercises/new"
+            {...(exerciseLinkState ? { state: exerciseLinkState } : {})}
+            aria-label="New exercise"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-(--text-h) text-(--bg) shadow-(--shadow) transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
+          >
+            <Plus className="size-5" aria-hidden />
+          </Link>
         </div>
       </header>
 
@@ -155,12 +156,14 @@ export function ExercisesPage() {
           <ExerciseMuscleGroupSection
             key={muscle}
             muscle={muscle}
+            {...(exerciseLinkState ? { linkState: exerciseLinkState } : {})}
             {...(filterEquipment ? { equipment: filterEquipment } : {})}
             {...(filterCategory ? { category: filterCategory } : {})}
             {...(filterMovement ? { movementPattern: filterMovement } : {})}
           />
         ))}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

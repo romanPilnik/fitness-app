@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/button';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import {
   EQUIPMENT_VALUES,
   EXERCISE_CATEGORY_VALUES,
@@ -25,8 +26,10 @@ const selectClass =
 const resolver = zodResolver(createExerciseFormSchema) as Resolver<CreateExerciseFormValues>;
 
 export function NewExercisePage() {
+  const location = useLocation();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const exercisesListPath = location.pathname.startsWith('/admin') ? '/admin/exercises' : '/exercises';
 
   const form = useForm<CreateExerciseFormValues>({
     resolver,
@@ -65,17 +68,13 @@ export function NewExercisePage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/exercises"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Exercises
-      </Link>
-      <header className="border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">New exercise</h1>
-      </header>
-
+    <>
+      <SubpageHeader
+        fallbackTo={exercisesListPath}
+        title="New exercise"
+        backLabel="Back to exercises"
+      />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <form
         className="flex flex-col gap-5"
         onSubmit={form.handleSubmit(async (values) => {
@@ -223,6 +222,7 @@ export function NewExercisePage() {
           {mutation.isPending ? 'Saving…' : 'Create exercise'}
         </Button>
       </form>
-    </div>
+      </div>
+    </>
   );
 }

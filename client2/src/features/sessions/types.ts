@@ -9,6 +9,8 @@ export type SessionSummary = {
   sessionDuration: number;
   createdAt: string;
   updatedAt: string;
+  /** Present on list responses; detail may include additional program fields. */
+  program: { id: string; name: string } | null;
 };
 
 export type SessionExerciseSet = {
@@ -52,7 +54,7 @@ export type SessionExerciseRow = {
   sessionExerciseSets: SessionExerciseSet[];
 };
 
-export type SessionDetail = SessionSummary & {
+export type SessionDetail = Omit<SessionSummary, 'program'> & {
   program: { id: string; name: string; userId: string } | null;
   sessionExercises: SessionExerciseRow[];
 };

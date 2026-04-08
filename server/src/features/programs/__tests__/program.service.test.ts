@@ -86,6 +86,7 @@ describe("ProgramService", () => {
       const result = await ProgramService.getPrograms({
         userId: "u-1",
         limit: 20,
+        sort: "created_desc",
       });
 
       expect(prismaMock.program.findMany).toHaveBeenCalled();
@@ -93,9 +94,35 @@ describe("ProgramService", () => {
       if (programFindCall === undefined) {
         throw new Error("expected program.findMany mock call");
       }
-      const findArgs = programFindCall[0] as { where: { userId: string } };
+      const findArgs = programFindCall[0] as {
+        where: { userId: string };
+        orderBy: [{ createdAt: string }, { id: string }];
+      };
       expect(findArgs.where.userId).toBe("u-1");
+      expect(findArgs.orderBy).toEqual([
+        { createdAt: "desc" },
+        { id: "desc" },
+      ]);
       expect(result.data).toHaveLength(1);
+    });
+
+    it("uses name orderBy when sort is name_asc", async () => {
+      prismaMock.program.findMany.mockResolvedValue([]);
+
+      await ProgramService.getPrograms({
+        userId: "u-1",
+        limit: 20,
+        sort: "name_asc",
+      });
+
+      const programFindCall = prismaMock.program.findMany.mock.calls[0];
+      if (programFindCall === undefined) {
+        throw new Error("expected program.findMany mock call");
+      }
+      const findArgs = programFindCall[0] as {
+        orderBy: [{ name: string }, { id: string }];
+      };
+      expect(findArgs.orderBy).toEqual([{ name: "asc" }, { id: "asc" }]);
     });
   });
 

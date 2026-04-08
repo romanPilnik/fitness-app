@@ -1,23 +1,28 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useFieldArray, useForm, type Resolver, type UseFormReturn } from 'react-hook-form';
+import { useFieldArray, useForm, useFormState, type Resolver, type UseFormReturn } from 'react-hook-form';
 import { useEffect } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { Button } from '@/components/ui/button';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import {
   API_VALIDATION_ERROR_CODE,
   applyApiValidationErrors,
 } from '@/lib/applyApiValidationErrors';
+import { isFromLibraryState, libraryLocationState } from '@/lib/libraryNav';
 import { errorMessageFromUnknown } from '@/lib/utils';
 import { ExerciseIdSelect } from '@/features/exercises/components/ExerciseIdSelect';
+import { useConfirmLeaveWhenDirty } from '@/hooks/useConfirmLeaveWhenDirty';
 import { deleteTemplate, fetchTemplateById, templateQueryKeys, updateTemplate } from '../api';
 import { templateFormSchema, type TemplateForm } from '../schemas';
 
 export function EditTemplatePage() {
   const { id } = useParams<{ id: string }>();
   const templateId = id ?? '';
+  const location = useLocation();
+  const fromLibrary = isFromLibraryState(location.state);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -45,6 +50,9 @@ export function EditTemplatePage() {
       ],
     },
   });
+
+  const { isDirty } = useFormState({ control: form.control });
+  const prepareLeave = useConfirmLeaveWhenDirty(isDirty);
 
   useEffect(() => {
     if (!q.data) return;
@@ -81,58 +89,76 @@ export function EditTemplatePage() {
   const save = useMutation({
     mutationFn: (body: Parameters<typeof updateTemplate>[1]) => updateTemplate(templateId, body),
     onSuccess: () => {
+      prepareLeave();
       qc.invalidateQueries({ queryKey: templateQueryKeys.detail(templateId) });
       qc.invalidateQueries({ queryKey: templateQueryKeys.all });
-      navigate(`/templates/${templateId}`);
+      navigate(`/templates/${templateId}`, {
+        state: fromLibrary ? libraryLocationState : undefined,
+      });
     },
   });
 
   const del = useMutation({
     mutationFn: () => deleteTemplate(templateId),
     onSuccess: () => {
+      prepareLeave();
       qc.invalidateQueries({ queryKey: templateQueryKeys.all });
-      navigate('/templates');
+      navigate('/templates', { state: fromLibrary ? libraryLocationState : undefined });
     },
   });
 
   if (!templateId) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Missing template id.</p>
-        <Link to="/templates" className="mt-4 inline-block text-sm text-(--accent)">
-          Back
-        </Link>
-      </div>
+      <>
+        <SubpageHeader fallbackTo="/templates" title="Templates" backLabel="Back to templates" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Missing template id.</p>
+        </div>
+      </>
     );
   }
 
   if (q.isError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <QueryErrorMessage error={q.error} refetch={() => q.refetch()} />
-      </div>
+      <>
+        <SubpageHeader
+          fallbackTo={`/templates/${templateId}`}
+          fallbackState={fromLibrary ? libraryLocationState : undefined}
+          title="Edit template"
+          backLabel="Back to template"
+        />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <QueryErrorMessage error={q.error} refetch={() => q.refetch()} />
+        </div>
+      </>
     );
   }
 
   if (q.isPending) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Loading…</p>
-      </div>
+      <>
+        <SubpageHeader
+          fallbackTo={`/templates/${templateId}`}
+          fallbackState={fromLibrary ? libraryLocationState : undefined}
+          title="Edit template"
+          backLabel="Back to template"
+        />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Loading…</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to={`/templates/${templateId}`}
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Template
-      </Link>
-      <header className="border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">Edit template</h1>
-      </header>
+    <>
+      <SubpageHeader
+        fallbackTo={`/templates/${templateId}`}
+        fallbackState={fromLibrary ? libraryLocationState : undefined}
+        title="Edit template"
+        backLabel="Back to template"
+      />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
 
       <form
         className="flex flex-col gap-6"
@@ -267,7 +293,8 @@ export function EditTemplatePage() {
       >
         {del.isPending ? 'Deleting…' : 'Delete template'}
       </Button>
-    </div>
+      </div>
+    </>
   );
 }
 

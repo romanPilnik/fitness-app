@@ -1,5 +1,6 @@
 import { NotFoundError } from "@/errors/HttpErrors";
 import { ERROR_CODES } from "@/errors";
+import { isExerciseVisibleToUser } from "@/features/exercises/exercise.access";
 import { prisma } from "@/lib/prisma";
 import type {
   ExercisePerformanceExerciseSnippet,
@@ -22,6 +23,13 @@ export async function getExercisePerformanceSummary(
   });
 
   if (!exercise) {
+    throw new NotFoundError(
+      "Exercise not found",
+      ERROR_CODES.EXERCISE_NOT_FOUND,
+    );
+  }
+
+  if (!isExerciseVisibleToUser(exercise.createdByUserId, userId)) {
     throw new NotFoundError(
       "Exercise not found",
       ERROR_CODES.EXERCISE_NOT_FOUND,

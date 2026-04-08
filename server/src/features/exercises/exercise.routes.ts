@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyToken } from "@/middlewares/auth.middleware";
+import { verifySession } from "@/middlewares/betterAuth.middleware";
 import { requireRole } from "@/middlewares/authorize.middleware";
 import { ExerciseController } from "./exercise.controller";
 import { validate } from "@/middlewares/validate.middleware";
@@ -66,7 +66,7 @@ const exerciseRouter = Router();
  */
 exerciseRouter.get(
   "/",
-  verifyToken,
+  verifySession,
   validate(getExercisesSchema),
   ExerciseController.getExercises,
 );
@@ -98,7 +98,7 @@ exerciseRouter.get(
  */
 exerciseRouter.get(
   "/:id",
-  verifyToken,
+  verifySession,
   validate(getExerciseByIdSchema),
   ExerciseController.getExerciseById,
 );
@@ -109,7 +109,8 @@ exerciseRouter.get(
  *   post:
  *     tags:
  *       - Exercises
- *     summary: Create exercise (admin only)
+ *     summary: Create exercise
+ *     description: Authenticated users create a personal exercise (owned by them). Admins create library/system exercises (no owner).
  *     requestBody:
  *       required: true
  *       content:
@@ -154,13 +155,10 @@ exerciseRouter.get(
  *         description: Validation error
  *       401:
  *         description: Unauthorized
- *       403:
- *         description: Admin only
  */
 exerciseRouter.post(
   "/",
-  verifyToken,
-  requireRole("admin"),
+  verifySession,
   apiLimiter,
   validate(createExerciseSchema),
   ExerciseController.createExercise,
@@ -226,7 +224,7 @@ exerciseRouter.post(
  */
 exerciseRouter.patch(
   "/:id",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(updateExerciseSchema),
   ExerciseController.updateExercise,
@@ -259,7 +257,7 @@ exerciseRouter.patch(
  */
 exerciseRouter.delete(
   "/:id",
-  verifyToken,
+  verifySession,
   requireRole("admin"),
   apiLimiter,
   validate(deleteExerciseSchema),

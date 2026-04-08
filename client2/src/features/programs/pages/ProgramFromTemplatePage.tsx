@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { Button } from '@/components/ui/button';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import {
   API_VALIDATION_ERROR_CODE,
   applyApiValidationErrors,
@@ -60,44 +61,46 @@ export function ProgramFromTemplatePage() {
 
   if (!templateIdParam) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">
-          Pick a template first, then use &quot;Start from template&quot;.
-        </p>
-        <Link to="/templates" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Browse templates
-        </Link>
-      </div>
+      <>
+        <SubpageHeader fallbackTo="/templates" title="Templates" backLabel="Back to templates" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">
+            Pick a template first, then use &quot;Start from template&quot;.
+          </p>
+          <Link to="/templates" className="mt-4 inline-block text-sm font-medium text-(--accent)">
+            Browse templates
+          </Link>
+        </div>
+      </>
     );
   }
 
   if (templateQ.isError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <QueryErrorMessage error={templateQ.error} refetch={() => templateQ.refetch()} />
-        <Link to="/templates" className="mt-4 inline-block text-sm text-(--accent)">
-          Back
-        </Link>
-      </div>
+      <>
+        <SubpageHeader fallbackTo="/templates" title="Templates" backLabel="Back to templates" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <QueryErrorMessage error={templateQ.error} refetch={() => templateQ.refetch()} />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to={`/templates/${templateIdParam}`}
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Template
-      </Link>
-      <header className="border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">Start from template</h1>
-        {templateQ.data ? (
-          <p className="mt-1 text-sm text-(--text)">From: {templateQ.data.name}</p>
-        ) : (
-          <p className="mt-1 text-sm text-(--text)">Loading…</p>
-        )}
-      </header>
+    <>
+      <SubpageHeader
+        fallbackTo={`/templates/${templateIdParam}`}
+        title="Start from template"
+        backLabel="Back to template"
+      />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
+        <header className="border-b border-(--border) pb-4">
+          {templateQ.data ? (
+            <p className="mt-1 text-sm text-(--text)">From: {templateQ.data.name}</p>
+          ) : (
+            <p className="mt-1 text-sm text-(--text)">Loading…</p>
+          )}
+        </header>
 
       <form
         className="flex flex-col gap-4"
@@ -174,6 +177,7 @@ export function ProgramFromTemplatePage() {
           {mutation.isPending ? 'Creating…' : 'Create program'}
         </Button>
       </form>
-    </div>
+      </div>
+    </>
   );
 }

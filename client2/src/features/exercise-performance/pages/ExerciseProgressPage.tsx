@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import { formatEnumLabel } from '@/lib/formatEnumLabel';
 import { exercisePerformanceQueryKeys, fetchExercisePerformance } from '../api';
 import type {
@@ -138,36 +139,46 @@ export function ExerciseProgressPage() {
     staleTime: 1000 * 60 * 2,
   });
 
+  const exerciseDetailPath = `/exercises/${encodeURIComponent(exerciseId)}`;
+
   if (!exerciseId) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Missing exercise id.</p>
-        <Link to="/exercises" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Back to exercises
-        </Link>
-      </div>
+      <>
+        <SubpageHeader fallbackTo="/exercises" title="Exercises" backLabel="Back to exercises" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Missing exercise id.</p>
+        </div>
+      </>
     );
   }
 
   if (query.isError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
-        <Link
-          to={`/exercises/${encodeURIComponent(exerciseId)}`}
-          className="mt-4 inline-block text-sm font-medium text-(--accent)"
-        >
-          Back to exercise
-        </Link>
-      </div>
+      <>
+        <SubpageHeader
+          fallbackTo={exerciseDetailPath}
+          title="Progress"
+          backLabel="Back to exercise"
+        />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
+        </div>
+      </>
     );
   }
 
   if (query.isPending) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">Loading…</p>
-      </div>
+      <>
+        <SubpageHeader
+          fallbackTo={exerciseDetailPath}
+          title="Progress"
+          backLabel="Back to exercise"
+        />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">Loading…</p>
+        </div>
+      </>
     );
   }
 
@@ -179,17 +190,15 @@ export function ExerciseProgressPage() {
   const ex = data.exercise;
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
-      <Link
-        to={`/exercises/${encodeURIComponent(exerciseId)}`}
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Exercise
-      </Link>
-
+    <>
+      <SubpageHeader
+        fallbackTo={exerciseDetailPath}
+        title="Progress"
+        backLabel="Back to exercise"
+      />
+      <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
       <header>
-        <h1 className="text-2xl font-medium text-(--text-h)">Progress</h1>
-        <p className="mt-2 text-xl font-medium text-(--text-h)">{ex.name}</p>
+        <p className="text-xl font-medium text-(--text-h)">{ex.name}</p>
         <p className="mt-1 text-sm text-(--text)">
           {formatEnumLabel(ex.primaryMuscle)} · {formatEnumLabel(ex.equipment)}
         </p>
@@ -233,6 +242,7 @@ export function ExerciseProgressPage() {
           </>
         )}
       </section>
-    </div>
+      </div>
+    </>
   );
 }

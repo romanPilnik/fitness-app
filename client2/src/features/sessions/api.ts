@@ -2,9 +2,18 @@ import { deleteEnvelope, getEnvelope, postEnvelope } from '@/api/client';
 import { DEFAULT_LIST_LIMIT, type CursorPage } from '@/api/pagination';
 import type { SessionDetail, SessionSummary } from './types';
 
+/** Filters included in list query keys (scope separates e.g. dashboard vs history). */
+export type SessionListFiltersKey = {
+  sessionStatus?: string;
+  programId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
+
 export const sessionQueryKeys = {
   all: ['sessions'] as const,
-  list: (suffix?: string) => [...sessionQueryKeys.all, 'list', suffix ?? 'default'] as const,
+  list: (scope: string, filters: SessionListFiltersKey = {}) =>
+    [...sessionQueryKeys.all, 'list', scope, filters] as const,
   detail: (id: string) => [...sessionQueryKeys.all, 'detail', id] as const,
 };
 
@@ -12,19 +21,51 @@ export type SessionListParams = {
   cursor?: string;
   limit?: number;
   sessionStatus?: string;
+  programId?: string;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export async function fetchSessionsPage(
   params: SessionListParams = {},
 ): Promise<CursorPage<SessionSummary>> {
-  const { cursor, limit = DEFAULT_LIST_LIMIT, sessionStatus } = params;
+  const {
+    cursor,
+    limit = DEFAULT_LIST_LIMIT,
+    sessionStatus,
+    programId,
+    dateFrom,
+    dateTo,
+  } = params;
   return getEnvelope<CursorPage<SessionSummary>>('/sessions', {
     params: {
       ...(cursor ? { cursor } : {}),
       limit,
       ...(sessionStatus ? { sessionStatus } : {}),
+      ...(programId ? { programId } : {}),
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo ? { dateTo } : {}),
     },
   });
+}
+
+/** Loads all sessions in `[dateFrom, dateTo]` via cursor pagination (max 100 per page). */
+export async function fetchAllSessionsInDateRange(params: {
+  dateFrom: string;
+  dateTo: string;
+  sessionStatus?: string;
+  programId?: string;
+}): Promise<SessionSummary[]> {
+  const limit = 100;
+  const all: SessionSummary[] = [];
+  let cursor: string | undefined;
+  for (;;) {
+    const page = await fetchSessionsPage({ ...params, limit, cursor });
+    all.push(...page.data);
+    if (!page.hasMore || !page.nextCursor) break;
+    cursor = page.nextCursor;
+  }
+  return all;
 }
 
 export async function fetchSessionById(id: string): Promise<SessionDetail> {

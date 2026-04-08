@@ -107,7 +107,7 @@ describe("ExerciseController", () => {
   });
 
   describe("getExerciseById", () => {
-    it("passes params.id to service", async () => {
+    it("passes params.id and user id to service", async () => {
       mockExerciseService.getExerciseById.mockResolvedValue({ id: "ex-1" });
 
       await ExerciseController.getExerciseById(
@@ -120,7 +120,20 @@ describe("ExerciseController", () => {
 
       expect(mockExerciseService.getExerciseById).toHaveBeenCalledWith({
         id: "ex-1",
+        userId: "u-1",
       });
+    });
+
+    it("throws AuthenticationError when req.user is missing", async () => {
+      await expect(
+        ExerciseController.getExerciseById(
+          asReqFor(
+            ExerciseController.getExerciseById,
+            mockReq({ user: undefined } as Partial<Request>),
+          ),
+          res,
+        ),
+      ).rejects.toThrow(AuthenticationError);
     });
   });
 

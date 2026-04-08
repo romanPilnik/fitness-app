@@ -82,23 +82,50 @@ describe("ExerciseService", () => {
   });
 
   describe("getExerciseById", () => {
-    it("returns the exercise when found", async () => {
+    it("returns the exercise when found and visible (owner)", async () => {
       prismaMock.exercise.findUnique.mockResolvedValue(fakeExercise);
 
-      const result = await ExerciseService.getExerciseById({ id: "ex-1" });
+      const result = await ExerciseService.getExerciseById({
+        id: "ex-1",
+        userId: "u-1",
+      });
 
       expect(result).toEqual(fakeExercise);
+    });
+
+    it("returns the exercise when found and visible (system exercise)", async () => {
+      const systemExercise = { ...fakeExercise, createdByUserId: null };
+      prismaMock.exercise.findUnique.mockResolvedValue(systemExercise);
+
+      const result = await ExerciseService.getExerciseById({
+        id: "ex-1",
+        userId: "u-1",
+      });
+
+      expect(result).toEqual(systemExercise);
     });
 
     it("throws NotFoundError when exercise does not exist", async () => {
       prismaMock.exercise.findUnique.mockResolvedValue(null);
 
       await expect(
-        ExerciseService.getExerciseById({ id: "nope" }),
+        ExerciseService.getExerciseById({ id: "nope", userId: "u-1" }),
       ).rejects.toThrow(NotFoundError);
 
       await expect(
-        ExerciseService.getExerciseById({ id: "nope" }),
+        ExerciseService.getExerciseById({ id: "nope", userId: "u-1" }),
+      ).rejects.toMatchObject({ code: ERROR_CODES.EXERCISE_NOT_FOUND });
+    });
+
+    it("throws NotFoundError when exercise is owned by another user", async () => {
+      prismaMock.exercise.findUnique.mockResolvedValue(fakeExercise);
+
+      await expect(
+        ExerciseService.getExerciseById({ id: "ex-1", userId: "other-user" }),
+      ).rejects.toThrow(NotFoundError);
+
+      await expect(
+        ExerciseService.getExerciseById({ id: "ex-1", userId: "other-user" }),
       ).rejects.toMatchObject({ code: ERROR_CODES.EXERCISE_NOT_FOUND });
     });
   });

@@ -7,6 +7,7 @@ import {
   ProgramSources,
 } from "@/generated/prisma/enums.js";
 import { cursorPaginationSchema } from "@/lib/pagination.js";
+import { programListSortValues } from "./program.dtos.js";
 
 export const getProgramsSchema = z.object({
   query: z
@@ -16,6 +17,7 @@ export const getProgramsSchema = z.object({
       goal: z.enum(Goal).optional(),
       splitType: z.enum(SplitType).optional(),
       createdFrom: z.enum(ProgramSources).optional(),
+      sort: z.enum(programListSortValues).default("created_desc"),
     })
     .extend(cursorPaginationSchema.shape),
 });

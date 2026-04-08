@@ -22,12 +22,26 @@ const sessionExerciseSchema = z.object({
   sets: z.array(sessionExerciseSetSchema).min(1),
 });
 
+const getSessionsQueryBase = z
+  .object({
+    sessionStatus: z.enum(SessionStatuses).optional(),
+    programId: z.string().min(1).optional(),
+    dateFrom: z.iso.datetime().optional(),
+    dateTo: z.iso.datetime().optional(),
+  })
+  .extend(cursorPaginationSchema.shape)
+  .refine(
+    (q) => {
+      if (q.dateFrom && q.dateTo) {
+        return new Date(q.dateFrom) <= new Date(q.dateTo);
+      }
+      return true;
+    },
+    { message: "dateFrom must be before or equal to dateTo", path: ["dateTo"] },
+  );
+
 export const getSessionsSchema = z.object({
-  query: z
-    .object({
-      sessionStatus: z.enum(SessionStatuses).optional(),
-    })
-    .extend(cursorPaginationSchema.shape),
+  query: getSessionsQueryBase,
 });
 
 export const getSessionByIdSchema = z.object({

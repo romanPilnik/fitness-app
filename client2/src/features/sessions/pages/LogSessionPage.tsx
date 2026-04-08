@@ -1,30 +1,44 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { useFieldArray, useForm, useWatch, type Resolver, type UseFormReturn } from 'react-hook-form';
+import {
+  useFieldArray,
+  useForm,
+  useFormState,
+  useWatch,
+  type Resolver,
+  type UseFormReturn,
+} from 'react-hook-form';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { Button } from '@/components/ui/button';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import {
   API_VALIDATION_ERROR_CODE,
   applyApiValidationErrors,
 } from '@/lib/applyApiValidationErrors';
 import { errorMessageFromUnknown } from '@/lib/utils';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { useAuth } from '@/features/auth/useAuth';
+import { useConfirmLeaveWhenDirty } from '@/hooks/useConfirmLeaveWhenDirty';
 import { exercisePerformanceQueryKeys } from '@/features/exercise-performance/api';
 import { programQueryKeys, fetchProgramById } from '@/features/programs/api';
+import {
+  PartialLogSessionDialog,
+  type PartialLogSessionChoice,
+} from '../components/PartialLogSessionDialog';
 import { SessionExerciseEditor } from '../components/SessionExerciseEditor';
+import {
+  classifyLogSessionCompletion,
+  pruneLogSessionToCompletedSetsOnly,
+} from '../logSessionSubmitHelpers';
 import { defaultSets, oneEmptySet } from '../sessionFormDefaults';
 import { createSession, sessionQueryKeys } from '../api';
 import { readLiveSessionDraft, writeLiveSessionDraft } from '../liveSessionDraftStorage';
 import { useLiveSessionChrome } from '../liveSessionChromeContext';
 import { useLiveSession } from '../useLiveSession';
-import {
-  deriveSessionStatusFromSets,
-  logSessionFormSchema,
-  type LogSessionForm,
-} from '../schemas';
+import { deriveSessionStatusFromSets, logSessionFormSchema, type LogSessionForm } from '../schemas';
 
 function formatElapsed(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
@@ -56,7 +70,10 @@ function newExerciseRow(order: number): LogSessionForm['exercises'][number] {
   };
 }
 
-function renumberExerciseOrders(form: UseFormReturn<LogSessionForm, unknown, LogSessionForm>, len: number) {
+function renumberExerciseOrders(
+  form: UseFormReturn<LogSessionForm, unknown, LogSessionForm>,
+  len: number,
+) {
   for (let i = 0; i < len; i++) {
     form.setValue(`exercises.${i}.order`, i + 1);
   }
@@ -73,12 +90,15 @@ export function LogSessionPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const gearDialogRef = useRef<HTMLDialogElement>(null);
   const gearTitleId = useId();
+  const partialChoiceRef = useRef<((choice: PartialLogSessionChoice) => void) | null>(null);
+  const [partialDialogOpen, setPartialDialogOpen] = useState(false);
 
   const [search] = useSearchParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { setLiveSession, clearLiveSession } = useLiveSession();
   const { setChrome } = useLiveSessionChrome();
+  const confirm = useConfirm();
 
   const programIdParam = search.get('programId') ?? '';
   const workoutIdParam = search.get('programWorkoutId') ?? '';
@@ -130,6 +150,9 @@ export function LogSessionPage() {
       exercises: [],
     },
   });
+
+  const { isDirty } = useFormState({ control: form.control });
+  const prepareLeave = useConfirmLeaveWhenDirty(isDirty);
 
   const workoutName = useWatch({ control: form.control, name: 'workoutName' });
   const dayNumber = useWatch({ control: form.control, name: 'dayNumber' });
@@ -243,6 +266,7 @@ export function LogSessionPage() {
   const mutation = useMutation({
     mutationFn: createSession,
     onSuccess: (session) => {
+      prepareLeave();
       clearLiveSession();
       qc.invalidateQueries({ queryKey: sessionQueryKeys.all });
       qc.invalidateQueries({ queryKey: programQueryKeys.active() });
@@ -259,9 +283,16 @@ export function LogSessionPage() {
   const canShowLiveSessionUi = hasSessionParams && !programQ.isError && !workoutMissing;
 
   const onQuit = useCallback(() => {
-    clearLiveSession();
-    navigate('/sessions');
-  }, [clearLiveSession, navigate]);
+    void confirm('Leave without saving? Anything on this screen will be lost.', {
+      confirmLabel: 'Leave',
+      cancelLabel: 'Stay',
+    }).then((ok) => {
+      if (!ok) return;
+      prepareLeave();
+      clearLiveSession();
+      navigate('/sessions');
+    });
+  }, [clearLiveSession, confirm, navigate, prepareLeave]);
 
   const onPauseToggle = useCallback(() => {
     if (sessionStartedAt == null) return;
@@ -281,6 +312,20 @@ export function LogSessionPage() {
 
   const onComplete = useCallback(() => {
     formRef.current?.requestSubmit();
+  }, []);
+
+  const resolvePartialChoice = useCallback((choice: PartialLogSessionChoice) => {
+    setPartialDialogOpen(false);
+    const r = partialChoiceRef.current;
+    partialChoiceRef.current = null;
+    r?.(choice);
+  }, []);
+
+  const askPartialChoice = useCallback((): Promise<PartialLogSessionChoice> => {
+    return new Promise((resolve) => {
+      partialChoiceRef.current = resolve;
+      setPartialDialogOpen(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -328,23 +373,27 @@ export function LogSessionPage() {
 
   if (programIdParam && programQ.isError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <QueryErrorMessage error={programQ.error} refetch={() => programQ.refetch()} />
-        <Link to="/programs" className="mt-4 inline-block text-sm text-(--accent)">
-          Programs
-        </Link>
-      </div>
+      <>
+        <SubpageHeader fallbackTo="/programs" title="Programs" backLabel="Back to programs" />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <QueryErrorMessage error={programQ.error} refetch={() => programQ.refetch()} />
+        </div>
+      </>
     );
   }
 
   if (workoutMissing) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-8">
-        <p className="text-sm text-(--text)">This workout is not part of that program.</p>
-        <Link to="/sessions/start" className="mt-4 inline-block text-sm font-medium text-(--accent)">
-          Choose a workout
-        </Link>
-      </div>
+      <>
+        <SubpageHeader
+          fallbackTo="/sessions/start"
+          title="Log session"
+          backLabel="Choose a workout"
+        />
+        <div className="mx-auto max-w-lg px-4 py-8">
+          <p className="text-sm text-(--text)">This workout is not part of that program.</p>
+        </div>
+      </>
     );
   }
 
@@ -354,17 +403,51 @@ export function LogSessionPage() {
         ref={formRef}
         className="flex flex-col gap-8"
         onSubmit={form.handleSubmit(async (values) => {
-          const sessionStatus = deriveSessionStatusFromSets(values.exercises);
+          const outcome = classifyLogSessionCompletion(values.exercises);
+          let payload: LogSessionForm = values;
+
+          if (outcome.kind === 'complete') {
+            const ok = await confirm('Save this workout and finish?', {
+              confirmLabel: 'Save',
+              cancelLabel: 'Not now',
+            });
+            if (!ok) return;
+          } else if (outcome.kind === 'empty') {
+            const emptyMsg =
+              outcome.emptyDetail === 'unmarked'
+                ? 'No sets are marked complete. Save this session anyway?'
+                : 'Nothing logged yet. Save this session anyway?';
+            const ok = await confirm(emptyMsg, {
+              confirmLabel: 'Save anyway',
+              cancelLabel: 'Go back',
+            });
+            if (!ok) return;
+          } else {
+            const choice = await askPartialChoice();
+            if (choice === 'back') return;
+            if (choice === 'prune') {
+              payload = pruneLogSessionToCompletedSetsOnly(values);
+              if (payload.exercises.length === 0) {
+                await confirm(
+                  'That would remove everything — no set has both reps and weight entered. Log at least one full set, or save as entered.',
+                  { confirmLabel: 'OK', singleButton: true },
+                );
+                return;
+              }
+            }
+          }
+
+          const sessionStatus = deriveSessionStatusFromSets(payload.exercises);
           const elapsedMin =
             sessionStartedAt != null ? Math.min(600, (nowMs - sessionStartedAt) / 60000) : 0;
           try {
             await mutation.mutateAsync({
-              programId: values.programId,
-              workoutName: values.workoutName.trim(),
-              dayNumber: values.dayNumber,
+              programId: payload.programId,
+              workoutName: payload.workoutName.trim(),
+              dayNumber: payload.dayNumber,
               sessionStatus,
               sessionDuration: elapsedMin,
-              exercises: values.exercises.map((ex) => ({
+              exercises: payload.exercises.map((ex) => ({
                 exerciseId: ex.exerciseId,
                 order: ex.order,
                 targetSets: ex.sets.length,
@@ -412,7 +495,7 @@ export function LogSessionPage() {
 
         <dialog
           ref={gearDialogRef}
-          className="fixed top-1/2 left-1/2 z-50 w-[min(100%-2rem,24rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-(--border) bg-(--bg) p-4 shadow-[var(--shadow)]"
+          className="fixed top-1/2 left-1/2 z-50 w-[min(100%-2rem,24rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-(--border) bg-(--bg) p-4 shadow-(--shadow)"
           aria-labelledby={gearTitleId}
         >
           <h2 id={gearTitleId} className="text-base font-medium text-(--text-h)">
@@ -508,9 +591,7 @@ export function LogSessionPage() {
           </p>
         ) : null}
 
-        {mutation.isPending ? (
-          <p className="text-sm text-(--text)">Saving…</p>
-        ) : null}
+        {mutation.isPending ? <p className="text-sm text-(--text)">Saving…</p> : null}
 
         {exercisesFA.fields.length === 0 ? (
           <p className="text-sm text-(--text)">
@@ -522,6 +603,8 @@ export function LogSessionPage() {
           </p>
         ) : null}
       </form>
+
+      <PartialLogSessionDialog open={partialDialogOpen} onChoice={resolvePartialChoice} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyToken } from "@/middlewares/auth.middleware";
+import { verifySession } from "@/middlewares/betterAuth.middleware";
 import { validate } from "@/middlewares/validate.middleware";
 import { ProgramController } from "./program.controller";
 import { apiLimiter } from "@/middlewares/rateLimit.middleware";
@@ -55,6 +55,12 @@ const programRouter = Router();
  *           type: string
  *           enum: [template, scratch, shared]
  *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [created_desc, created_asc, name_asc, name_desc]
+ *           default: created_desc
+ *       - in: query
  *         name: cursor
  *         schema:
  *           type: string
@@ -75,7 +81,7 @@ const programRouter = Router();
  */
 programRouter.get(
   "/",
-  verifyToken,
+  verifySession,
   validate(getProgramsSchema),
   ProgramController.getPrograms,
 );
@@ -93,7 +99,7 @@ programRouter.get(
  *       401:
  *         description: Unauthorized
  */
-programRouter.get("/active", verifyToken, ProgramController.getActiveProgram);
+programRouter.get("/active", verifySession, ProgramController.getActiveProgram);
 
 /**
  * @openapi
@@ -118,7 +124,7 @@ programRouter.get("/active", verifyToken, ProgramController.getActiveProgram);
  */
 programRouter.get(
   "/:id",
-  verifyToken,
+  verifySession,
   validate(getProgramByIdSchema),
   ProgramController.getProgramById,
 );
@@ -159,7 +165,7 @@ programRouter.get(
  */
 programRouter.post(
   "/from-template",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(createFromTemplateSchema),
   ProgramController.createFromTemplate,
@@ -261,7 +267,7 @@ programRouter.post(
  */
 programRouter.post(
   "/custom",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(createCustomProgramSchema),
   ProgramController.createCustomProgram,
@@ -325,7 +331,7 @@ programRouter.post(
  */
 programRouter.patch(
   "/:id",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(updateProgramSchema),
   ProgramController.updateProgram,
@@ -354,7 +360,7 @@ programRouter.patch(
  */
 programRouter.delete(
   "/:id",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(deleteProgramSchema),
   ProgramController.deleteProgram,
@@ -402,7 +408,7 @@ programRouter.delete(
  */
 programRouter.post(
   "/:id/workouts",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(addProgramWorkoutSchema),
   ProgramController.addProgramWorkout,
@@ -453,7 +459,7 @@ programRouter.post(
  */
 programRouter.patch(
   "/:id/workouts/:workoutId",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(updateProgramWorkoutSchema),
   ProgramController.updateProgramWorkout,
@@ -487,7 +493,7 @@ programRouter.patch(
  */
 programRouter.delete(
   "/:id/workouts/:workoutId",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(deleteProgramWorkoutSchema),
   ProgramController.deleteProgramWorkout,
@@ -550,7 +556,7 @@ programRouter.delete(
  */
 programRouter.post(
   "/:id/workouts/:workoutId/exercises",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(addWorkoutExerciseSchema),
   ProgramController.addWorkoutExercise,
@@ -609,7 +615,7 @@ programRouter.post(
  */
 programRouter.put(
   "/:id/workouts/:workoutId/exercises/reorder",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(bulkReorderWorkoutExercisesSchema),
   ProgramController.bulkReorderWorkoutExercises,
@@ -672,7 +678,7 @@ programRouter.put(
  */
 programRouter.patch(
   "/:id/workouts/:workoutId/exercises/:exerciseId",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(updateWorkoutExerciseSchema),
   ProgramController.updateWorkoutExercise,
@@ -711,7 +717,7 @@ programRouter.patch(
  */
 programRouter.delete(
   "/:id/workouts/:workoutId/exercises/:exerciseId",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(deleteWorkoutExerciseSchema),
   ProgramController.deleteWorkoutExercise,

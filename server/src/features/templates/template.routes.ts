@@ -8,7 +8,7 @@ import {
 } from "./template.validation";
 import { TemplateController } from "./template.controller";
 import { validate } from "@/middlewares/validate.middleware";
-import { verifyToken } from "@/middlewares/auth.middleware";
+import { verifySession } from "@/middlewares/betterAuth.middleware";
 import { apiLimiter } from "@/middlewares/rateLimit.middleware";
 
 const templateRouter = Router();
@@ -64,7 +64,7 @@ const templateRouter = Router();
  */
 templateRouter.get(
   "/",
-  verifyToken,
+  verifySession,
   validate(getTemplatesSchema),
   TemplateController.getTemplates,
 );
@@ -144,6 +144,14 @@ templateRouter.get(
  *                           targetSets:
  *                             type: integer
  *                             minimum: 1
+ *                           targetWeight:
+ *                             type: number
+ *                           targetTotalReps:
+ *                             type: integer
+ *                           targetTopSetReps:
+ *                             type: integer
+ *                           targetRir:
+ *                             type: integer
  *                           notes:
  *                             type: string
  *                             maxLength: 500
@@ -157,7 +165,7 @@ templateRouter.get(
  */
 templateRouter.post(
   "/",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(createTemplateSchema),
   TemplateController.createTemplate,
@@ -188,7 +196,7 @@ templateRouter.post(
  */
 templateRouter.get(
   "/:id",
-  verifyToken,
+  verifySession,
   validate(getTemplateByIdSchema),
   TemplateController.getTemplateById,
 );
@@ -268,6 +276,14 @@ templateRouter.get(
  *                           targetSets:
  *                             type: integer
  *                             minimum: 1
+ *                           targetWeight:
+ *                             type: number
+ *                           targetTotalReps:
+ *                             type: integer
+ *                           targetTopSetReps:
+ *                             type: integer
+ *                           targetRir:
+ *                             type: integer
  *                           notes:
  *                             type: string
  *                             maxLength: 500
@@ -283,7 +299,7 @@ templateRouter.get(
  */
 templateRouter.patch(
   "/:id",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(updateTemplateSchema),
   TemplateController.updateTemplate,
@@ -312,7 +328,7 @@ templateRouter.patch(
  */
 templateRouter.delete(
   "/:id",
-  verifyToken,
+  verifySession,
   apiLimiter,
   validate(deleteTemplateSchema),
   TemplateController.deleteTemplate,

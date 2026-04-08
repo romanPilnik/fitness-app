@@ -20,6 +20,7 @@ const fakeExercise = {
   name: "Bench Press",
   primaryMuscle: "chest" as const,
   equipment: "barbell" as const,
+  createdByUserId: null as string | null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -43,6 +44,30 @@ describe("getExercisePerformanceSummary", () => {
       getExercisePerformanceSummary({
         userId: "u-1",
         exerciseId: "missing",
+      }),
+    ).rejects.toMatchObject({ code: ERROR_CODES.EXERCISE_NOT_FOUND });
+
+    expect(prismaMock.sessionExercise.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.sessionExercise.findMany).not.toHaveBeenCalled();
+  });
+
+  it("throws NotFoundError when exercise exists but is owned by another user", async () => {
+    prismaMock.exercise.findUnique.mockResolvedValue({
+      ...fakeExercise,
+      createdByUserId: "u-2",
+    });
+
+    await expect(
+      getExercisePerformanceSummary({
+        userId: "u-1",
+        exerciseId: "ex-1",
+      }),
+    ).rejects.toThrow(NotFoundError);
+
+    await expect(
+      getExercisePerformanceSummary({
+        userId: "u-1",
+        exerciseId: "ex-1",
       }),
     ).rejects.toMatchObject({ code: ERROR_CODES.EXERCISE_NOT_FOUND });
 

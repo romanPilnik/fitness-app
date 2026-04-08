@@ -39,12 +39,23 @@ export const logSessionFormSchema = z.object({
 
 export type LogSessionForm = z.infer<typeof logSessionFormSchema>;
 
+export type SessionSetFields = LogSessionForm['exercises'][number]['sets'][number];
+
+/** A set counts toward session completion only with reps and weight both &gt; 0. */
+export function isSetFullyLogged(set: SessionSetFields): boolean {
+  const reps = typeof set.reps === 'number' ? set.reps : Number(set.reps);
+  const weight = typeof set.weight === 'number' ? set.weight : Number(set.weight);
+  const r = Number.isFinite(reps) ? reps : 0;
+  const w = Number.isFinite(weight) ? weight : 0;
+  return set.setCompleted && r > 0 && w > 0;
+}
+
 export function deriveSessionStatusFromSets(
   exercises: LogSessionForm['exercises'],
 ): LogSessionForm['sessionStatus'] {
   const allSets = exercises.flatMap((ex) => ex.sets);
   if (allSets.length === 0) return 'skipped';
-  const done = allSets.filter((s) => s.setCompleted).length;
+  const done = allSets.filter((s) => isSetFullyLogged(s)).length;
   if (done === allSets.length) return 'completed';
   if (done === 0) return 'skipped';
   return 'partially';

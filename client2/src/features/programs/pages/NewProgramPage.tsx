@@ -1,15 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useFieldArray, useForm, type Resolver } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { useFieldArray, useForm, useFormState, type Resolver } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/button';
+import { SubpageHeader } from '@/components/ui/SubpageHeader';
 import {
   API_VALIDATION_ERROR_CODE,
   applyApiValidationErrors,
 } from '@/lib/applyApiValidationErrors';
 import { toDatetimeLocalInputValue } from '@/lib/datetime';
 import { errorMessageFromUnknown } from '@/lib/utils';
+import { useConfirmLeaveWhenDirty } from '@/hooks/useConfirmLeaveWhenDirty';
 import { ProgramWorkoutBlock } from '@/features/programs/components/ProgramWorkoutBlock';
 import { createCustomProgram, programQueryKeys } from '../api';
 import { customProgramFormSchema, type CustomProgramForm } from '../schemas';
@@ -42,6 +44,9 @@ export function NewProgramPage() {
     },
   });
 
+  const { isDirty } = useFormState({ control: form.control });
+  const prepareLeave = useConfirmLeaveWhenDirty(isDirty);
+
   const workoutsFA = useFieldArray({
     control: form.control,
     name: 'workouts',
@@ -50,6 +55,7 @@ export function NewProgramPage() {
   const mutation = useMutation({
     mutationFn: createCustomProgram,
     onSuccess: (program) => {
+      prepareLeave();
       qc.invalidateQueries({ queryKey: programQueryKeys.all });
       navigate(`/programs/${program.id}`);
     },
@@ -60,17 +66,14 @@ export function NewProgramPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
-      <Link
-        to="/programs"
-        className="text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
-      >
-        ← Programs
-      </Link>
-      <header className="border-b border-(--border) pb-4">
-        <h1 className="text-2xl font-medium text-(--text-h)">New program</h1>
-        <p className="mt-1 text-sm text-(--text)">Build a custom program from scratch.</p>
-      </header>
+    <>
+      <SubpageHeader
+        fallbackTo="/programs"
+        title="New program"
+        backLabel="Back to programs"
+      />
+      <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
+        <p className="text-sm text-(--text)">Build a custom program from scratch.</p>
 
       <form
         className="flex flex-col gap-6"
@@ -289,6 +292,7 @@ export function NewProgramPage() {
           {mutation.isPending ? 'Saving…' : 'Create program'}
         </Button>
       </form>
-    </div>
+      </div>
+    </>
   );
 }

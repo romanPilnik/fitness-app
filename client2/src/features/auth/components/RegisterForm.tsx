@@ -2,19 +2,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { safeReturnPath } from '@/lib/returnPath';
-import { applyApiValidationErrors } from '@/lib/applyApiValidationErrors';
-import { registerRequest } from '../api';
+import { authClient } from '@/lib/auth-client';
 import { registerSchema, type RegisterFormValues } from '../schemas';
-import { useAuth } from '../useAuth';
 
 export function RegisterForm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
   const {
     register,
     handleSubmit,
@@ -26,19 +22,22 @@ export function RegisterForm() {
   });
 
   const mutation = useMutation({
-    mutationFn: registerRequest,
-    onSuccess: (data) => {
-      login(data.token, data.user);
+    mutationFn: async (values: RegisterFormValues) => {
+      const { error } = await authClient.signUp.email({
+        email: values.email,
+        password: values.password,
+        name: values.name,
+      });
+      if (error) throw new Error(error.message ?? 'Registration failed');
+    },
+    onSuccess: () => {
       const from = (location.state as { from?: string } | null)?.from;
       navigate(safeReturnPath(from, '/home'), { replace: true });
     },
     onError: (err: unknown) => {
-      if (err instanceof ApiError) {
-        if (applyApiValidationErrors(err, setError)) return;
-        setError('root', { message: err.message });
-        return;
-      }
-      setError('root', { message: 'Something went wrong. Try again.' });
+      setError('root', {
+        message: err instanceof Error ? err.message : 'Something went wrong. Try again.',
+      });
     },
   });
 

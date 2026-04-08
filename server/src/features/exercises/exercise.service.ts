@@ -15,6 +15,7 @@ import {
   paginateCursorResult,
   type CursorPage,
 } from "@/lib/pagination";
+import { isExerciseVisibleToUser } from "./exercise.access";
 
 async function getExercises(
   input: GetExercisesDTO,
@@ -39,10 +40,16 @@ async function getExercises(
 async function getExerciseById(
   input: GetExerciseByIdDTO,
 ): Promise<ExerciseModel> {
-  const { id } = input;
+  const { id, userId } = input;
 
   const exercise = await prisma.exercise.findUnique({ where: { id } });
   if (!exercise) {
+    throw new NotFoundError(
+      "Exercise not found",
+      ERROR_CODES.EXERCISE_NOT_FOUND,
+    );
+  }
+  if (!isExerciseVisibleToUser(exercise.createdByUserId, userId)) {
     throw new NotFoundError(
       "Exercise not found",
       ERROR_CODES.EXERCISE_NOT_FOUND,
