@@ -45,4 +45,15 @@ describe("templates GET list — validation (authenticated)", () => {
     const body = res.body as ApiError;
     expect(body.error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
   });
+
+  it("returns 400 for invalid sort", async () => {
+    const res = await agent
+      .get("/api/v1/programs/templates")
+      .set(bearerAuth(token))
+      .query({ sort: "not-a-sort" });
+
+    expect(res.status).toBe(400);
+    const body = res.body as ApiError;
+    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
+  });
 });

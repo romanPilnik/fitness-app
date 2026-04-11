@@ -11,8 +11,9 @@ interface Config {
   nodeEnv: string;
 }
 
-const parsedPort = Number(process.env.PORT ?? 5002);
-const port = Number.isFinite(parsedPort) ? parsedPort : 5002;
+// Default 5001 matches client2, Vite proxy, and BETTER_AUTH_URL fallback in lib/auth.ts
+const parsedPort = Number(process.env.PORT ?? 5001);
+const port = Number.isFinite(parsedPort) ? parsedPort : 5001;
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {

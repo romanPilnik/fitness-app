@@ -25,7 +25,17 @@ function StatLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LastPerformedCard({ row }: { row: ExercisePerformanceLastPerformed }) {
+function LastPerformedCard({
+  row,
+  exerciseId,
+}: {
+  row: ExercisePerformanceLastPerformed;
+  exerciseId: string;
+}) {
+  const sessionFromProgress = {
+    from: 'exercise-progress' as const,
+    exerciseId,
+  };
   return (
     <div className="rounded-xl border border-(--border) bg-(--bg) p-4">
       <h2 className="text-sm font-medium text-(--text-h)">Last performed</h2>
@@ -37,6 +47,7 @@ function LastPerformedCard({ row }: { row: ExercisePerformanceLastPerformed }) {
       </dl>
       <Link
         to={`/sessions/${row.sessionId}`}
+        state={sessionFromProgress}
         className="mt-4 inline-block text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
       >
         Open session
@@ -45,7 +56,17 @@ function LastPerformedCard({ row }: { row: ExercisePerformanceLastPerformed }) {
   );
 }
 
-function PRCard({ pr }: { pr: ExercisePerformancePersonalRecord }) {
+function PRCard({
+  pr,
+  exerciseId,
+}: {
+  pr: ExercisePerformancePersonalRecord;
+  exerciseId: string;
+}) {
+  const sessionFromProgress = {
+    from: 'exercise-progress' as const,
+    exerciseId,
+  };
   return (
     <div className="rounded-xl border border-(--border) bg-(--bg) p-4">
       <h2 className="text-sm font-medium text-(--text-h)">Personal record</h2>
@@ -55,6 +76,7 @@ function PRCard({ pr }: { pr: ExercisePerformancePersonalRecord }) {
       <p className="mt-1 text-sm text-(--text)">{formatSessionWhen(pr.datePerformed)}</p>
       <Link
         to={`/sessions/${pr.sessionId}`}
+        state={sessionFromProgress}
         className="mt-3 inline-block text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
       >
         Open session
@@ -63,7 +85,17 @@ function PRCard({ pr }: { pr: ExercisePerformancePersonalRecord }) {
   );
 }
 
-function HistoryRowMobile({ row }: { row: ExercisePerformanceHistoryRow }) {
+function HistoryRowMobile({
+  row,
+  exerciseId,
+}: {
+  row: ExercisePerformanceHistoryRow;
+  exerciseId: string;
+}) {
+  const sessionFromProgress = {
+    from: 'exercise-progress' as const,
+    exerciseId,
+  };
   return (
     <div className="rounded-xl border border-(--border) bg-(--bg) px-4 py-3">
       <div className="flex items-start justify-between gap-2">
@@ -78,6 +110,7 @@ function HistoryRowMobile({ row }: { row: ExercisePerformanceHistoryRow }) {
       <p className="mt-2 text-sm text-(--text)">{row.totalSets} sets</p>
       <Link
         to={`/sessions/${row.sessionId}`}
+        state={sessionFromProgress}
         className="mt-2 inline-block text-sm font-medium text-(--accent) underline-offset-2 hover:underline"
       >
         Session
@@ -86,7 +119,17 @@ function HistoryRowMobile({ row }: { row: ExercisePerformanceHistoryRow }) {
   );
 }
 
-function HistoryTable({ rows }: { rows: ExercisePerformanceHistoryRow[] }) {
+function HistoryTable({
+  rows,
+  exerciseId,
+}: {
+  rows: ExercisePerformanceHistoryRow[];
+  exerciseId: string;
+}) {
+  const sessionFromProgress = {
+    from: 'exercise-progress' as const,
+    exerciseId,
+  };
   return (
     <div className="hidden overflow-x-auto md:block">
       <table className="w-full min-w-lg border-collapse text-left text-sm">
@@ -115,6 +158,7 @@ function HistoryTable({ rows }: { rows: ExercisePerformanceHistoryRow[] }) {
               <td className="py-2 align-top">
                 <Link
                   to={`/sessions/${row.sessionId}`}
+                  state={sessionFromProgress}
                   className="font-medium text-(--accent) underline-offset-2 hover:underline"
                 >
                   View
@@ -206,7 +250,7 @@ export function ExerciseProgressPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {data.lastPerformed ? (
-          <LastPerformedCard row={data.lastPerformed} />
+          <LastPerformedCard row={data.lastPerformed} exerciseId={exerciseId} />
         ) : (
           <div className="rounded-xl border border-dashed border-(--border) bg-(--bg) p-4">
             <h2 className="text-sm font-medium text-(--text-h)">Last performed</h2>
@@ -214,7 +258,7 @@ export function ExerciseProgressPage() {
           </div>
         )}
         {data.personalRecord ? (
-          <PRCard pr={data.personalRecord} />
+          <PRCard pr={data.personalRecord} exerciseId={exerciseId} />
         ) : (
           <div className="rounded-xl border border-dashed border-(--border) bg-(--bg) p-4">
             <h2 className="text-sm font-medium text-(--text-h)">Personal record</h2>
@@ -232,12 +276,12 @@ export function ExerciseProgressPage() {
             <ul className="mt-3 flex flex-col gap-2 md:hidden">
               {data.recentHistory.map((row) => (
                 <li key={row.sessionId}>
-                  <HistoryRowMobile row={row} />
+                  <HistoryRowMobile row={row} exerciseId={exerciseId} />
                 </li>
               ))}
             </ul>
             <div className="mt-3">
-              <HistoryTable rows={data.recentHistory} />
+              <HistoryTable rows={data.recentHistory} exerciseId={exerciseId} />
             </div>
           </>
         )}

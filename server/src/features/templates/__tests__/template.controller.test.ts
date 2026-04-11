@@ -62,7 +62,7 @@ describe("TemplateController", () => {
       await TemplateController.getTemplates(
         asReqFor(
           TemplateController.getTemplates,
-          mockReq({ query: { difficulty: "beginner" } as never }),
+          mockReq({ query: { difficulty: "beginner", sort: "created_desc" } as never }),
         ),
         res,
       );
@@ -70,6 +70,7 @@ describe("TemplateController", () => {
       expect(mockTemplateService.getTemplates).toHaveBeenCalledWith(
         expect.objectContaining({
           difficulty: "beginner",
+          sort: "created_desc",
           userId: "u-1",
         }),
       );
@@ -90,7 +91,7 @@ describe("TemplateController", () => {
           TemplateController.getTemplates,
           mockReq({
             user: undefined,
-            query: { difficulty: "advanced" } as never,
+            query: { difficulty: "advanced", sort: "created_desc" } as never,
           } as Partial<Request>),
         ),
         res,
@@ -99,6 +100,7 @@ describe("TemplateController", () => {
       expect(mockTemplateService.getTemplates).toHaveBeenCalledWith(
         expect.objectContaining({
           difficulty: "advanced",
+          sort: "created_desc",
           userId: undefined,
         }),
       );

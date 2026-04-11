@@ -1,10 +1,27 @@
 import { deleteEnvelope, getEnvelope, patchEnvelope, postEnvelope } from '@/api/client';
 import { DEFAULT_LIST_LIMIT, type CursorPage } from '@/api/pagination';
-import type { TemplateDetail, TemplateSummary } from './types';
+import type { TemplateDetail, TemplateListSort, TemplateSummary } from './types';
 
 export const templateQueryKeys = {
   all: ['templates'] as const,
-  list: (scope: 'all' | 'mine' = 'all') => [...templateQueryKeys.all, 'list', scope] as const,
+  list: (
+    mineScope: 'all' | 'mine',
+    sort: TemplateListSort,
+    difficulty: string,
+    goal: string,
+    splitType: string,
+    daysPerWeek: string | number,
+  ) =>
+    [
+      ...templateQueryKeys.all,
+      'list',
+      mineScope,
+      sort,
+      difficulty,
+      goal,
+      splitType,
+      daysPerWeek,
+    ] as const,
   detail: (id: string) => [...templateQueryKeys.all, 'detail', id] as const,
 };
 
@@ -12,8 +29,10 @@ export type TemplateListParams = {
   cursor?: string;
   limit?: number;
   myTemplatesOnly?: boolean;
+  sort?: TemplateListSort;
   splitType?: string;
   difficulty?: string;
+  goal?: string;
   daysPerWeek?: number;
 };
 
@@ -45,8 +64,10 @@ export async function fetchTemplatesPage(
     cursor,
     limit = DEFAULT_LIST_LIMIT,
     myTemplatesOnly,
+    sort,
     splitType,
     difficulty,
+    goal,
     daysPerWeek,
   } = params;
   return getEnvelope<CursorPage<TemplateSummary>>('/programs/templates', {
@@ -54,8 +75,10 @@ export async function fetchTemplatesPage(
       ...(cursor ? { cursor } : {}),
       limit,
       ...(myTemplatesOnly === true ? { myTemplatesOnly: true } : {}),
+      ...(sort ? { sort } : {}),
       ...(splitType ? { splitType } : {}),
       ...(difficulty ? { difficulty } : {}),
+      ...(goal ? { goal } : {}),
       ...(daysPerWeek != null ? { daysPerWeek } : {}),
     },
   });

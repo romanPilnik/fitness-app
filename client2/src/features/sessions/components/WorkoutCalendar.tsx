@@ -179,16 +179,12 @@ export function WorkoutCalendar() {
 
             {sessionsQuery.isPending ? (
               <p className="mt-3 text-center text-xs text-(--text)">Loading workouts…</p>
-            ) : totalInMonth === 0 ? (
-              <p className="mt-3 text-center text-xs text-(--text)">
-                No workouts logged this month yet.
-              </p>
-            ) : (
+            ) : totalInMonth > 0 ? (
               <p className="mt-3 text-center text-xs text-(--text)">
                 {totalInMonth} workout{totalInMonth === 1 ? '' : 's'} in{' '}
                 {formatMonthYear(visible.year, visible.monthIndex)}
               </p>
-            )}
+            ) : null}
           </>
         )}
       </div>

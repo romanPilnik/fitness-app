@@ -1,18 +1,23 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DEFAULT_LIST_LIMIT } from '@/api/pagination';
+import { useConfirm } from '@/components/ConfirmProvider';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { errorMessageFromUnknown } from '@/lib/utils';
 import type { ProgramListSort } from '../types';
-import { fetchProgramsPage, programQueryKeys } from '../api';
+import { deleteProgram, fetchProgramsPage, programQueryKeys } from '../api';
 import { ProgramAdvancedFiltersDialog } from '../components/ProgramAdvancedFiltersDialog';
 import { ProgramListFiltersBar } from '../components/ProgramListFiltersBar';
 import { ProgramListPageHeader } from '../components/ProgramListPageHeader';
 
 export function ProgramsPage() {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [activeOnly, setActiveOnly] = useState(false);
   const [advStatus, setAdvStatus] = useState('');
@@ -49,6 +54,13 @@ export function ProgramsPage() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => (last.hasMore && last.nextCursor ? last.nextCursor : undefined),
     staleTime: 1000 * 60,
+  });
+
+  const delProgram = useMutation({
+    mutationFn: deleteProgram,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: programQueryKeys.all });
+    },
   });
 
   const advancedCount =
@@ -143,19 +155,40 @@ export function ProgramsPage() {
         <ul className="flex flex-col gap-2">
           {items.map((p) => (
             <li key={p.id}>
-              <Link
-                to={`/programs/${p.id}`}
-                className="block rounded-xl border border-(--border) bg-(--bg) px-4 py-3 transition-colors hover:bg-(--code-bg)/50"
-              >
-                <span className="font-medium text-(--text-h)">{p.name}</span>
-                <p className="font-mono-ui mt-0.5 text-xs capitalize tracking-tight text-(--text)">
-                  {p.status} · {p.goal} · {p.difficulty}
-                </p>
-              </Link>
+              <div className="flex min-w-0 gap-2 rounded-xl border border-(--border) bg-(--bg) p-3 transition-colors hover:bg-(--code-bg)/50 sm:items-center">
+                <Link to={`/programs/${p.id}`} className="min-w-0 flex-1">
+                  <span className="font-medium text-(--text-h)">{p.name}</span>
+                  <p className="font-mono-ui mt-0.5 text-xs capitalize tracking-tight text-(--text)">
+                    {p.status} · {p.goal} · {p.difficulty}
+                  </p>
+                </Link>
+                <button
+                  type="button"
+                  aria-label={`Delete ${p.name}`}
+                  disabled={delProgram.isPending && delProgram.variables === p.id}
+                  className="inline-flex size-11 shrink-0 items-center justify-center self-start rounded-lg border border-red-600/40 text-red-700 hover:bg-red-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border) disabled:pointer-events-none disabled:opacity-50 sm:self-center"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    const ok = await confirm('Delete this program permanently?', {
+                      confirmLabel: 'Delete',
+                      cancelLabel: 'Cancel',
+                    });
+                    if (ok) delProgram.mutate(p.id);
+                  }}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
+
+      {delProgram.isError ? (
+        <p className="text-center text-sm text-red-600" role="alert">
+          {errorMessageFromUnknown(delProgram.error)}
+        </p>
+      ) : null}
 
       {query.hasNextPage ? (
         <Button

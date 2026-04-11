@@ -67,7 +67,6 @@ export function HomePage() {
         ) : activeProgramsQuery.data.length === 0 ? (
           <EmptyState
             title="No active program"
-            description="Start from a template, create a custom program, or open an existing program and set its status to active."
             action={
               <div className={btnGroup}>
                 <Link to="/programs/new" className={primaryBtn}>
@@ -75,9 +74,6 @@ export function HomePage() {
                 </Link>
                 <Link to="/templates" className={secondaryBtn}>
                   Browse templates
-                </Link>
-                <Link to="/programs" className={secondaryBtn}>
-                  My programs
                 </Link>
               </div>
             }
@@ -115,7 +111,6 @@ export function HomePage() {
         ) : recentSessions.length === 0 ? (
           <EmptyState
             title="No sessions yet"
-            description="Start a workout from a program day, or open Sessions and start a log."
             action={
               <Link to="/sessions/start" className={primaryBtn}>
                 Start workout

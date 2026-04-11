@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { SubpageHeader } from '@/components/ui/SubpageHeader';
@@ -7,11 +7,27 @@ import { errorMessageFromUnknown } from '@/lib/utils';
 import { exercisePerformanceQueryKeys } from '@/features/exercise-performance/api';
 import { deleteSession, fetchSessionById, sessionQueryKeys } from '../api';
 
+type SessionDetailLocationState = {
+  from?: 'exercise-progress';
+  exerciseId?: string;
+} | null;
+
 export function SessionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const sessionId = id ?? '';
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
+
+  const backState = location.state as SessionDetailLocationState;
+  const sessionBackFallback =
+    backState?.from === 'exercise-progress' && backState.exerciseId
+      ? `/exercises/${backState.exerciseId}/progress`
+      : '/sessions';
+  const sessionBackLabel =
+    backState?.from === 'exercise-progress'
+      ? 'Back to history and PRs'
+      : 'Back to sessions';
 
   const query = useQuery({
     queryKey: sessionQueryKeys.detail(sessionId),
@@ -34,7 +50,11 @@ export function SessionDetailPage() {
   if (!sessionId) {
     return (
       <>
-        <SubpageHeader showBack={false} title="Sessions" />
+        <SubpageHeader
+          fallbackTo={sessionBackFallback}
+          backLabel={sessionBackLabel}
+          title="Sessions"
+        />
         <div className="mx-auto max-w-lg px-4 py-8">
           <p className="text-sm text-(--text)">Missing session id.</p>
         </div>
@@ -45,7 +65,11 @@ export function SessionDetailPage() {
   if (query.isError) {
     return (
       <>
-        <SubpageHeader showBack={false} title="Sessions" />
+        <SubpageHeader
+          fallbackTo={sessionBackFallback}
+          backLabel={sessionBackLabel}
+          title="Sessions"
+        />
         <div className="mx-auto max-w-lg px-4 py-8">
           <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
         </div>
@@ -56,7 +80,11 @@ export function SessionDetailPage() {
   if (query.isPending) {
     return (
       <>
-        <SubpageHeader showBack={false} title="Session" />
+        <SubpageHeader
+          fallbackTo={sessionBackFallback}
+          backLabel={sessionBackLabel}
+          title="Session"
+        />
         <div className="mx-auto max-w-lg px-4 py-8">
           <p className="text-sm text-(--text)">Loading…</p>
         </div>
@@ -69,7 +97,11 @@ export function SessionDetailPage() {
 
   return (
     <>
-      <SubpageHeader showBack={false} title={s.workoutName} />
+      <SubpageHeader
+        fallbackTo={sessionBackFallback}
+        backLabel={sessionBackLabel}
+        title={s.workoutName}
+      />
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <header className="flex flex-col gap-2">
         <p className="text-sm capitalize text-(--text)">
@@ -124,13 +156,15 @@ export function SessionDetailPage() {
             </h3>
             <p className="mt-1 text-xs text-(--text)">Target: {row.targetSets} sets</p>
             <ul className="mt-3 space-y-2 border-t border-(--border) pt-3 text-sm text-(--text)">
-              {row.sessionExerciseSets.map((set, idx) => (
-                <li key={set.id}>
-                  Set {idx + 1}: {set.reps} reps @ {set.weight}
-                  {typeof set.rir === 'number' ? ` · RIR ${set.rir}` : ''}
-                  {set.setCompleted ? '' : ' (incomplete)'}
-                </li>
-              ))}
+              {row.sessionExerciseSets.map((set, idx) => {
+                const rir = typeof set.rir === 'number' ? set.rir : 0;
+                return (
+                  <li key={set.id}>
+                    Set {idx + 1}: {set.reps} reps @ {set.weight} · RIR {rir}
+                    {set.setCompleted ? '' : ' (incomplete)'}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}

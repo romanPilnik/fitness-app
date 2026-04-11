@@ -33,7 +33,10 @@ describe("getTemplatesSchema", () => {
   it("accepts empty query with pagination defaults", () => {
     const r = getTemplatesSchema.safeParse({ query: {} });
     expect(r.success).toBe(true);
-    if (r.success) expect(r.data.query.limit).toBe(20);
+    if (r.success) {
+      expect(r.data.query.limit).toBe(20);
+      expect(r.data.query.sort).toBe("created_desc");
+    }
   });
 
   it("accepts filters", () => {
@@ -41,8 +44,10 @@ describe("getTemplatesSchema", () => {
       query: {
         splitType: SplitType.upper_lower,
         difficulty: Difficulty.advanced,
+        goal: Goal.hypertrophy,
         myTemplatesOnly: "true",
         daysPerWeek: "4",
+        sort: "name_desc",
       },
     });
     expect(r.success).toBe(true);
@@ -51,6 +56,13 @@ describe("getTemplatesSchema", () => {
   it("rejects daysPerWeek out of range", () => {
     const r = getTemplatesSchema.safeParse({
       query: { daysPerWeek: 99 },
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects invalid sort", () => {
+    const r = getTemplatesSchema.safeParse({
+      query: { sort: "bogus" },
     });
     expect(r.success).toBe(false);
   });

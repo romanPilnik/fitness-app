@@ -21,6 +21,20 @@ export function pickTopSetWeightReps(
   return { weight: bestW, reps: bestR };
 }
 
+/** Best top-set weight/reps using only sets marked complete (for stats and history). */
+export function pickTopSetWeightRepsFromCompleted(
+  sets: readonly { weight: number; reps: number; setCompleted: boolean }[],
+): { weight: number; reps: number } | null {
+  const completed = sets.filter((s) => s.setCompleted);
+  return pickTopSetWeightReps(completed);
+}
+
+export function countCompletedSets(
+  sets: readonly { setCompleted: boolean }[],
+): number {
+  return sets.filter((s) => s.setCompleted).length;
+}
+
 export async function getExercisePerformanceLastPerformed(
   exerciseId: string,
   userId: string,
@@ -51,7 +65,9 @@ export async function getExercisePerformanceLastPerformed(
     return null;
   }
 
-  const topSet = pickTopSetWeightReps(sessionExercise.sessionExerciseSets);
+  const topSet = pickTopSetWeightRepsFromCompleted(
+    sessionExercise.sessionExerciseSets,
+  );
   const topSetWeight = topSet?.weight ?? 0;
   const topSetReps = topSet?.reps ?? 0;
 
@@ -61,7 +77,7 @@ export async function getExercisePerformanceLastPerformed(
     workoutName: sessionExercise.session.workoutName,
     topSetWeight,
     topSetReps,
-    totalSets: sessionExercise.sessionExerciseSets.length,
+    totalSets: countCompletedSets(sessionExercise.sessionExerciseSets),
   };
 
   return lastPerformed;
@@ -84,6 +100,7 @@ export async function getExercisePerformancePersonalRecord(
         select: {
           weight: true,
           reps: true,
+          setCompleted: true,
         },
       },
     },
@@ -96,7 +113,7 @@ export async function getExercisePerformancePersonalRecord(
   let best: ExercisePerformancePersonalRecord | null = null;
 
   for (const row of exercisePerformances) {
-    const top = pickTopSetWeightReps(row.sessionExerciseSets);
+    const top = pickTopSetWeightRepsFromCompleted(row.sessionExerciseSets);
     if (!top) continue;
     if (
       !best ||
@@ -124,16 +141,20 @@ export async function getExercisePerformanceHistory(
     orderBy: [{ session: { datePerformed: "desc" } }, { id: "desc" }],
     include: {
       session: { select: { id: true, workoutName: true, datePerformed: true } },
-      sessionExerciseSets: { select: { weight: true, reps: true } },
+      sessionExerciseSets: {
+        select: { weight: true, reps: true, setCompleted: true },
+      },
     },
   });
 
   const historyRows: ExercisePerformanceHistoryRow[] = [];
   for (const sessionExercise of history) {
-    const top = pickTopSetWeightReps(sessionExercise.sessionExerciseSets);
+    const top = pickTopSetWeightRepsFromCompleted(
+      sessionExercise.sessionExerciseSets,
+    );
     const topSetWeight = top?.weight ?? 0;
     const topSetReps = top?.reps ?? 0;
-    const totalSets = sessionExercise.sessionExerciseSets.length;
+    const totalSets = countCompletedSets(sessionExercise.sessionExerciseSets);
     historyRows.push({
       sessionId: sessionExercise.sessionId,
       datePerformed: sessionExercise.session.datePerformed.toISOString(),

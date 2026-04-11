@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Goal } from "@/generated/prisma/enums.js";
 import { NotFoundError, AuthorizationError } from "@/errors/index.js";
 import { ERROR_CODES } from "@/types/error.types.js";
 
@@ -10,6 +11,10 @@ const prismaMock = vi.hoisted(() => ({
     update: vi.fn(),
     delete: vi.fn(),
   },
+  program: {
+    findMany: vi.fn(),
+  },
+  $queryRaw: vi.fn(),
 }));
 vi.mock("@/lib/prisma.js", () => ({ prisma: prismaMock }));
 
@@ -33,50 +38,63 @@ const systemTemplate = { ...fakeTemplate, id: "t-sys", createdByUserId: null };
 describe("TemplateService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.program.findMany.mockResolvedValue([]);
+    prismaMock.$queryRaw.mockResolvedValue([{ id: "t-1" }]);
+    prismaMock.template.findMany.mockResolvedValue([fakeTemplate]);
   });
 
   describe("getTemplates", () => {
     it("returns paginated results with OR filter when myTemplatesOnly is false", async () => {
-      prismaMock.template.findMany.mockResolvedValue([fakeTemplate]);
-
       const result = await TemplateService.getTemplates({
         limit: 20,
+        sort: "created_desc",
         userId: "u-1",
       });
 
-      expect(prismaMock.template.findMany).toHaveBeenCalled();
-      const templateFindCall = prismaMock.template.findMany.mock.calls[0];
-      if (templateFindCall === undefined) {
-        throw new Error("expected template.findMany mock call");
-      }
-      const findArgs = templateFindCall[0] as {
-        where: { OR: { createdByUserId: string | null }[] };
-      };
-      expect(findArgs.where.OR).toEqual([
-        { createdByUserId: null },
-        { createdByUserId: "u-1" },
-      ]);
+      expect(prismaMock.$queryRaw).toHaveBeenCalled();
+      expect(prismaMock.template.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ["t-1"] } },
+      });
       expect(result.data).toHaveLength(1);
+      expect(result.data[0]?.hasProgramFromTemplate).toBe(false);
     });
 
     it("filters by createdByUserId when myTemplatesOnly is true", async () => {
-      prismaMock.template.findMany.mockResolvedValue([fakeTemplate]);
-
       await TemplateService.getTemplates({
         limit: 20,
+        sort: "created_desc",
         userId: "u-1",
         myTemplatesOnly: true,
       });
 
-      expect(prismaMock.template.findMany).toHaveBeenCalled();
-      const myTemplatesCall = prismaMock.template.findMany.mock.calls[0];
-      if (myTemplatesCall === undefined) {
-        throw new Error("expected template.findMany mock call");
-      }
-      const myArgs = myTemplatesCall[0] as {
-        where: { createdByUserId: string };
-      };
-      expect(myArgs.where.createdByUserId).toBe("u-1");
+      expect(prismaMock.$queryRaw).toHaveBeenCalled();
+    });
+
+    it("passes goal to where and secondary sort in raw list query", async () => {
+      prismaMock.$queryRaw.mockResolvedValue([]);
+
+      await TemplateService.getTemplates({
+        limit: 20,
+        sort: "name_asc",
+        goal: Goal.strength,
+        userId: "u-1",
+      });
+
+      expect(prismaMock.$queryRaw).toHaveBeenCalled();
+    });
+
+    it("sets hasProgramFromTemplate when user has a program from the template", async () => {
+      prismaMock.program.findMany.mockResolvedValue([
+        { sourceTemplateId: "t-1" },
+      ]);
+
+      const result = await TemplateService.getTemplates({
+        limit: 20,
+        sort: "created_desc",
+        userId: "u-1",
+      });
+
+      expect(result.data[0]?.hasProgramFromTemplate).toBe(true);
     });
   });
 

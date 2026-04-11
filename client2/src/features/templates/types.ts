@@ -1,3 +1,9 @@
+export type TemplateListSort =
+  | 'created_desc'
+  | 'created_asc'
+  | 'name_asc'
+  | 'name_desc';
+
 export type TemplateSummary = {
   id: string;
   name: string;
@@ -9,6 +15,8 @@ export type TemplateSummary = {
   createdByUserId: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Present on list responses when authenticated: user has at least one program created from this template. */
+  hasProgramFromTemplate?: boolean;
 };
 
 export type TemplateWorkoutExercise = {

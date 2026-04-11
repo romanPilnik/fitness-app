@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigateBack } from '@/hooks/useNavigateBack';
 import { cn } from '@/lib/utils';
@@ -5,6 +6,8 @@ import { cn } from '@/lib/utils';
 type SubpageHeaderBaseProps = {
   /** Shown next to the chevron; keep short for truncation. */
   title?: string;
+  /** Optional control (e.g. primary action) aligned to the end of the bar. */
+  trailingAction?: ReactNode;
   className?: string;
   /** Optional `location.state` when using `fallbackTo` (ignored when `onBack` is set). */
   fallbackState?: unknown;
@@ -37,6 +40,7 @@ export function SubpageHeader({
   fallbackTo,
   fallbackState,
   title,
+  trailingAction,
   backLabel,
   onBack,
   className,
@@ -75,6 +79,7 @@ export function SubpageHeader({
             {title}
           </h1>
         ) : null}
+        {trailingAction ? <div className="shrink-0">{trailingAction}</div> : null}
       </div>
     </div>
   );

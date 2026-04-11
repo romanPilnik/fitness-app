@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { programListSortValues } from "@/features/programs/program.dtos";
 import { SplitType, Difficulty, Goal } from "@/generated/prisma/enums";
 import { cursorPaginationSchema } from "@/lib/pagination";
 
@@ -8,7 +9,9 @@ export const getTemplatesSchema = z.object({
       splitType: z.enum(SplitType).optional(),
       myTemplatesOnly: z.coerce.boolean().optional(),
       difficulty: z.enum(Difficulty).optional(),
+      goal: z.enum(Goal).optional(),
       daysPerWeek: z.coerce.number().int().min(1).max(14).optional(),
+      sort: z.enum(programListSortValues).default("created_desc"),
     })
     .extend(cursorPaginationSchema.shape),
 });

@@ -1,9 +1,12 @@
+import type { ProgramListSort } from "@/features/programs/program.dtos";
 import { SplitType, Difficulty, Goal, Role } from "@/generated/prisma/enums";
 import type { CursorPaginationParams } from "@/lib/pagination";
 
 export interface GetTemplatesDTO extends CursorPaginationParams {
+  sort: ProgramListSort;
   splitType?: SplitType;
   difficulty?: Difficulty;
+  goal?: Goal;
   daysPerWeek?: number;
   userId?: string;
   myTemplatesOnly?: boolean;

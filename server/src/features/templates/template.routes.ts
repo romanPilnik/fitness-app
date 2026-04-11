@@ -38,6 +38,17 @@ const templateRouter = Router();
  *           type: string
  *           enum: [beginner, intermediate, advanced]
  *       - in: query
+ *         name: goal
+ *         schema:
+ *           type: string
+ *           enum: [strength, hypertrophy, endurance]
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [created_desc, created_asc, name_asc, name_desc]
+ *           default: created_desc
+ *       - in: query
  *         name: daysPerWeek
  *         schema:
  *           type: integer
