@@ -42,7 +42,7 @@ export function NewTemplatePage() {
   });
 
   const { isDirty } = useFormState({ control: form.control });
-  const prepareLeave = useConfirmLeaveWhenDirty(isDirty);
+  const [prepareLeave, navigationLeavePrompt] = useConfirmLeaveWhenDirty(isDirty);
 
   const workoutsFA = useFieldArray({
     control: form.control,
@@ -200,6 +200,7 @@ export function NewTemplatePage() {
         </Button>
       </form>
       </div>
+      {navigationLeavePrompt}
     </>
   );
 }

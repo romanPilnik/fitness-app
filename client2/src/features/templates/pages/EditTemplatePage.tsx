@@ -52,7 +52,7 @@ export function EditTemplatePage() {
   });
 
   const { isDirty } = useFormState({ control: form.control });
-  const prepareLeave = useConfirmLeaveWhenDirty(isDirty);
+  const [prepareLeave, navigationLeavePrompt] = useConfirmLeaveWhenDirty(isDirty);
 
   useEffect(() => {
     if (!q.data) return;
@@ -114,6 +114,7 @@ export function EditTemplatePage() {
         <div className="mx-auto max-w-lg px-4 py-8">
           <p className="text-sm text-(--text)">Missing template id.</p>
         </div>
+        {navigationLeavePrompt}
       </>
     );
   }
@@ -130,6 +131,7 @@ export function EditTemplatePage() {
         <div className="mx-auto max-w-lg px-4 py-8">
           <QueryErrorMessage error={q.error} refetch={() => q.refetch()} />
         </div>
+        {navigationLeavePrompt}
       </>
     );
   }
@@ -146,6 +148,7 @@ export function EditTemplatePage() {
         <div className="mx-auto max-w-lg px-4 py-8">
           <p className="text-sm text-(--text)">Loading…</p>
         </div>
+        {navigationLeavePrompt}
       </>
     );
   }
@@ -294,6 +297,7 @@ export function EditTemplatePage() {
         {del.isPending ? 'Deleting…' : 'Delete template'}
       </Button>
       </div>
+      {navigationLeavePrompt}
     </>
   );
 }
