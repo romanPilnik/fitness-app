@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   useFieldArray,
   useForm,
   useFormState,
   useWatch,
+  type Control,
   type Resolver,
+  type UseFormGetValues,
   type UseFormReturn,
 } from 'react-hook-form';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
@@ -28,17 +30,20 @@ import {
   PartialLogSessionDialog,
   type PartialLogSessionChoice,
 } from '../components/PartialLogSessionDialog';
+import { AddSessionExerciseDialog } from '../components/AddSessionExerciseDialog';
 import { SessionExerciseEditor } from '../components/SessionExerciseEditor';
 import {
   classifyLogSessionCompletion,
   pruneLogSessionToCompletedSetsOnly,
 } from '../logSessionSubmitHelpers';
-import { defaultSets, oneEmptySet } from '../sessionFormDefaults';
-import { createSession, sessionQueryKeys } from '../api';
+import { defaultSets } from '../sessionFormDefaults';
+import { createSession, fetchGeneratedTargets, sessionQueryKeys } from '../api';
 import { readLiveSessionDraft, writeLiveSessionDraft } from '../liveSessionDraftStorage';
+import { triggerWorkoutGeneration } from '../triggerWorkoutGeneration';
 import { useLiveSessionChrome } from '../liveSessionChromeContext';
 import { useLiveSession } from '../useLiveSession';
 import { deriveSessionStatusFromSets, logSessionFormSchema, type LogSessionForm } from '../schemas';
+import { formatDateKeyForDisplay, isValidDateKey, localDateKey } from '../sessionCalendarUtils';
 
 function formatElapsed(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
@@ -56,20 +61,6 @@ function toDatetimeLocalValue(ts: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function newExerciseRow(order: number): LogSessionForm['exercises'][number] {
-  return {
-    exerciseId: '',
-    exerciseName: undefined,
-    order,
-    targetSets: 1,
-    targetWeight: undefined,
-    targetTotalReps: undefined,
-    targetTopSetReps: undefined,
-    targetRir: undefined,
-    sets: [oneEmptySet()],
-  };
-}
-
 function renumberExerciseOrders(
   form: UseFormReturn<LogSessionForm, unknown, LogSessionForm>,
   len: number,
@@ -79,17 +70,98 @@ function renumberExerciseOrders(
   }
 }
 
+/**
+ * Isolated `useWatch` + debounced draft write so the rest of the page does not re-render
+ * on every form edit (replaces RHF `watch()` which trips react-hooks/incompatible-library).
+ */
+function LiveSessionDraftSync({
+  control,
+  getValues,
+  hasSession,
+  userId,
+  programId,
+  programWorkoutId,
+  draftPersistenceEnabled,
+  sessionStartedAt,
+}: {
+  control: Control<LogSessionForm>;
+  getValues: UseFormGetValues<LogSessionForm>;
+  hasSession: boolean;
+  userId: string;
+  programId: string;
+  programWorkoutId: string;
+  draftPersistenceEnabled: boolean;
+  sessionStartedAt: number | null;
+}) {
+  const watched = useWatch({ control });
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionStartedForWriteRef = useRef(sessionStartedAt);
+
+  useLayoutEffect(() => {
+    sessionStartedForWriteRef.current = sessionStartedAt;
+  }, [sessionStartedAt]);
+
+  useEffect(() => {
+    if (!hasSession || !userId) {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      return;
+    }
+    if (!draftPersistenceEnabled) {
+      return;
+    }
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      const started = sessionStartedForWriteRef.current;
+      if (started == null) {
+        return;
+      }
+      writeLiveSessionDraft({
+        userId,
+        programId,
+        programWorkoutId,
+        sessionStartedAt: started,
+        form: getValues(),
+      });
+    }, 300);
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
+  }, [
+    watched,
+    hasSession,
+    userId,
+    programId,
+    programWorkoutId,
+    getValues,
+    draftPersistenceEnabled,
+    sessionStartedAt,
+  ]);
+
+  return null;
+}
+
 export function LogSessionPage() {
   const { user } = useAuth();
   const userId = user?.id ?? '';
 
   const initKeyRef = useRef<string | null>(null);
-  const allowPersistRef = useRef(false);
+  const [draftPersistenceEnabled, setDraftPersistenceEnabled] = useState(false);
   const sessionStartedAtRef = useRef<number | null>(null);
-  const persistDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const gearDialogRef = useRef<HTMLDialogElement>(null);
+  const addExerciseDialogRef = useRef<HTMLDialogElement>(null);
   const gearTitleId = useId();
+  const [addExerciseReset, setAddExerciseReset] = useState(0);
+  const [addExerciseDefaultIndex, setAddExerciseDefaultIndex] = useState(0);
   const partialChoiceRef = useRef<((choice: PartialLogSessionChoice) => void) | null>(null);
   const [partialDialogOpen, setPartialDialogOpen] = useState(false);
 
@@ -102,6 +174,9 @@ export function LogSessionPage() {
 
   const programIdParam = search.get('programId') ?? '';
   const workoutIdParam = search.get('programWorkoutId') ?? '';
+  const occurrenceIdParam = search.get('occurrenceId') ?? '';
+  const scheduledOnParamRaw = search.get('scheduledOn');
+  const scheduledOnParam = isValidDateKey(scheduledOnParamRaw) ? scheduledOnParamRaw : '';
   const hasSessionParams = Boolean(programIdParam && workoutIdParam);
 
   useEffect(() => {
@@ -140,10 +215,18 @@ export function LogSessionPage() {
     enabled: hasSessionParams,
   });
 
+  const generatedTargetsQ = useQuery({
+    queryKey: sessionQueryKeys.generatedTargets(workoutIdParam),
+    queryFn: () => fetchGeneratedTargets(workoutIdParam),
+    enabled: hasSessionParams && !!workoutIdParam,
+    retry: false,
+  });
+
   const form = useForm<LogSessionForm>({
     resolver: zodResolver(logSessionFormSchema) as Resolver<LogSessionForm>,
     defaultValues: {
       programId: programIdParam,
+      programWorkoutId: workoutIdParam,
       workoutName: '',
       dayNumber: 1,
       sessionStatus: 'completed',
@@ -152,26 +235,51 @@ export function LogSessionPage() {
   });
 
   const { isDirty } = useFormState({ control: form.control });
-  const prepareLeave = useConfirmLeaveWhenDirty(isDirty);
+  /** Draft is persisted; SPA blocking would prompt on every navigation despite safe browse-away. */
+  const [prepareLeave, navigationLeavePrompt] = useConfirmLeaveWhenDirty(isDirty, {
+    blockSpaNavigation: !draftPersistenceEnabled,
+  });
 
   const workoutName = useWatch({ control: form.control, name: 'workoutName' });
   const dayNumber = useWatch({ control: form.control, name: 'dayNumber' });
 
+  const watchedExercises = useWatch({ control: form.control, name: 'exercises' });
+  const addExercisePositionLabels = useMemo(
+    () =>
+      (watchedExercises ?? []).map((ex, i) =>
+        ex.exerciseName?.trim() ? ex.exerciseName.trim() : `Exercise ${i + 1}`,
+      ),
+    [watchedExercises],
+  );
+
+  const completingWorkoutName = useMemo(() => {
+    const w = workoutName?.trim();
+    if (w) return w;
+    const pw = programQ.data?.programWorkouts.find((x) => x.id === workoutIdParam);
+    return pw?.name ?? '';
+  }, [workoutName, programQ.data, workoutIdParam]);
+
+  const generatedTargetsSettled = !generatedTargetsQ.isPending;
+
   useEffect(() => {
     if (!programQ.data || !workoutIdParam || !userId) {
       if (programIdParam) form.setValue('programId', programIdParam);
+      if (workoutIdParam) form.setValue('programWorkoutId', workoutIdParam);
       return;
     }
     const w = programQ.data.programWorkouts.find((x) => x.id === workoutIdParam);
     if (!w) return;
+
+    const draft = readLiveSessionDraft(userId, programIdParam, workoutIdParam);
+
+    if (!draft && !generatedTargetsSettled) return;
 
     const currentKey = `${userId}:${programIdParam}:${workoutIdParam}`;
     if (initKeyRef.current === currentKey) {
       return;
     }
 
-    allowPersistRef.current = false;
-    const draft = readLiveSessionDraft(userId, programIdParam, workoutIdParam);
+    setDraftPersistenceEnabled(false);
     const rows = [...w.programWorkoutExercises].sort((a, b) => a.order - b.order);
 
     if (draft) {
@@ -182,27 +290,54 @@ export function LogSessionPage() {
       sessionStartedAtRef.current = t;
       setPausedAt(null);
     } else {
+      const generated = generatedTargetsQ.data;
+      const genByExercise = new Map(generated?.exercises.map((e) => [e.exerciseId, e]) ?? []);
+
       const startedAt = Date.now();
       form.reset({
         programId: programQ.data.id,
+        programWorkoutId: workoutIdParam,
         workoutName: w.name,
         dayNumber: w.dayNumber,
         sessionStatus: 'completed',
-        exercises: rows.map((slot) => ({
-          exerciseId: slot.exerciseId,
-          exerciseName: slot.exercise?.name,
-          order: slot.order,
-          targetSets: slot.targetSets,
-          targetWeight: slot.targetWeight ?? undefined,
-          targetTotalReps: slot.targetTotalReps ?? undefined,
-          targetTopSetReps: slot.targetTopSetReps ?? undefined,
-          targetRir: slot.targetRir ?? undefined,
-          sets: defaultSets(
-            slot.targetSets,
-            slot.targetWeight != null ? Math.round(slot.targetWeight) : null,
-            slot.targetTopSetReps,
-          ),
-        })),
+        exercises: rows.map((slot) => {
+          const gen = genByExercise.get(slot.exerciseId);
+          if (gen) {
+            return {
+              exerciseId: slot.exerciseId,
+              exerciseName: slot.exercise?.name,
+              order: slot.order,
+              targetSets: gen.targetSets,
+              targetWeight: slot.targetWeight ?? undefined,
+              targetTotalReps: slot.targetTotalReps ?? undefined,
+              targetTopSetReps: slot.targetTopSetReps ?? undefined,
+              targetRir: gen.targetRir ?? slot.targetRir ?? undefined,
+              sets: gen.sets.map((s) => ({
+                targetWeight: s.targetWeight != null ? Math.round(s.targetWeight) : undefined,
+                targetReps: s.targetReps ?? undefined,
+                reps: 0,
+                weight: 0,
+                rir: undefined,
+                setCompleted: false,
+              })),
+            };
+          }
+          return {
+            exerciseId: slot.exerciseId,
+            exerciseName: slot.exercise?.name,
+            order: slot.order,
+            targetSets: slot.targetSets,
+            targetWeight: slot.targetWeight ?? undefined,
+            targetTotalReps: slot.targetTotalReps ?? undefined,
+            targetTopSetReps: slot.targetTopSetReps ?? undefined,
+            targetRir: slot.targetRir ?? undefined,
+            sets: defaultSets(
+              slot.targetSets,
+              slot.targetWeight != null ? Math.round(slot.targetWeight) : null,
+              slot.targetTopSetReps,
+            ),
+          };
+        }),
       });
       setSessionStartedAt(startedAt);
       setNowMs(startedAt);
@@ -212,38 +347,17 @@ export function LogSessionPage() {
 
     initKeyRef.current = currentKey;
     queueMicrotask(() => {
-      allowPersistRef.current = true;
+      setDraftPersistenceEnabled(true);
     });
-  }, [programQ.data, workoutIdParam, programIdParam, userId, form]);
-
-  useEffect(() => {
-    if (!hasSessionParams || !userId) return;
-
-    const subscription = form.watch(() => {
-      if (!allowPersistRef.current) return;
-      if (persistDebounceRef.current) clearTimeout(persistDebounceRef.current);
-      persistDebounceRef.current = setTimeout(() => {
-        persistDebounceRef.current = null;
-        const started = sessionStartedAtRef.current;
-        if (started == null) return;
-        writeLiveSessionDraft({
-          userId,
-          programId: programIdParam,
-          programWorkoutId: workoutIdParam,
-          sessionStartedAt: started,
-          form: form.getValues(),
-        });
-      }, 300);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      if (persistDebounceRef.current) {
-        clearTimeout(persistDebounceRef.current);
-        persistDebounceRef.current = null;
-      }
-    };
-  }, [hasSessionParams, userId, programIdParam, workoutIdParam, form]);
+  }, [
+    programQ.data,
+    workoutIdParam,
+    programIdParam,
+    userId,
+    form,
+    generatedTargetsSettled,
+    generatedTargetsQ.data,
+  ]);
 
   useEffect(() => {
     if (!hasSessionParams) return;
@@ -263,15 +377,69 @@ export function LogSessionPage() {
     renumberExerciseOrders(form, len);
   };
 
+  const openAddExerciseDialog = () => {
+    setAddExerciseDefaultIndex(exercisesFA.fields.length);
+    setAddExerciseReset((n) => n + 1);
+    setTimeout(() => {
+      addExerciseDialogRef.current?.showModal();
+    }, 0);
+  };
+
+  const onOpenReorder = useCallback(() => {
+    if (sessionStartedAt == null || !userId) return;
+    writeLiveSessionDraft({
+      userId,
+      programId: programIdParam,
+      programWorkoutId: workoutIdParam,
+      sessionStartedAt,
+      form: form.getValues(),
+    });
+    const p = new URLSearchParams();
+    p.set('programId', programIdParam);
+    p.set('programWorkoutId', workoutIdParam);
+    if (occurrenceIdParam) p.set('occurrenceId', occurrenceIdParam);
+    if (scheduledOnParam) p.set('scheduledOn', scheduledOnParam);
+    navigate({ pathname: '/sessions/new/reorder-exercises', search: `?${p.toString()}` });
+  }, [
+    sessionStartedAt,
+    userId,
+    programIdParam,
+    workoutIdParam,
+    occurrenceIdParam,
+    scheduledOnParam,
+    form,
+    navigate,
+  ]);
+
   const mutation = useMutation({
     mutationFn: createSession,
     onSuccess: (session) => {
       prepareLeave();
       clearLiveSession();
+      triggerWorkoutGeneration(session.id);
       qc.invalidateQueries({ queryKey: sessionQueryKeys.all });
+      qc.invalidateQueries({ queryKey: programQueryKeys.all });
       qc.invalidateQueries({ queryKey: programQueryKeys.active() });
       qc.invalidateQueries({ queryKey: exercisePerformanceQueryKeys.all });
-      navigate(`/sessions/${session.id}`);
+      const name =
+        session.workoutName?.trim() ||
+        (session.programWorkoutId
+          ? programQ.data?.programWorkouts.find((w) => w.id === session.programWorkoutId)?.name
+          : undefined) ||
+        session.workoutName;
+      const scheduleLabel = scheduledOnParam ? formatDateKeyForDisplay(scheduledOnParam) : null;
+      const backlogAck =
+        occurrenceIdParam && programQ.data
+          ? {
+              scheduleLabel,
+              workoutName: name,
+              programId: programIdParam,
+              programName: programQ.data.name,
+            }
+          : undefined;
+      navigate(`/sessions/${session.id}`, {
+        state: backlogAck ? { backlogAck } : undefined,
+      });
     },
   });
 
@@ -399,9 +567,37 @@ export function LogSessionPage() {
 
   return (
     <div className="flex w-full flex-col gap-8 px-4 py-5 sm:px-5 sm:py-8">
+      <LiveSessionDraftSync
+        control={form.control}
+        getValues={form.getValues}
+        hasSession={hasSessionParams}
+        userId={userId}
+        programId={programIdParam}
+        programWorkoutId={workoutIdParam}
+        draftPersistenceEnabled={draftPersistenceEnabled}
+        sessionStartedAt={sessionStartedAt}
+      />
+      {hasSessionParams && occurrenceIdParam ? (
+        <section
+          className="rounded-xl border border-(--accent-border) bg-(--accent-bg) px-4 py-3 text-sm"
+          aria-live="polite"
+        >
+          <p className="font-medium text-(--text-h)">
+            Completing: {completingWorkoutName || 'Workout'}
+            {scheduledOnParam ? ` · scheduled ${formatDateKeyForDisplay(scheduledOnParam)}` : null}
+          </p>
+          <p className="mt-2 text-(--text)">
+            Saving will mark that planned day complete and move your program forward (this clears
+            one item from your backlog).
+          </p>
+        </section>
+      ) : null}
+
       <form
         ref={formRef}
         className="flex flex-col gap-8"
+        // RHF: handleSubmit does not read `formRef` — `react-hooks/refs` false positive on the same <form> node.
+        // eslint-disable-next-line react-hooks/refs
         onSubmit={form.handleSubmit(async (values) => {
           const outcome = classifyLogSessionCompletion(values.exercises);
           let payload: LogSessionForm = values;
@@ -443,10 +639,15 @@ export function LogSessionPage() {
           try {
             await mutation.mutateAsync({
               programId: payload.programId,
+              programWorkoutId: payload.programWorkoutId,
               workoutName: payload.workoutName.trim(),
               dayNumber: payload.dayNumber,
               sessionStatus,
               sessionDuration: elapsedMin,
+              ...(occurrenceIdParam ? { occurrenceId: occurrenceIdParam } : {}),
+              datePerformed: new Date().toISOString(),
+              performedOnLocalDate: localDateKey(new Date()),
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
               exercises: payload.exercises.map((ex) => ({
                 exerciseId: ex.exerciseId,
                 order: ex.order,
@@ -490,6 +691,7 @@ export function LogSessionPage() {
         })}
       >
         <input type="hidden" {...form.register('programId')} />
+        <input type="hidden" {...form.register('programWorkoutId')} />
         <input type="hidden" {...form.register('dayNumber')} />
         <input type="hidden" {...form.register('sessionStatus')} />
 
@@ -541,41 +743,51 @@ export function LogSessionPage() {
           </Button>
         </dialog>
 
-        {exercisesFA.fields.map((field, ei) => (
-          <SessionExerciseEditor
-            key={field.id}
-            ei={ei}
-            form={form}
-            exerciseCount={exercisesFA.fields.length}
-            onMoveUp={() => {
-              if (ei <= 0) return;
-              exercisesFA.move(ei, ei - 1);
-              renumberAll();
-            }}
-            onMoveDown={() => {
-              if (ei >= exercisesFA.fields.length - 1) return;
-              exercisesFA.move(ei, ei + 1);
-              renumberAll();
-            }}
-            onRemove={() => {
-              if (exercisesFA.fields.length <= 1) return;
-              exercisesFA.remove(ei);
-              renumberAll();
-            }}
-          />
-        ))}
+        <section className="flex flex-col gap-4" aria-labelledby="log-session-exercises-heading">
+          <div className="flex items-center justify-between gap-3">
+            <h2
+              id="log-session-exercises-heading"
+              className="min-w-0 text-lg font-medium text-(--text-h)"
+            >
+              Exercises
+            </h2>
+            <Button
+              type="button"
+              variant="secondary"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 px-3.5"
+              onClick={openAddExerciseDialog}
+            >
+              Add exercise
+            </Button>
+          </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="self-start min-h-14 px-8 text-lg font-semibold tracking-tight sm:min-h-[3.75rem] sm:text-xl"
-          onClick={() => {
-            exercisesFA.append(newExerciseRow(1));
+          {exercisesFA.fields.map((field, ei) => (
+            <SessionExerciseEditor
+              key={field.id}
+              ei={ei}
+              form={form}
+              exerciseCount={exercisesFA.fields.length}
+              onOpenReorder={onOpenReorder}
+              onRemove={() => {
+                if (exercisesFA.fields.length <= 1) return;
+                exercisesFA.remove(ei);
+                renumberAll();
+              }}
+            />
+          ))}
+        </section>
+
+        <AddSessionExerciseDialog
+          dialogRef={addExerciseDialogRef}
+          resetSignal={addExerciseReset}
+          defaultInsertIndex={addExerciseDefaultIndex}
+          exerciseLabels={addExercisePositionLabels}
+          onAdd={({ row, insertIndex }) => {
+            exercisesFA.insert(insertIndex, row);
             renumberAll();
+            addExerciseDialogRef.current?.close();
           }}
-        >
-          + Exercise
-        </Button>
+        />
 
         {form.formState.errors.exercises?.message ? (
           <p className="text-sm text-red-600" role="alert">
@@ -605,6 +817,7 @@ export function LogSessionPage() {
       </form>
 
       <PartialLogSessionDialog open={partialDialogOpen} onChoice={resolvePartialChoice} />
+      {navigationLeavePrompt}
     </div>
   );
 }

@@ -4,8 +4,10 @@ import {
   SplitType,
   ProgramSources,
   ProgramStatuses,
+  ProgramScheduleKind,
 } from "@/generated/prisma/enums";
 import type { CursorPaginationParams } from "@/lib/pagination";
+import type { SchedulePatternInputSlot, ScheduleSlot } from "./programSchedule.js";
 
 export const programListSortValues = [
   "created_desc",
@@ -26,7 +28,7 @@ interface ProgramWorkoutExerciseDTO {
   targetRir?: number;
 }
 
-interface ProgramWorkoutDTO {
+export interface ProgramWorkoutDTO {
   name: string;
   dayNumber: number;
   exercises: ProgramWorkoutExerciseDTO[];
@@ -56,6 +58,9 @@ export interface CreateFromTemplateDTO {
   templateId: string;
   name?: string;
   startDate?: string;
+  lengthWeeks?: number;
+  /** Defaults to UTC; used when materializing calendar days. */
+  timeZone?: string;
 }
 
 export interface CreateCustomProgramDTO {
@@ -67,6 +72,11 @@ export interface CreateCustomProgramDTO {
   splitType: SplitType;
   daysPerWeek: number;
   startDate?: string;
+  lengthWeeks?: number;
+  scheduleKind: ProgramScheduleKind;
+  /** Resolved after workouts are created (workoutIndex → id). */
+  schedulePattern: SchedulePatternInputSlot[];
+  timeZone?: string;
   workouts: ProgramWorkoutDTO[];
 }
 
@@ -81,6 +91,34 @@ export interface UpdateProgramDTO {
   daysPerWeek?: number;
   status?: ProgramStatuses;
   startDate?: string;
+  lengthWeeks?: number;
+  scheduleKind?: ProgramScheduleKind;
+  /** Stored JSON shape (UUIDs). */
+  schedulePattern?: ScheduleSlot[];
+  /** When updating schedule fields; defaults to UTC. */
+  timeZone?: string;
+}
+
+export interface GetProgramOccurrencesDTO {
+  programId: string;
+  userId: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface GetNextWorkoutDTO {
+  programId: string;
+  userId: string;
+  timeZone: string;
+}
+
+export interface PatchOccurrenceDTO {
+  programId: string;
+  occurrenceId: string;
+  userId: string;
+  timeZone: string;
+  scheduledOn?: string;
+  status?: "planned" | "skipped" | "cancelled";
 }
 
 export interface DeleteProgramDTO {

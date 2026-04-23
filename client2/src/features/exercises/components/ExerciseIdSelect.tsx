@@ -13,11 +13,12 @@ type Props = {
 
 export function ExerciseIdSelect({ id, value, onChange, disabled }: Props) {
   const q = useInfiniteQuery({
-    queryKey: exerciseQueryKeys.list(),
+    queryKey: [...exerciseQueryKeys.all, 'list', 'name_asc', 'paged'] as const,
     queryFn: ({ pageParam }) =>
       fetchExercisesPage({
         cursor: pageParam,
         limit: DEFAULT_LIST_LIMIT,
+        sort: 'name_asc',
       }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => (last.hasMore && last.nextCursor ? last.nextCursor : undefined),

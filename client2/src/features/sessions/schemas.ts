@@ -31,6 +31,7 @@ const sessionExerciseSchema = z.object({
 
 export const logSessionFormSchema = z.object({
   programId: z.string().min(1),
+  programWorkoutId: z.string().min(1),
   workoutName: z.string().max(35).trim().min(1),
   dayNumber: intFieldMin(1),
   sessionStatus: z.enum(['completed', 'partially', 'skipped']),

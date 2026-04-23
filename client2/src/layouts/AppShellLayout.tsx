@@ -7,9 +7,10 @@ import { MainNav } from './MainNav';
 function AppShellLayoutInner() {
   const location = useLocation();
   const search = new URLSearchParams(location.search);
+  const isLiveSessionPath =
+    location.pathname === '/sessions/new' || location.pathname === '/sessions/new/reorder-exercises';
   const isLiveSession =
-    location.pathname === '/sessions/new' &&
-    Boolean(search.get('programId') && search.get('programWorkoutId'));
+    isLiveSessionPath && Boolean(search.get('programId') && search.get('programWorkoutId'));
 
   const { chrome } = useLiveSessionChrome();
 

@@ -9,3 +9,10 @@ export type UserProfile = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type AiUserPreferences = {
+  progressionStyle: 'conservative' | 'moderate' | 'aggressive';
+  progressionPreference: 'weight' | 'reps' | 'balanced';
+  deloadSensitivity: 'low' | 'medium' | 'high';
+  rirFloor: number;
+};

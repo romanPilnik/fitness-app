@@ -9,7 +9,7 @@ function requireRole(...allowedRoles: Role[]) {
       if (!req.user) {
         throw new AuthenticationError(
           "Authentication required",
-          ERROR_CODES.TOKEN_REQUIRED,
+          ERROR_CODES.UNAUTHENTICATED,
         );
       }
 

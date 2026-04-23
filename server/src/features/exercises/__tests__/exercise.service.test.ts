@@ -45,6 +45,7 @@ describe("ExerciseService", () => {
       const result = await ExerciseService.getExercises({
         limit: 20,
         userId: "u-1",
+        sort: "name_asc",
       });
 
       expect(prismaMock.exercise.findMany).toHaveBeenCalled();
@@ -73,6 +74,7 @@ describe("ExerciseService", () => {
       const result = await ExerciseService.getExercises({
         limit: 2,
         userId: "u-1",
+        sort: "name_asc",
       });
 
       expect(result.hasMore).toBe(true);

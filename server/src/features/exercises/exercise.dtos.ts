@@ -4,6 +4,7 @@ import {
   ExerciseCategory,
   MovementPattern,
 } from "@/generated/prisma/enums";
+import type { ProgramListSort } from "@/features/programs/program.dtos";
 import type { CursorPaginationParams } from "@/lib/pagination";
 
 export interface GetExercisesDTO extends CursorPaginationParams {
@@ -11,6 +12,7 @@ export interface GetExercisesDTO extends CursorPaginationParams {
   equipment?: Equipment;
   category?: ExerciseCategory;
   movementPattern?: MovementPattern;
+  sort: ProgramListSort;
   userId?: string;
 }
 

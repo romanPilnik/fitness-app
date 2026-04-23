@@ -1,6 +1,6 @@
 import { deleteEnvelope, getEnvelope, postEnvelope } from '@/api/client';
 import { DEFAULT_LIST_LIMIT, type CursorPage } from '@/api/pagination';
-import type { Exercise } from './types';
+import type { Exercise, ExerciseListSort } from './types';
 
 export type CreateExerciseBody = {
   name: string;
@@ -25,6 +25,7 @@ export type ExerciseListParams = {
   equipment?: string;
   category?: string;
   movementPattern?: string;
+  sort?: ExerciseListSort;
 };
 
 export async function fetchExercisesPage(
@@ -37,6 +38,7 @@ export async function fetchExercisesPage(
     equipment,
     category,
     movementPattern,
+    sort,
   } = params;
   return getEnvelope<CursorPage<Exercise>>('/exercises', {
     params: {
@@ -46,6 +48,7 @@ export async function fetchExercisesPage(
       ...(equipment ? { equipment } : {}),
       ...(category ? { category } : {}),
       ...(movementPattern ? { movementPattern } : {}),
+      ...(sort ? { sort } : {}),
     },
   });
 }

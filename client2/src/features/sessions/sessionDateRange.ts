@@ -44,7 +44,6 @@ export function sessionDateRangeToApiParams(
     };
   }
 
-  // custom
   if (!customFrom.trim() || !customTo.trim()) {
     return {};
   }

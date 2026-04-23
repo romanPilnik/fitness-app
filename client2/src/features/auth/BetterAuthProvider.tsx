@@ -1,6 +1,7 @@
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useCallback, useLayoutEffect, useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { queryClient } from '@/api/queryClient';
+import { setUnauthorizedHandler } from '@/api/unauthorized';
 import { authClient } from '@/lib/auth-client';
 import { AuthContext, type AuthContextValue } from './auth-context';
 import { userQueryKeys } from '@/features/users/api';
@@ -10,14 +11,7 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { data: session, isPending, refetch } = authClient.useSession();
 
-  const user: AuthUser | null = session?.user
-    ? { id: session.user.id, email: session.user.email, name: session.user.name }
-    : null;
-
-  const login = useCallback((_token: string, _user: AuthUser) => {
-    // No-op: Better Auth manages sessions via cookies.
-    // The useSession hook auto-updates after signIn/signUp calls.
-  }, []);
+  const login = useCallback(() => {}, []);
 
   const logout = useCallback(async () => {
     await authClient.signOut();
@@ -25,25 +19,42 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
     navigate('/login', { replace: true });
   }, [navigate]);
 
-  const setAuthUser = useCallback(
-    (_user: AuthUser) => {
-      // Refresh session so the auth context picks up updated user data
-      void refetch();
-    },
-    [refetch],
-  );
+  const setAuthUser = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
-  const value: AuthContextValue = useMemo(
-    () => ({
+  useLayoutEffect(() => {
+    setUnauthorizedHandler(() => {
+      queryClient.removeQueries({ queryKey: userQueryKeys.me() });
+      void authClient.signOut().then(() => navigate('/login', { replace: true }));
+    });
+    return () => {
+      setUnauthorizedHandler(() => {
+        window.location.assign('/login');
+      });
+    };
+  }, [navigate]);
+
+  const value: AuthContextValue = useMemo(() => {
+    const user: AuthUser | null = session?.user
+      ? {
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.name,
+          emailVerified:
+            'emailVerified' in session.user
+              ? Boolean((session.user as { emailVerified?: boolean }).emailVerified)
+              : undefined,
+        }
+      : null;
+    return {
       user,
-      token: session?.session ? 'cookie-session' : null,
       isAuthenticated: Boolean(session?.user),
       login,
       logout,
       setAuthUser,
-    }),
-    [user, session, login, logout, setAuthUser],
-  );
+    };
+  }, [session, login, logout, setAuthUser]);
 
   if (isPending) {
     return (

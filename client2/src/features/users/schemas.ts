@@ -13,6 +13,26 @@ export const accountProfileSchema = z.object({
 
 export type AccountProfileForm = z.infer<typeof accountProfileSchema>;
 
+const progressionStyle = z.enum(['conservative', 'moderate', 'aggressive']);
+const progressionPreference = z.enum(['weight', 'reps', 'balanced']);
+const deloadSensitivity = z.enum(['low', 'medium', 'high']);
+
+export const aiPreferencesFormSchema = z.object({
+  progressionStyle,
+  progressionPreference,
+  deloadSensitivity,
+  rirFloor: z.number().int().min(0).max(4),
+});
+
+export type AiPreferencesForm = z.infer<typeof aiPreferencesFormSchema>;
+
+export const DEFAULT_AI_PREFERENCES_FORM: AiPreferencesForm = {
+  progressionStyle: 'moderate',
+  progressionPreference: 'balanced',
+  deloadSensitivity: 'medium',
+  rirFloor: 2,
+};
+
 export const changePasswordFormSchema = z
   .object({
     oldPassword: z.string().min(1, 'Required'),

@@ -1,3 +1,4 @@
+import { useQueries } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -12,9 +13,11 @@ import {
 } from '@/lib/apiFilterOptions';
 import { formatEnumLabel } from '@/lib/formatEnumLabel';
 import { isFromLibraryState, libraryLocationState } from '@/lib/libraryNav';
-import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/features/users/useCurrentUser';
+import { exerciseQueryKeys, fetchExercisesPage } from '../api';
+import { ExerciseListFiltersBar } from '../components/ExerciseListFiltersBar';
 import { ExerciseMuscleGroupSection } from '../components/ExerciseMuscleGroupSection';
+import type { ExerciseListSort } from '../types';
 
 const selectClass =
   'min-h-11 w-full rounded-lg border border-(--border) bg-(--bg) px-3 py-2 text-sm text-(--text-h)';
@@ -25,6 +28,7 @@ export function ExercisesPage() {
   const fromLibrary = isFromLibraryState(location.state);
   const exerciseLinkState = fromLibrary ? libraryLocationState : undefined;
   const me = useCurrentUser();
+  const [sort, setSort] = useState<ExerciseListSort>('name_asc');
   const [equipment, setEquipment] = useState('');
   const [category, setCategory] = useState('');
   const [movementPattern, setMovementPattern] = useState('');
@@ -40,10 +44,67 @@ export function ExercisesPage() {
   const filterCategory = category || undefined;
   const filterMovement = movementPattern || undefined;
 
+  const hasAdvancedFilters = advancedCount > 0;
+
+  const groupProbeQueries = useQueries({
+    queries: MUSCLE_GROUP_VALUES.map((muscle) => ({
+      queryKey: [
+        ...exerciseQueryKeys.all,
+        'group-probe',
+        muscle,
+        filterEquipment ?? '',
+        filterCategory ?? '',
+        filterMovement ?? '',
+        sort,
+      ] as const,
+      queryFn: () =>
+        fetchExercisesPage({
+          primaryMuscle: muscle,
+          limit: 1,
+          sort,
+          ...(filterEquipment ? { equipment: filterEquipment } : {}),
+          ...(filterCategory ? { category: filterCategory } : {}),
+          ...(filterMovement ? { movementPattern: filterMovement } : {}),
+        }),
+      enabled: hasAdvancedFilters,
+      staleTime: 1000 * 60 * 5,
+    })),
+  });
+
+  const isProbeLoading =
+    hasAdvancedFilters && groupProbeQueries.some((q) => q.isPending);
+
+  const musclesToRender = !hasAdvancedFilters
+    ? MUSCLE_GROUP_VALUES
+    : MUSCLE_GROUP_VALUES.filter((_, i) => {
+        const q = groupProbeQueries[i]!;
+        if (q.isError) return true;
+        return (q.data?.data.length ?? 0) > 0;
+      });
+
+  const onlyOneGroupVisible = hasAdvancedFilters && musclesToRender.length === 1;
+  const sectionKeySuffix = [filterEquipment ?? '', filterCategory ?? '', filterMovement ?? '', sort].join(
+    '|',
+  );
+
   return (
     <>
       {fromLibrary ? (
-        <SubpageHeader fallbackTo="/library" title="Exercises" backLabel="Back to library" />
+        <SubpageHeader
+          fallbackTo="/library"
+          title="Exercises"
+          backLabel="Back to library"
+          trailingAction={
+            <Link
+              to="/exercises/new"
+              {...(exerciseLinkState ? { state: exerciseLinkState } : {})}
+              aria-label="New exercise"
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-(--text-h) text-(--bg) shadow-(--shadow) transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
+            >
+              <Plus className="size-5" aria-hidden />
+            </Link>
+          }
+        />
       ) : null}
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       {me.isError ? (
@@ -53,35 +114,30 @@ export function ExercisesPage() {
       <header className="flex flex-col gap-4 border-b border-(--border) pb-4">
         {!fromLibrary ? <h1 className="text-2xl font-medium text-(--text-h)">Exercises</h1> : null}
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={openAdvanced}
-            className={cn(
-              'inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)',
-              advancedCount > 0
-                ? 'border-(--accent) bg-(--code-bg)/40 text-(--text-h)'
-                : 'border-(--border) bg-transparent text-(--text-h) hover:bg-(--code-bg)/50',
-            )}
-          >
-            Advanced filters
-            {advancedCount > 0 ? (
-              <span
-                className="flex size-5 items-center justify-center rounded-full bg-(--text-h) text-[10px] font-semibold text-(--bg)"
-                aria-hidden
-              >
-                {advancedCount}
-              </span>
-            ) : null}
-          </button>
-          <Link
-            to="/exercises/new"
-            {...(exerciseLinkState ? { state: exerciseLinkState } : {})}
-            aria-label="New exercise"
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg bg-(--text-h) text-(--bg) shadow-(--shadow) transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border)"
-          >
-            <Plus className="size-5" aria-hidden />
-          </Link>
+        <div
+          className={
+            fromLibrary
+              ? 'flex flex-col gap-3'
+              : 'flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3'
+          }
+        >
+          <ExerciseListFiltersBar
+            className="min-w-0 flex-1"
+            sort={sort}
+            onSortChange={setSort}
+            advancedCount={advancedCount}
+            onOpenAdvanced={openAdvanced}
+          />
+          {fromLibrary ? null : (
+            <Link
+              to="/exercises/new"
+              {...(exerciseLinkState ? { state: exerciseLinkState } : {})}
+              aria-label="New exercise"
+              className="inline-flex size-11 shrink-0 items-center justify-center self-end rounded-lg bg-(--text-h) text-(--bg) shadow-(--shadow) transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border) sm:self-center"
+            >
+              <Plus className="size-5" aria-hidden />
+            </Link>
+          )}
         </div>
       </header>
 
@@ -90,9 +146,10 @@ export function ExercisesPage() {
         className="w-[calc(100%-2rem)] max-w-md rounded-xl border border-(--border) bg-(--bg) p-0 text-(--text) shadow-lg backdrop:bg-black/40"
       >
         <div className="border-b border-(--border) px-4 py-3">
-          <h2 className="text-base font-medium text-(--text-h)">Advanced filters</h2>
+          <h2 className="text-base font-medium text-(--text-h)">Advanced</h2>
           <p className="mt-0.5 text-xs text-(--text)">
-            Filters apply to every muscle group below.
+            Equipment, category, and movement apply to every muscle group below. Sorting is
+            per-group from the bar above.
           </p>
         </div>
         <div className="flex max-h-[min(70vh,420px)] flex-col gap-3 overflow-y-auto p-4">
@@ -152,16 +209,24 @@ export function ExercisesPage() {
       </dialog>
 
       <div className="flex flex-col gap-2">
-        {MUSCLE_GROUP_VALUES.map((muscle) => (
-          <ExerciseMuscleGroupSection
-            key={muscle}
-            muscle={muscle}
-            {...(exerciseLinkState ? { linkState: exerciseLinkState } : {})}
-            {...(filterEquipment ? { equipment: filterEquipment } : {})}
-            {...(filterCategory ? { category: filterCategory } : {})}
-            {...(filterMovement ? { movementPattern: filterMovement } : {})}
-          />
-        ))}
+        {isProbeLoading ? (
+          <p className="text-sm text-(--text)">Loading exercise groups…</p>
+        ) : hasAdvancedFilters && musclesToRender.length === 0 ? (
+          <p className="text-sm text-(--text)">No exercises match the current filters.</p>
+        ) : (
+          musclesToRender.map((muscle) => (
+            <ExerciseMuscleGroupSection
+              key={`${muscle}-${sectionKeySuffix}`}
+              muscle={muscle}
+              sort={sort}
+              defaultOpen={onlyOneGroupVisible}
+              {...(exerciseLinkState ? { linkState: exerciseLinkState } : {})}
+              {...(filterEquipment ? { equipment: filterEquipment } : {})}
+              {...(filterCategory ? { category: filterCategory } : {})}
+              {...(filterMovement ? { movementPattern: filterMovement } : {})}
+            />
+          ))
+        )}
       </div>
       </div>
     </>

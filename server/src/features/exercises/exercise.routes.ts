@@ -23,8 +23,14 @@ const exerciseRouter = Router();
  *     summary: List exercises (cursor pagination)
  *     description: Filter by optional query params; supports cursor-based pagination.
  *     security:
- *       - bearerAuth: []
+ *       - sessionCookie: []
  *     parameters:
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [created_desc, created_asc, name_asc, name_desc]
+ *           default: name_asc
  *       - in: query
  *         name: primaryMuscle
  *         schema:
@@ -79,7 +85,7 @@ exerciseRouter.get(
  *       - Exercises
  *     summary: Get exercise by id
  *     security:
- *       - bearerAuth: []
+ *       - sessionCookie: []
  *     parameters:
  *       - in: path
  *         name: id

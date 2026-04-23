@@ -47,7 +47,7 @@ async function createTemplate(
   res: Response,
 ) {
   if (!req.user) {
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   }
   const createdByUserId = req.user.role === "admin" ? null : req.user.id;
   const template = await TemplateService.createTemplate({
@@ -67,7 +67,7 @@ async function updateTemplate(
   res: Response,
 ) {
   if (!req.user) {
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   }
   const { id } = req.params;
   const { body } = req;
@@ -92,7 +92,7 @@ async function deleteTemplate(
   res: Response,
 ) {
   if (!req.user) {
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   }
 
   const { id } = req.params;

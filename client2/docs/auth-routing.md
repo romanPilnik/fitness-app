@@ -1,33 +1,37 @@
-# Auth and protected UI
+# Auth routing (Better Auth)
 
 Hub: [AGENTS.md](../AGENTS.md)
 
-## Backend
+## Session
 
-- Auth endpoints: **`/api/v1/auth`** (register, login, etc.) — see [`server/AGENTS.md`](../../server/AGENTS.md).
-- Protected routes use JWT **`Authorization: Bearer <token>`** (confirm exact header shape from server auth responses when implementing).
+- **Server:** [`/api/auth/*`](../../server/src/app.ts) (Better Auth handler on the API origin).
+- **Client:** [`src/lib/auth-client.ts`](../src/lib/auth-client.ts) — `baseURL` is the API **origin** only (see [`src/api/config.ts`](../src/api/config.ts)).
+- **Cookies:** Session tokens are **HTTP-only** on the API host. Use **`withCredentials: true`** on Axios ([`src/api/client.ts`](../src/api/client.ts)) and on the Socket.IO client for features that need the same session.
 
-## Token handling (choose one convention and document it in AGENTS)
+## Public routes
 
-Until the app standardizes, pick a single approach and update the hub:
+| Path | Purpose |
+|------|---------|
+| `/login` | Email/password + Google |
+| `/register` | Sign up |
+| `/forgot-password` | Request password reset email |
+| `/reset-password` | Set new password (`?token=` from email redirect) |
 
-1. **Memory-only** token + refresh (most secure against XSS theft of persistent storage; harder to survive full reload without refresh endpoint).
-2. **`sessionStorage`** or **`localStorage`** (simpler; higher XSS risk — mitigate with CSP and careful dependency hygiene).
+## Protected app shell
 
-**Don’t mix strategies** across the codebase.
+[`ProtectedRoute`](../src/routes/ProtectedRoute.tsx) wraps authed UI. Example account routes:
 
-## Axios
+| Path | Purpose |
+|------|---------|
+| `/account` | Profile |
+| `/account/password` | Change password (Better Auth `authClient.changePassword`) |
+| `/account/devices` | List / revoke sessions |
+| `/account/ai-preferences` | AI preferences |
 
-- **Request interceptor:** attach Bearer token when present.
-- **Response interceptor:** on `401`, clear session and redirect to login (watch for infinite retry loops).
+## Errors (REST)
 
-## Routing
+Unauthenticated requests to `/api/v1/*` return **`error.code`: `UNAUTHENTICATED`** (HTTP 401), not a Bearer token challenge — auth is cookie-based.
 
-- **`ProtectedRoute`** (or route `loader`): if no valid session, redirect to `/login` (or equivalent) with return URL when appropriate.
-- Keep **public** routes (login, register) free of auth requirements.
-- **Don’t** gate routes only in the UI while leaving API calls unprotected — the server is authoritative; the client mirrors for UX.
+## Database (operators)
 
-## Don’t
-
-- Don’t log tokens or passwords.
-- Don’t put JWTs in URLs or analytics events.
+Schema changes live in [`server/prisma/schema.prisma`](../../server/prisma/schema.prisma). After pulling changes, run **`npx prisma migrate dev`** (or your deploy migrate) and **`npx prisma generate`** as needed so the client matches the schema.

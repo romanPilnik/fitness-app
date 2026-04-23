@@ -6,7 +6,8 @@ const options: swaggerJSDoc.Options = {
     info: {
       title: "OnlyFitness API Documentation",
       version: "1.0.0",
-      description: "API documentation for OnlyFitness",
+      description:
+        "API documentation for OnlyFitness. Authenticated `/api/v1/*` routes expect a **Better Auth session cookie** (e.g. `better-auth.session_token`) from `POST /api/auth/sign-in/email` or OAuth — not a Bearer token. Sign-in must use `credentials: true` (same-site rules apply).",
       contact: {
         name: "OnlyFitness",
         url: "https://onlyfitness.com",
@@ -25,13 +26,16 @@ const options: swaggerJSDoc.Options = {
     ],
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
+        sessionCookie: {
+          type: "apiKey",
+          in: "cookie",
+          name: "better-auth.session_token",
+          description:
+            "Better Auth session token cookie. Issued by `/api/auth/*` after sign-in. Send requests with `Cookie` from the same browser session (or an HTTP client that stores cookies from the sign-in response).",
         },
       },
     },
-    security: [{ bearerAuth: [] }],
+    security: [{ sessionCookie: [] }],
     tags: [
       { name: "Health", description: "Service health" },
       { name: "Auth", description: "Authentication routes" },

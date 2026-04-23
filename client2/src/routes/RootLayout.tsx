@@ -13,9 +13,7 @@ function RouteFallback() {
   );
 }
 
-/**
- * Wraps all routes. Must render under {@link RouterProvider} so {@link AuthProvider} can use navigation hooks.
- */
+/** Root shell: error boundary, auth, live session, confirm, suspense. Requires `RouterProvider`. */
 export function RootLayout() {
   return (
     <AppErrorBoundary>

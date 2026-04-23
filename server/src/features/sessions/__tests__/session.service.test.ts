@@ -12,6 +12,14 @@ const prismaMock = vi.hoisted(() => ({
   program: {
     findUnique: vi.fn(),
   },
+  programWorkout: {
+    findUnique: vi.fn(),
+  },
+  programWorkoutOccurrence: {
+    findFirst: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(),
+  },
 }));
 vi.mock("@/lib/prisma.js", () => ({ prisma: prismaMock }));
 
@@ -33,6 +41,8 @@ const fakeSession = {
 describe("SessionService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.programWorkoutOccurrence.findFirst.mockResolvedValue(null);
+    prismaMock.programWorkoutOccurrence.updateMany.mockResolvedValue({ count: 0 });
   });
 
   describe("getSessions", () => {
@@ -160,11 +170,14 @@ describe("SessionService", () => {
   describe("createSession", () => {
     it("creates session with nested exercises and sets", async () => {
       prismaMock.program.findUnique.mockResolvedValue({ userId: "u-1" });
+      prismaMock.programWorkout.findUnique.mockResolvedValue({ programId: "p-1" });
+      prismaMock.programWorkoutOccurrence.findFirst.mockResolvedValue(null);
       prismaMock.session.create.mockResolvedValue(fakeSession);
 
       const result = await SessionService.createSession({
         userId: "u-1",
         programId: "p-1",
+        programWorkoutId: "pw-1",
         workoutName: "Push",
         dayNumber: 1,
         sessionStatus: "completed" as never,
@@ -183,6 +196,10 @@ describe("SessionService", () => {
         where: { id: "p-1" },
         select: { userId: true },
       });
+      expect(prismaMock.programWorkout.findUnique).toHaveBeenCalledWith({
+        where: { id: "pw-1" },
+        select: { programId: true },
+      });
       expect(prismaMock.session.create).toHaveBeenCalled();
       const sessionCreateCall = prismaMock.session.create.mock.calls[0];
       if (sessionCreateCall === undefined) {
@@ -192,11 +209,13 @@ describe("SessionService", () => {
         data: {
           userId: string;
           programId: string;
+          programWorkoutId: string;
           sessionExercises: { create: unknown };
         };
       };
       expect(createArgs.data.userId).toBe("u-1");
       expect(createArgs.data.programId).toBe("p-1");
+      expect(createArgs.data.programWorkoutId).toBe("pw-1");
       expect(Array.isArray(createArgs.data.sessionExercises.create)).toBe(true);
       expect(result).toEqual(fakeSession);
     });
@@ -208,6 +227,7 @@ describe("SessionService", () => {
         SessionService.createSession({
           userId: "u-1",
           programId: "p-1",
+          programWorkoutId: "pw-1",
           workoutName: "Push",
           dayNumber: 1,
           sessionStatus: "completed" as never,
@@ -220,6 +240,7 @@ describe("SessionService", () => {
         SessionService.createSession({
           userId: "u-1",
           programId: "p-1",
+          programWorkoutId: "pw-1",
           workoutName: "Push",
           dayNumber: 1,
           sessionStatus: "completed" as never,
@@ -236,6 +257,7 @@ describe("SessionService", () => {
         SessionService.createSession({
           userId: "u-1",
           programId: "nope",
+          programWorkoutId: "pw-1",
           workoutName: "Push",
           dayNumber: 1,
           sessionStatus: "completed" as never,
@@ -244,15 +266,55 @@ describe("SessionService", () => {
         }),
       ).rejects.toThrow(NotFoundError);
     });
+
+    it("throws NotFoundError when program workout does not exist", async () => {
+      prismaMock.program.findUnique.mockResolvedValue({ userId: "u-1" });
+      prismaMock.programWorkout.findUnique.mockResolvedValue(null);
+
+      await expect(
+        SessionService.createSession({
+          userId: "u-1",
+          programId: "p-1",
+          programWorkoutId: "missing-pw",
+          workoutName: "Push",
+          dayNumber: 1,
+          sessionStatus: "completed" as never,
+          sessionDuration: 60,
+          exercises: [],
+        }),
+      ).rejects.toMatchObject({ code: ERROR_CODES.WORKOUT_NOT_FOUND });
+    });
+
+    it("throws when program workout belongs to another program", async () => {
+      prismaMock.program.findUnique.mockResolvedValue({ userId: "u-1" });
+      prismaMock.programWorkout.findUnique.mockResolvedValue({ programId: "other-program" });
+
+      await expect(
+        SessionService.createSession({
+          userId: "u-1",
+          programId: "p-1",
+          programWorkoutId: "pw-1",
+          workoutName: "Push",
+          dayNumber: 1,
+          sessionStatus: "completed" as never,
+          sessionDuration: 60,
+          exercises: [],
+        }),
+      ).rejects.toMatchObject({ code: ERROR_CODES.INVALID_INPUT });
+    });
   });
 
   describe("deleteSession", () => {
     it("deletes session when user owns it", async () => {
       prismaMock.session.findUnique.mockResolvedValue(fakeSession);
+      prismaMock.programWorkoutOccurrence.updateMany.mockResolvedValue({
+        count: 0,
+      });
       prismaMock.session.delete.mockResolvedValue(undefined);
 
       await SessionService.deleteSession({ sessionId: "s-1", userId: "u-1" });
 
+      expect(prismaMock.programWorkoutOccurrence.updateMany).toHaveBeenCalled();
       expect(prismaMock.session.delete).toHaveBeenCalledWith({
         where: { id: "s-1" },
       });

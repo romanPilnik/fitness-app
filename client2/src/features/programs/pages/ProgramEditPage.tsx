@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm, useWatch, type Resolver } from 'react-hook-form';
+import { useForm, useFormState, useWatch, type Resolver } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '@/api/errors';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
@@ -13,6 +13,8 @@ import {
   API_VALIDATION_ERROR_CODE,
   applyApiValidationErrors,
 } from '@/lib/applyApiValidationErrors';
+import { useConfirmLeaveWhenDirty } from '@/hooks/useConfirmLeaveWhenDirty';
+import { useNavigateBack } from '@/hooks/useNavigateBack';
 import { errorMessageFromUnknown } from '@/lib/utils';
 import {
   addProgramWorkout,
@@ -28,15 +30,20 @@ import {
   type UpdateProgramWorkoutBody,
   updateWorkoutExercise,
 } from '../api';
+import { ProgramScheduleFields } from '@/features/programs/components/ProgramScheduleFields';
+import {
+  formInputPatternToStoredPattern,
+  programDetailToScheduleFormValues,
+} from '@/features/programs/editScheduleFromProgram';
 import {
   addExerciseSlotSchema,
   addWorkoutFormSchema,
   editExerciseSlotSchema,
-  editProgramMetadataSchema,
+  editProgramFormSchema,
   type AddExerciseSlotForm,
   type AddWorkoutForm,
   type EditExerciseSlotForm,
-  type EditProgramMetadataForm,
+  type EditProgramForm,
 } from '../schemas';
 import type { ProgramWorkout, ProgramWorkoutExercise } from '../types';
 
@@ -54,38 +61,144 @@ export function ProgramEditPage() {
     staleTime: 1000 * 60,
   });
 
-  const metaForm = useForm<EditProgramMetadataForm>({
-    resolver: zodResolver(editProgramMetadataSchema) as Resolver<EditProgramMetadataForm>,
+  const programForm = useForm<EditProgramForm>({
+    resolver: zodResolver(editProgramFormSchema) as Resolver<EditProgramForm>,
     values: query.data
-      ? {
-          name: query.data.name,
-          description: query.data.description ?? '',
-          difficulty: query.data.difficulty as EditProgramMetadataForm['difficulty'],
-          goal: query.data.goal as EditProgramMetadataForm['goal'],
-          splitType: query.data.splitType as EditProgramMetadataForm['splitType'],
-          daysPerWeek: query.data.daysPerWeek,
-          status: query.data.status as EditProgramMetadataForm['status'],
-          startDate: query.data.startDate ? formatForDatetimeLocal(query.data.startDate) : '',
-        }
+      ? (() => {
+          const sched = programDetailToScheduleFormValues(query.data);
+          return {
+            name: query.data.name,
+            description: query.data.description ?? '',
+            difficulty: query.data.difficulty as EditProgramForm['difficulty'],
+            goal: query.data.goal as EditProgramForm['goal'],
+            splitType: query.data.splitType as EditProgramForm['splitType'],
+            daysPerWeek: query.data.daysPerWeek,
+            lengthWeeks: query.data.lengthWeeks ?? 8,
+            status: query.data.status as EditProgramForm['status'],
+            startDate: query.data.startDate ? formatForDatetimeLocal(query.data.startDate) : '',
+            ...sched,
+          };
+        })()
       : undefined,
   });
 
+  const { isDirty: programDetailsDirty } = useFormState({ control: programForm.control });
+  const [prepareLeaveProgramForm, navigationLeavePrompt] =
+    useConfirmLeaveWhenDirty(programDetailsDirty);
+  const goBackToProgram = useNavigateBack(
+    programId ? `/programs/${programId}` : '/programs',
+  );
+
   const patchMeta = useMutation({
     mutationFn: (body: Parameters<typeof updateProgram>[1]) => updateProgram(programId, body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: programQueryKeys.detail(programId) });
-      qc.invalidateQueries({ queryKey: programQueryKeys.active() });
-      qc.invalidateQueries({ queryKey: programQueryKeys.list() });
-    },
   });
 
   const delProgram = useMutation({
     mutationFn: () => deleteProgram(programId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: programQueryKeys.all });
-      navigate('/programs');
-    },
   });
+
+  const saveProgramDetails = useCallback(
+    async (values: EditProgramForm) => {
+      if (!query.data) return;
+      const workoutsOrdered = [...query.data.programWorkouts].sort(
+        (a, b) => (a.sequenceIndex ?? 0) - (b.sequenceIndex ?? 0) || a.dayNumber - b.dayNumber,
+      );
+      const dirty = programForm.formState.dirtyFields;
+      const body: Parameters<typeof updateProgram>[1] = {};
+      if (dirty.name) {
+        const n = values.name?.trim();
+        if (n) body.name = n;
+      }
+      if (dirty.description) body.description = values.description?.trim() || null;
+      if (dirty.difficulty) body.difficulty = values.difficulty;
+      if (dirty.goal) body.goal = values.goal;
+      if (dirty.splitType) body.splitType = values.splitType;
+      if (dirty.daysPerWeek) body.daysPerWeek = values.daysPerWeek;
+      if (dirty.lengthWeeks) body.lengthWeeks = values.lengthWeeks;
+      if (dirty.status) body.status = values.status;
+      if (dirty.startDate && values.startDate?.trim()) {
+        body.startDate = new Date(values.startDate).toISOString();
+      }
+      const scheduleDirty =
+        Boolean(dirty.scheduleKind) ||
+        Boolean(dirty.asyncPattern) ||
+        Boolean(
+          dirty.syncPattern && (Array.isArray(dirty.syncPattern) ? dirty.syncPattern.some(Boolean) : true),
+        );
+      if (scheduleDirty) {
+        body.scheduleKind = values.scheduleKind;
+        const pattern =
+          values.scheduleKind === 'sync_week' ? values.syncPattern : values.asyncPattern;
+        body.schedulePattern = formInputPatternToStoredPattern(
+          pattern,
+          workoutsOrdered.map((w) => w.id),
+        );
+      }
+      if (scheduleDirty || dirty.lengthWeeks || dirty.startDate) {
+        body.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      }
+      if (Object.keys(body).length === 0) return;
+      try {
+        await patchMeta.mutateAsync(body);
+        // Unblocks `useBlocker` before navigate: `isDirty` can still be true until the next render after `reset`.
+        prepareLeaveProgramForm();
+        qc.invalidateQueries({ queryKey: programQueryKeys.detail(programId) });
+        qc.invalidateQueries({ queryKey: programQueryKeys.active() });
+        qc.invalidateQueries({ queryKey: programQueryKeys.list() });
+        programForm.reset(values);
+        navigate('/programs', { replace: true });
+      } catch (e) {
+        if (e instanceof ApiError) {
+          if (
+            e.code === API_VALIDATION_ERROR_CODE &&
+            applyApiValidationErrors(e, programForm.setError)
+          ) {
+            patchMeta.reset();
+            return;
+          }
+          patchMeta.reset();
+          programForm.setError('root', {
+            type: 'server',
+            message: e.message,
+          });
+          return;
+        }
+        patchMeta.reset();
+        programForm.setError('root', {
+          type: 'server',
+          message: errorMessageFromUnknown(e),
+        });
+      }
+    },
+    [query.data, programForm, programId, patchMeta, qc, navigate, prepareLeaveProgramForm],
+  );
+
+  const onBackFromProgramEdit = useCallback(() => {
+    if (!programDetailsDirty) {
+      goBackToProgram();
+      return;
+    }
+    void confirm('You have unsaved changes.', {
+      cancelLabel: 'Keep editing',
+      confirmLabel: 'Discard',
+      extraLabel: 'Save changes',
+    }).then((result) => {
+      if (result === false) return;
+      if (result === true) {
+        prepareLeaveProgramForm();
+        goBackToProgram();
+        return;
+      }
+      void programForm.handleSubmit(saveProgramDetails)();
+    });
+  }, [
+    programDetailsDirty,
+    confirm,
+    prepareLeaveProgramForm,
+    goBackToProgram,
+    programForm,
+    saveProgramDetails,
+  ]);
 
   if (!programId) {
     return (
@@ -94,6 +207,7 @@ export function ProgramEditPage() {
         <div className="mx-auto max-w-lg px-4 py-8">
           <p className="text-sm text-(--text)">Missing program id.</p>
         </div>
+        {navigationLeavePrompt}
       </>
     );
   }
@@ -109,6 +223,7 @@ export function ProgramEditPage() {
         <div className="mx-auto max-w-lg px-4 py-8">
           <QueryErrorMessage error={query.error} refetch={() => query.refetch()} />
         </div>
+        {navigationLeavePrompt}
       </>
     );
   }
@@ -124,12 +239,16 @@ export function ProgramEditPage() {
         <div className="mx-auto max-w-lg px-4 py-8">
           <p className="text-sm text-(--text)">Loading…</p>
         </div>
+        {navigationLeavePrompt}
       </>
     );
   }
 
   const p = query.data;
-  const workouts = [...p.programWorkouts].sort((a, b) => a.dayNumber - b.dayNumber);
+  const workoutsOrdered = [...p.programWorkouts].sort(
+    (a, b) => (a.sequenceIndex ?? 0) - (b.sequenceIndex ?? 0) || a.dayNumber - b.dayNumber,
+  );
+  const workoutNamesForSchedule = workoutsOrdered.map((w) => w.name);
 
   return (
     <>
@@ -137,61 +256,20 @@ export function ProgramEditPage() {
         fallbackTo={`/programs/${programId}`}
         title={p.name}
         backLabel="Back to program"
+        onBack={onBackFromProgramEdit}
       />
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
         <section className="rounded-xl border border-(--border) p-4">
-          <h2 className="text-lg font-medium text-(--text-h)">Program details</h2>
+          <h2 className="text-lg font-medium text-(--text-h)">Program details &amp; schedule</h2>
           <form
             className="mt-3 flex flex-col gap-3"
-            onSubmit={metaForm.handleSubmit(async (values) => {
-              const dirty = metaForm.formState.dirtyFields;
-              const body: Parameters<typeof updateProgram>[1] = {};
-              if (dirty.name) {
-                const n = values.name?.trim();
-                if (n) body.name = n;
-              }
-              if (dirty.description) body.description = values.description?.trim() || null;
-              if (dirty.difficulty) body.difficulty = values.difficulty;
-              if (dirty.goal) body.goal = values.goal;
-              if (dirty.splitType) body.splitType = values.splitType;
-              if (dirty.daysPerWeek) body.daysPerWeek = values.daysPerWeek;
-              if (dirty.status) body.status = values.status;
-              if (dirty.startDate && values.startDate?.trim()) {
-                body.startDate = new Date(values.startDate).toISOString();
-              }
-              if (Object.keys(body).length === 0) return;
-              try {
-                await patchMeta.mutateAsync(body);
-                metaForm.reset(values);
-              } catch (e) {
-                if (e instanceof ApiError) {
-                  if (
-                    e.code === API_VALIDATION_ERROR_CODE &&
-                    applyApiValidationErrors(e, metaForm.setError)
-                  ) {
-                    patchMeta.reset();
-                    return;
-                  }
-                  patchMeta.reset();
-                  metaForm.setError('root', {
-                    type: 'server',
-                    message: e.message,
-                  });
-                  return;
-                }
-                patchMeta.reset();
-                metaForm.setError('root', {
-                  type: 'server',
-                  message: errorMessageFromUnknown(e),
-                });
-              }
-            })}
+            onSubmit={programForm.handleSubmit(saveProgramDetails)}
           >
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-(--text-h)">Name</label>
               <input
                 className="min-h-11 rounded-lg border border-(--border) bg-(--bg) px-3 text-base"
-                {...metaForm.register('name')}
+                {...programForm.register('name')}
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -199,7 +277,7 @@ export function ProgramEditPage() {
               <textarea
                 rows={2}
                 className="rounded-lg border border-(--border) bg-(--bg) px-3 py-2 text-base"
-                {...metaForm.register('description')}
+                {...programForm.register('description')}
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -207,7 +285,7 @@ export function ProgramEditPage() {
                 <label className="text-sm font-medium text-(--text-h)">Status</label>
                 <select
                   className="min-h-11 rounded-lg border border-(--border) bg-(--bg) px-2 text-base"
-                  {...metaForm.register('status')}
+                  {...programForm.register('status')}
                 >
                   <option value="active">Active</option>
                   <option value="paused">Paused</option>
@@ -221,8 +299,19 @@ export function ProgramEditPage() {
                   min={1}
                   max={14}
                   className="min-h-11 rounded-lg border border-(--border) bg-(--bg) px-3 text-base"
-                  {...metaForm.register('daysPerWeek')}
+                  {...programForm.register('daysPerWeek')}
                 />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-(--text-h)">Length (weeks)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={104}
+                  className="min-h-11 rounded-lg border border-(--border) bg-(--bg) px-3 text-base"
+                  {...programForm.register('lengthWeeks', { valueAsNumber: true })}
+                />
+                <p className="text-xs text-(--text)">Changing length or start rebuilds planned days.</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -230,7 +319,7 @@ export function ProgramEditPage() {
                 <label className="text-sm font-medium text-(--text-h)">Difficulty</label>
                 <select
                   className="min-h-11 rounded-lg border border-(--border) bg-(--bg) px-2 text-base"
-                  {...metaForm.register('difficulty')}
+                  {...programForm.register('difficulty')}
                 >
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
@@ -241,7 +330,7 @@ export function ProgramEditPage() {
                 <label className="text-sm font-medium text-(--text-h)">Goal</label>
                 <select
                   className="min-h-11 rounded-lg border border-(--border) bg-(--bg) px-2 text-base"
-                  {...metaForm.register('goal')}
+                  {...programForm.register('goal')}
                 >
                   <option value="strength">Strength</option>
                   <option value="hypertrophy">Hypertrophy</option>
@@ -253,7 +342,7 @@ export function ProgramEditPage() {
               <label className="text-sm font-medium text-(--text-h)">Split</label>
               <select
                 className="min-h-11 rounded-lg border border-(--border) bg-(--bg) px-2 text-base"
-                {...metaForm.register('splitType')}
+                {...programForm.register('splitType')}
               >
                 <option value="full_body">Full body</option>
                 <option value="push_pull_legs">Push / pull / legs</option>
@@ -268,13 +357,23 @@ export function ProgramEditPage() {
               <input
                 type="datetime-local"
                 className="min-h-11 rounded-lg border border-(--border) bg-(--bg) px-3 text-base"
-                {...metaForm.register('startDate')}
+                {...programForm.register('startDate')}
               />
             </div>
-            {metaForm.formState.errors.root?.message ||
+            <p className="text-xs text-(--text)">
+              Map each weekday to a workout or rest (same as creating a program). Workouts are
+              ordered by sequence below. Changing schedule, length, or start rebuilds planned calendar
+              days.
+            </p>
+            <ProgramScheduleFields
+              form={programForm}
+              workoutNames={workoutNamesForSchedule}
+              includeLengthField={false}
+            />
+            {programForm.formState.errors.root?.message ||
             (patchMeta.isError ? errorMessageFromUnknown(patchMeta.error) : null) ? (
               <p className="text-sm text-red-600" role="alert">
-                {metaForm.formState.errors.root?.message ??
+                {programForm.formState.errors.root?.message ??
                   (patchMeta.isError ? errorMessageFromUnknown(patchMeta.error) : undefined)}
               </p>
             ) : null}
@@ -294,7 +393,15 @@ export function ProgramEditPage() {
                   confirmLabel: 'Delete',
                   cancelLabel: 'Cancel',
                 });
-                if (ok) delProgram.mutate();
+                if (!ok) return;
+                try {
+                  await delProgram.mutateAsync();
+                  prepareLeaveProgramForm();
+                  qc.invalidateQueries({ queryKey: programQueryKeys.all });
+                  navigate('/programs', { replace: true });
+                } catch {
+                  /* error surfaced via delProgram.isError */
+                }
               }}
             >
               {delProgram.isPending ? 'Deleting…' : 'Delete program'}
@@ -311,7 +418,7 @@ export function ProgramEditPage() {
 
         <section className="flex flex-col gap-6">
           <h2 className="text-lg font-medium text-(--text-h)">Workouts</h2>
-          {workouts.map((w) => (
+          {workoutsOrdered.map((w) => (
             <WorkoutCard
               key={w.id}
               programId={programId}
@@ -320,18 +427,19 @@ export function ProgramEditPage() {
                 confirm('Remove this workout day from the program?', {
                   confirmLabel: 'Remove',
                   cancelLabel: 'Cancel',
-                })
+                }).then((r) => r === true)
               }
               onConfirmRemoveExercise={() =>
                 confirm('Remove this exercise from the workout?', {
                   confirmLabel: 'Remove',
                   cancelLabel: 'Cancel',
-                })
+                }).then((r) => r === true)
               }
             />
           ))}
         </section>
       </div>
+      {navigationLeavePrompt}
     </>
   );
 }

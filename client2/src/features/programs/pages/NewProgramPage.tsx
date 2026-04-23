@@ -12,7 +12,9 @@ import {
 import { toDatetimeLocalInputValue } from '@/lib/datetime';
 import { errorMessageFromUnknown } from '@/lib/utils';
 import { useConfirmLeaveWhenDirty } from '@/hooks/useConfirmLeaveWhenDirty';
+import { ProgramScheduleFields } from '@/features/programs/components/ProgramScheduleFields';
 import { ProgramWorkoutBlock } from '@/features/programs/components/ProgramWorkoutBlock';
+import { defaultSyncPattern } from '@/features/programs/scheduleDefaults';
 import { createCustomProgram, programQueryKeys } from '../api';
 import { customProgramFormSchema, type CustomProgramForm } from '../schemas';
 
@@ -26,6 +28,25 @@ function seedWorkouts(n: number): CustomProgramForm['workouts'] {
   }));
 }
 
+function defaultFormState(): Omit<CustomProgramForm, 'name' | 'description'> {
+  const workouts = seedWorkouts(DPW_DEFAULT);
+  return {
+    difficulty: 'beginner',
+    goal: 'hypertrophy',
+    splitType: 'other',
+    daysPerWeek: DPW_DEFAULT,
+    startDate: toDatetimeLocalInputValue(new Date()),
+    lengthWeeks: 8,
+    scheduleKind: 'sync_week',
+    syncPattern: defaultSyncPattern(workouts.length, DPW_DEFAULT),
+    asyncPattern: [
+      { type: 'workout', workoutIndex: 0 },
+      { type: 'rest' },
+    ],
+    workouts,
+  };
+}
+
 export function NewProgramPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -35,17 +56,12 @@ export function NewProgramPage() {
     defaultValues: {
       name: '',
       description: '',
-      difficulty: 'beginner',
-      goal: 'hypertrophy',
-      splitType: 'other',
-      daysPerWeek: DPW_DEFAULT,
-      startDate: toDatetimeLocalInputValue(new Date()),
-      workouts: seedWorkouts(DPW_DEFAULT),
+      ...defaultFormState(),
     },
   });
 
   const { isDirty } = useFormState({ control: form.control });
-  const prepareLeave = useConfirmLeaveWhenDirty(isDirty);
+  const [prepareLeave, navigationLeavePrompt] = useConfirmLeaveWhenDirty(isDirty);
 
   const workoutsFA = useFieldArray({
     control: form.control,
@@ -54,11 +70,6 @@ export function NewProgramPage() {
 
   const mutation = useMutation({
     mutationFn: createCustomProgram,
-    onSuccess: (program) => {
-      prepareLeave();
-      qc.invalidateQueries({ queryKey: programQueryKeys.all });
-      navigate(`/programs/${program.id}`);
-    },
   });
 
   const daysPerWeekRegister = form.register('daysPerWeek', {
@@ -78,6 +89,7 @@ export function NewProgramPage() {
       <form
         className="flex flex-col gap-6"
         onSubmit={form.handleSubmit(async (values) => {
+          const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
           const body = {
             name: values.name.trim(),
             description: values.description?.trim() || undefined,
@@ -86,6 +98,11 @@ export function NewProgramPage() {
             splitType: values.splitType,
             daysPerWeek: values.daysPerWeek,
             startDate: new Date(values.startDate.trim()).toISOString(),
+            lengthWeeks: values.lengthWeeks,
+            scheduleKind: values.scheduleKind,
+            schedulePattern:
+              values.scheduleKind === 'sync_week' ? values.syncPattern : values.asyncPattern,
+            timeZone,
             workouts: values.workouts.map((w) => ({
               name: w.name.trim(),
               dayNumber: w.dayNumber,
@@ -102,6 +119,9 @@ export function NewProgramPage() {
           };
           try {
             await mutation.mutateAsync(body);
+            prepareLeave();
+            qc.invalidateQueries({ queryKey: programQueryKeys.all });
+            navigate('/programs');
           } catch (e) {
             if (e instanceof ApiError) {
               if (
@@ -208,6 +228,11 @@ export function NewProgramPage() {
                 const next = Number(e.target.value);
                 if (!Number.isFinite(next) || next < 1 || next > 14) return;
                 const workouts = form.getValues('workouts');
+                form.setValue(
+                  'syncPattern',
+                  defaultSyncPattern(workouts.length, next) as CustomProgramForm['syncPattern'],
+                  { shouldDirty: true },
+                );
                 if (next > workouts.length) {
                   const toAdd = next - workouts.length;
                   const start = workouts.length;
@@ -262,12 +287,21 @@ export function NewProgramPage() {
               dayNumber: len + 1,
               exercises: [{ exerciseId: '', order: 1, targetSets: 3 }],
             });
+            const newLen = len + 1;
             const dpw = form.getValues('daysPerWeek');
-            form.setValue('daysPerWeek', Math.max(dpw, len + 1));
+            const nextDpw = Math.max(dpw, newLen);
+            form.setValue('daysPerWeek', nextDpw);
+            form.setValue(
+              'syncPattern',
+              defaultSyncPattern(newLen, nextDpw) as CustomProgramForm['syncPattern'],
+              { shouldDirty: true },
+            );
           }}
         >
           Add workout day
         </Button>
+
+        <ProgramScheduleFields form={form} />
 
         {form.formState.errors.workouts?.message ? (
           <p className="text-sm text-red-600" role="alert">
@@ -293,6 +327,7 @@ export function NewProgramPage() {
         </Button>
       </form>
       </div>
+      {navigationLeavePrompt}
     </>
   );
 }

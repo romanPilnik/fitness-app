@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, useWatch, type Resolver } from 'react-hook-form';
+import { X } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/button';
@@ -16,11 +17,12 @@ import {
   applyApiValidationErrors,
 } from '@/lib/applyApiValidationErrors';
 import { formatEnumLabel } from '@/lib/formatEnumLabel';
+import { FILTER_SELECT_CLASS } from '@/lib/nativeSelect';
 import { errorMessageFromUnknown } from '@/lib/utils';
 import { createExercise, exerciseQueryKeys } from '../api';
 import { createExerciseFormSchema, type CreateExerciseFormValues } from '../schemas';
 
-const selectClass =
+const fieldClass =
   'min-h-11 w-full rounded-lg border border-(--border) bg-(--bg) px-3 py-2 text-sm text-(--text-h)';
 
 const resolver = zodResolver(createExerciseFormSchema) as Resolver<CreateExerciseFormValues>;
@@ -44,28 +46,20 @@ export function NewExercisePage() {
     },
   });
 
+  const primaryMuscle = useWatch({ control: form.control, name: 'primaryMuscle', defaultValue: 'chest' });
   const secondaryMuscles = useWatch({ control: form.control, name: 'secondaryMuscles', defaultValue: [] });
+
+  const availableSecondaryMuscles = MUSCLE_GROUP_VALUES.filter(
+    (m) => m !== primaryMuscle && !secondaryMuscles.includes(m),
+  );
 
   const mutation = useMutation({
     mutationFn: createExercise,
-    onSuccess: (ex) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: exerciseQueryKeys.all });
-      navigate(`/exercises/${ex.id}`);
+      navigate(exercisesListPath);
     },
   });
-
-  function toggleSecondary(muscle: (typeof MUSCLE_GROUP_VALUES)[number]) {
-    const cur = form.getValues('secondaryMuscles');
-    if (cur.includes(muscle)) {
-      form.setValue(
-        'secondaryMuscles',
-        cur.filter((m) => m !== muscle),
-        { shouldValidate: true },
-      );
-    } else if (cur.length < 3) {
-      form.setValue('secondaryMuscles', [...cur, muscle], { shouldValidate: true });
-    }
-  }
 
   return (
     <>
@@ -116,7 +110,7 @@ export function NewExercisePage() {
           <input
             type="text"
             autoComplete="off"
-            className={selectClass}
+            className={fieldClass}
             {...form.register('name')}
           />
           {form.formState.errors.name ? (
@@ -126,7 +120,7 @@ export function NewExercisePage() {
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-(--text)">Equipment</span>
-          <select className={selectClass} {...form.register('equipment')}>
+          <select className={FILTER_SELECT_CLASS} {...form.register('equipment')}>
             {EQUIPMENT_VALUES.map((v) => (
               <option key={v} value={v}>
                 {formatEnumLabel(v)}
@@ -137,7 +131,7 @@ export function NewExercisePage() {
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-(--text)">Primary muscle</span>
-          <select className={selectClass} {...form.register('primaryMuscle')}>
+          <select className={FILTER_SELECT_CLASS} {...form.register('primaryMuscle')}>
             {MUSCLE_GROUP_VALUES.map((v) => (
               <option key={v} value={v}>
                 {formatEnumLabel(v)}
@@ -146,39 +140,70 @@ export function NewExercisePage() {
           </select>
         </label>
 
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm text-(--text)">Secondary muscles (at most 3)</legend>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {MUSCLE_GROUP_VALUES.map((m) => {
-              const checked = secondaryMuscles.includes(m);
-              const disabled = !checked && secondaryMuscles.length >= 3;
-              return (
-                <label
-                  key={m}
-                  className="flex min-h-11 items-center gap-2 rounded-lg border border-(--border) px-3 py-2 text-sm text-(--text-h)"
-                >
-                  <input
-                    type="checkbox"
-                    className="size-4 rounded border-(--border)"
-                    checked={checked}
-                    disabled={disabled}
-                    onChange={() => toggleSecondary(m)}
-                  />
-                  {formatEnumLabel(m)}
-                </label>
-              );
-            })}
+        <div className="flex flex-col gap-2 text-sm">
+          <div>
+            <span className="text-(--text)">Secondary muscles</span>
+            <p className="mt-0.5 text-xs text-(--text)">Up to 3, optional.</p>
           </div>
+          {secondaryMuscles.length > 0 ? (
+            <div className="flex flex-wrap gap-2" role="list" aria-label="Selected secondary muscles">
+              {secondaryMuscles.map((m) => (
+                <button
+                  type="button"
+                  key={m}
+                  aria-label={`Remove ${formatEnumLabel(m)} from secondary muscles`}
+                  className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-(--border) bg-(--code-bg) py-1 pl-3 pr-2 text-left text-sm text-(--text-h) touch-manipulation"
+                  onClick={() => {
+                    form.setValue(
+                      'secondaryMuscles',
+                      secondaryMuscles.filter((x) => x !== m),
+                      { shouldValidate: true },
+                    );
+                  }}
+                >
+                  <span className="min-w-0 truncate">{formatEnumLabel(m)}</span>
+                  <X className="size-3.5 shrink-0 text-(--text) opacity-90" strokeWidth={2.5} aria-hidden />
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <label className="sr-only" htmlFor="secondary-muscle-add">
+            Add secondary muscle
+          </label>
+          <select
+            id="secondary-muscle-add"
+            className={FILTER_SELECT_CLASS}
+            value=""
+            disabled={secondaryMuscles.length >= 3}
+            onChange={(e) => {
+              const v = e.target.value as (typeof MUSCLE_GROUP_VALUES)[number];
+              if (!v) return;
+              const cur = form.getValues('secondaryMuscles');
+              if (cur.length < 3 && !cur.includes(v)) {
+                form.setValue('secondaryMuscles', [...cur, v], { shouldValidate: true });
+              }
+            }}
+            key={secondaryMuscles.join(',')}
+          >
+            <option value="">
+              {secondaryMuscles.length >= 3 ? 'Maximum 3 selected' : 'Add muscle…'}
+            </option>
+            {availableSecondaryMuscles.map((m) => (
+              <option key={m} value={m}>
+                {formatEnumLabel(m)}
+              </option>
+            ))}
+          </select>
           {form.formState.errors.secondaryMuscles ? (
-            <span className="text-sm text-red-600">
+            <span className="text-sm text-red-600" role="alert">
               {form.formState.errors.secondaryMuscles.message}
             </span>
           ) : null}
-        </fieldset>
+        </div>
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-(--text)">Category</span>
-          <select className={selectClass} {...form.register('category')}>
+          <select className={FILTER_SELECT_CLASS} {...form.register('category')}>
             {EXERCISE_CATEGORY_VALUES.map((v) => (
               <option key={v} value={v}>
                 {formatEnumLabel(v)}
@@ -189,7 +214,7 @@ export function NewExercisePage() {
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-(--text)">Movement pattern</span>
-          <select className={selectClass} {...form.register('movementPattern')}>
+          <select className={FILTER_SELECT_CLASS} {...form.register('movementPattern')}>
             {MOVEMENT_PATTERN_VALUES.map((v) => (
               <option key={v} value={v}>
                 {formatEnumLabel(v)}
@@ -202,7 +227,7 @@ export function NewExercisePage() {
           <span className="text-(--text)">Instructions (optional)</span>
           <textarea
             rows={4}
-            className={`${selectClass} resize-y`}
+            className={`${fieldClass} resize-y`}
             {...form.register('instructions')}
           />
           {form.formState.errors.instructions ? (

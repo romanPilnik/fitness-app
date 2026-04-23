@@ -15,6 +15,8 @@ export const sessionQueryKeys = {
   list: (scope: string, filters: SessionListFiltersKey = {}) =>
     [...sessionQueryKeys.all, 'list', scope, filters] as const,
   detail: (id: string) => [...sessionQueryKeys.all, 'detail', id] as const,
+  generatedTargets: (programWorkoutId: string) =>
+    ['generated-targets', programWorkoutId] as const,
 };
 
 export type SessionListParams = {
@@ -74,10 +76,16 @@ export async function fetchSessionById(id: string): Promise<SessionDetail> {
 
 export type CreateSessionBody = {
   programId: string;
+  programWorkoutId: string;
   workoutName: string;
   dayNumber: number;
   sessionStatus: string;
   sessionDuration: number;
+  occurrenceId?: string;
+  datePerformed?: string;
+  timeZone?: string;
+  /** YYYY-MM-DD in the user's local calendar — used to link planned occurrences. */
+  performedOnLocalDate?: string;
   exercises: Array<{
     exerciseId: string;
     order: number;
@@ -103,4 +111,30 @@ export async function createSession(body: CreateSessionBody): Promise<SessionDet
 
 export async function deleteSession(id: string): Promise<void> {
   return deleteEnvelope(`/sessions/${encodeURIComponent(id)}`);
+}
+
+export interface GeneratedTargetsResponse {
+  generatedWorkoutId: string;
+  createdAt: string;
+  exercises: Array<{
+    exerciseId: string;
+    order: number;
+    targetSets: number;
+    targetRir: number | null;
+    notes: string | null;
+    sets: Array<{
+      setNumber: number;
+      targetWeight: number;
+      targetReps: number;
+      targetRir: number | null;
+    }>;
+  }>;
+}
+
+export async function fetchGeneratedTargets(
+  programWorkoutId: string,
+): Promise<GeneratedTargetsResponse> {
+  return getEnvelope<GeneratedTargetsResponse>(
+    `/generated-targets/${encodeURIComponent(programWorkoutId)}`,
+  );
 }

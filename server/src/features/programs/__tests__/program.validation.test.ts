@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   Difficulty,
   Goal,
+  ProgramScheduleKind,
   ProgramSources,
   ProgramStatuses,
   SplitType,
@@ -40,6 +41,16 @@ const customProgramBody = {
   goal: Goal.hypertrophy,
   splitType: SplitType.push_pull_legs,
   daysPerWeek: 3,
+  scheduleKind: ProgramScheduleKind.sync_week,
+  schedulePattern: [
+    { type: "rest" as const },
+    { type: "workout" as const, workoutIndex: 0 },
+    { type: "rest" as const },
+    { type: "rest" as const },
+    { type: "rest" as const },
+    { type: "rest" as const },
+    { type: "rest" as const },
+  ],
   workouts: [programWorkout],
 };
 

@@ -26,7 +26,7 @@ async function getExerciseById(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const { id } = req.params;
   const exercise = await ExerciseService.getExerciseById({
     id,
@@ -40,7 +40,7 @@ async function createExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const createdByUserId = req.user.role === "admin" ? null : req.user.id;
   const newExercise = await ExerciseService.createExercise({
     ...req.body,
@@ -54,7 +54,7 @@ async function updateExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const { id } = req.params;
   const { body } = req;
   const exercise = await ExerciseService.updateExercise({
@@ -70,7 +70,7 @@ async function deleteExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
 
   const { id } = req.params;
   await ExerciseService.deleteExercise({ id, userId: req.user.id });

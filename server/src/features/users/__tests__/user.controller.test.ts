@@ -4,12 +4,20 @@ import { AuthenticationError } from "@/errors/index.js";
 
 const mockUserService = vi.hoisted(() => ({
   updateUser: vi.fn(),
-  changePassword: vi.fn(),
+  getNormalizedAiPreferencesForUser: vi.fn(),
+  patchAiPreferences: vi.fn(),
 }));
 vi.mock("../user.service.js", () => ({ UserService: mockUserService }));
 
 const mockSendSuccess = vi.hoisted(() => vi.fn());
 vi.mock("@/utils/response.js", () => ({ sendSuccess: mockSendSuccess }));
+
+const mockPrisma = vi.hoisted(() => ({
+  user: {
+    findUnique: vi.fn(),
+  },
+}));
+vi.mock("@/lib/prisma.js", () => ({ prisma: mockPrisma }));
 
 import { UserController } from "../user.controller.js";
 
@@ -47,9 +55,25 @@ describe("UserController", () => {
   });
 
   describe("getCurrentUser", () => {
-    it("sends req.user with 200", () => {
-      UserController.getCurrentUser(mockReq(), res);
+    it("sends DB user with 200", async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(fakeRequestUser);
 
+      await UserController.getCurrentUser(mockReq(), res);
+
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: fakeRequestUser.id },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          isActive: true,
+          units: true,
+          weekStartsOn: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
       expect(mockSendSuccess).toHaveBeenCalledWith(
         res,
         fakeRequestUser,
@@ -58,18 +82,13 @@ describe("UserController", () => {
       );
     });
 
-    it("sends undefined when req.user is missing (no auth middleware)", () => {
-      UserController.getCurrentUser(
-        mockReq({ user: undefined } as Partial<Request>),
-        res,
-      );
-
-      expect(mockSendSuccess).toHaveBeenCalledWith(
-        res,
-        undefined,
-        200,
-        "User retrieved",
-      );
+    it("throws AuthenticationError when req.user is missing", async () => {
+      await expect(
+        UserController.getCurrentUser(
+          mockReq({ user: undefined } as Partial<Request>),
+          res,
+        ),
+      ).rejects.toThrow(AuthenticationError);
     });
   });
 
@@ -113,39 +132,73 @@ describe("UserController", () => {
     });
   });
 
-  describe("changePassword", () => {
-    it("calls UserService.changePassword and sends 200", async () => {
-      mockUserService.changePassword.mockResolvedValue(undefined);
+  describe("getAiPreferences", () => {
+    it("calls UserService.getNormalizedAiPreferencesForUser and sends 200", async () => {
+      const prefs = {
+        progressionStyle: "moderate" as const,
+        progressionPreference: "balanced" as const,
+        deloadSensitivity: "medium" as const,
+        rirFloor: 2,
+      };
+      mockUserService.getNormalizedAiPreferencesForUser.mockResolvedValue(prefs);
 
-      await UserController.changePassword(
-        asReqFor(
-          UserController.changePassword,
-          mockReq({
-            body: { oldPassword: "old", newPassword: "new" },
-          } as Partial<Request>),
-        ),
-        res,
-      );
+      await UserController.getAiPreferences(mockReq(), res);
 
-      expect(mockUserService.changePassword).toHaveBeenCalledWith({
-        id: "u-1",
-        oldPassword: "old",
-        newPassword: "new",
-      });
+      expect(mockUserService.getNormalizedAiPreferencesForUser).toHaveBeenCalledWith("u-1");
       expect(mockSendSuccess).toHaveBeenCalledWith(
         res,
-        null,
+        prefs,
         200,
-        "Password changed successfully",
+        "AI preferences retrieved",
       );
     });
 
     it("throws AuthenticationError when req.user is missing", async () => {
       await expect(
-        UserController.changePassword(
+        UserController.getAiPreferences(mockReq({ user: undefined } as Partial<Request>), res),
+      ).rejects.toThrow(AuthenticationError);
+    });
+  });
+
+  describe("patchAiPreferences", () => {
+    it("calls UserService.patchAiPreferences and sends 200", async () => {
+      const prefs = {
+        progressionStyle: "aggressive" as const,
+        progressionPreference: "balanced" as const,
+        deloadSensitivity: "medium" as const,
+        rirFloor: 2,
+      };
+      mockUserService.patchAiPreferences.mockResolvedValue(prefs);
+
+      await UserController.patchAiPreferences(
+        asReqFor(
+          UserController.patchAiPreferences,
+          mockReq({ body: { progressionStyle: "aggressive" } } as Partial<Request>),
+        ),
+        res,
+      );
+
+      expect(mockUserService.patchAiPreferences).toHaveBeenCalledWith({
+        id: "u-1",
+        patch: { progressionStyle: "aggressive" },
+      });
+      expect(mockSendSuccess).toHaveBeenCalledWith(
+        res,
+        prefs,
+        200,
+        "AI preferences updated",
+      );
+    });
+
+    it("throws AuthenticationError when req.user is missing", async () => {
+      await expect(
+        UserController.patchAiPreferences(
           asReqFor(
-            UserController.changePassword,
-            mockReq({ user: undefined } as Partial<Request>),
+            UserController.patchAiPreferences,
+            mockReq({
+              user: undefined,
+              body: { rirFloor: 1 },
+            } as Partial<Request>),
           ),
           res,
         ),

@@ -1,7 +1,12 @@
-import { NotFoundError } from "@/errors/index";
+import { BadRequestError, NotFoundError } from "@/errors/index";
 import { ERROR_CODES } from "@/types/error.types";
+import { OccurrenceStatus } from "@/generated/prisma/enums.js";
 import type { SessionModel } from "@/generated/prisma/models";
 import type { Prisma } from "@/generated/prisma/client";
+import {
+  dateKeyToDbDate,
+  startDateKeyInTimeZone,
+} from "@/features/programs/programSchedule.js";
 import type {
   GetSessionsDTO,
   GetSessionByIdDTO,
@@ -86,14 +91,20 @@ async function createSession(input: CreateSessionDTO): Promise<SessionModel> {
   const {
     userId,
     programId,
+    programWorkoutId,
     workoutName,
     dayNumber,
     sessionStatus,
     exercises,
     sessionDuration,
+    occurrenceId,
+    datePerformed: datePerformedRaw,
+    timeZone,
+    performedOnLocalDate,
   } = input;
 
-  // Prevent logging sessions against programs that don't belong to the user.
+  const datePerformed = datePerformedRaw ? new Date(datePerformedRaw) : new Date();
+
   const program = await prisma.program.findUnique({
     where: { id: programId },
     select: { userId: true },
@@ -102,15 +113,30 @@ async function createSession(input: CreateSessionDTO): Promise<SessionModel> {
     throw new NotFoundError("Program not found", ERROR_CODES.PROGRAM_NOT_FOUND);
   }
 
+  const programWorkout = await prisma.programWorkout.findUnique({
+    where: { id: programWorkoutId },
+    select: { programId: true },
+  });
+  if (!programWorkout) {
+    throw new NotFoundError("Workout not found", ERROR_CODES.WORKOUT_NOT_FOUND);
+  }
+  if (programWorkout.programId !== programId) {
+    throw new BadRequestError(
+      "Program workout does not belong to this program",
+      ERROR_CODES.INVALID_INPUT,
+    );
+  }
+
   const session = await prisma.session.create({
     data: {
       userId,
       programId,
+      programWorkoutId,
       workoutName,
       dayNumber,
       sessionStatus,
       sessionDuration,
-      datePerformed: new Date(),
+      datePerformed,
       sessionExercises: {
         create: exercises.map((exercise) => ({
           exerciseId: exercise.exerciseId,
@@ -143,6 +169,51 @@ async function createSession(input: CreateSessionDTO): Promise<SessionModel> {
       },
     },
   });
+
+  const tz = timeZone ?? "UTC";
+
+  if (occurrenceId) {
+    const occ = await prisma.programWorkoutOccurrence.findFirst({
+      where: {
+        id: occurrenceId,
+        programId,
+        programWorkoutId,
+        program: { userId },
+      },
+    });
+    if (!occ) {
+      throw new NotFoundError("Occurrence not found", ERROR_CODES.NOT_FOUND);
+    }
+    await prisma.programWorkoutOccurrence.update({
+      where: { id: occurrenceId },
+      data: {
+        sessionId: session.id,
+        status: OccurrenceStatus.completed,
+      },
+    });
+  } else {
+    const dayKey =
+      performedOnLocalDate ??
+      startDateKeyInTimeZone(datePerformed, tz);
+    const occ = await prisma.programWorkoutOccurrence.findFirst({
+      where: {
+        programId,
+        programWorkoutId,
+        scheduledOn: dateKeyToDbDate(dayKey),
+        status: OccurrenceStatus.planned,
+      },
+    });
+    if (occ) {
+      await prisma.programWorkoutOccurrence.update({
+        where: { id: occ.id },
+        data: {
+          sessionId: session.id,
+          status: OccurrenceStatus.completed,
+        },
+      });
+    }
+  }
+
   return session;
 }
 
@@ -155,6 +226,11 @@ async function deleteSession(input: DeleteSessionDTO): Promise<void> {
   if (session?.userId !== userId) {
     throw new NotFoundError("Session not found", ERROR_CODES.SESSION_NOT_FOUND);
   }
+
+  await prisma.programWorkoutOccurrence.updateMany({
+    where: { sessionId },
+    data: { sessionId: null, status: OccurrenceStatus.planned },
+  });
 
   await prisma.session.delete({ where: { id: sessionId } });
 }

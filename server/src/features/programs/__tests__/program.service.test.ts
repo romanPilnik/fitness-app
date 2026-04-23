@@ -11,9 +11,14 @@ const prismaMock = vi.hoisted(() => ({
     findMany: vi.fn(),
     findUnique: vi.fn(),
     findFirst: vi.fn(),
+    findUniqueOrThrow: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+  },
+  programWorkoutOccurrence: {
+    deleteMany: vi.fn(),
+    createMany: vi.fn(),
   },
   template: {
     findUnique: vi.fn(),
@@ -23,6 +28,7 @@ const prismaMock = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    aggregate: vi.fn(),
   },
   programWorkoutExercise: {
     findFirst: vi.fn(),
@@ -38,6 +44,17 @@ vi.mock("@/lib/prisma.js", () => ({ prisma: prismaMock }));
 
 import { ProgramService } from "../program.service.js";
 
+const fakeProgramWorkout = {
+  id: "pw-1",
+  programId: "p-1",
+  name: "Day 1",
+  dayNumber: 1,
+  sequenceIndex: 1,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  programWorkoutExercises: [],
+};
+
 const fakeProgram = {
   id: "p-1",
   name: "My Program",
@@ -52,9 +69,24 @@ const fakeProgram = {
   daysPerWeek: 6,
   status: "active",
   startDate: new Date(),
+  lengthWeeks: 8,
+  scheduleKind: "sync_week",
+  schedulePattern: [],
   createdAt: new Date(),
   updatedAt: new Date(),
+  programWorkouts: [fakeProgramWorkout],
 };
+
+const sevenSlotPattern = () =>
+  [
+    { type: "rest" },
+    { type: "workout", workoutIndex: 0 },
+    { type: "rest" },
+    { type: "rest" },
+    { type: "rest" },
+    { type: "rest" },
+    { type: "rest" },
+  ] as const;
 
 const fakeTemplate = {
   id: "t-1",
@@ -133,6 +165,15 @@ describe("ProgramService", () => {
       prismaMock.program.create.mockResolvedValue({
         ...fakeProgram,
         sourceTemplateId: "t-1",
+        programWorkouts: [fakeProgramWorkout],
+      });
+      prismaMock.program.update.mockResolvedValue({});
+      prismaMock.programWorkoutOccurrence.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.programWorkoutOccurrence.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.program.findUniqueOrThrow.mockResolvedValue({
+        ...fakeProgram,
+        sourceTemplateId: "t-1",
+        programWorkouts: [fakeProgramWorkout],
       });
 
       const result = await ProgramService.createFromTemplate({
@@ -183,7 +224,14 @@ describe("ProgramService", () => {
     it("uses provided name over template name", async () => {
       prismaMock.template.findUnique.mockResolvedValue(fakeTemplate);
       prismaMock.program.findFirst.mockResolvedValue(null);
-      prismaMock.program.create.mockResolvedValue(fakeProgram);
+      prismaMock.program.create.mockResolvedValue({
+        ...fakeProgram,
+        programWorkouts: [fakeProgramWorkout],
+      });
+      prismaMock.program.update.mockResolvedValue({});
+      prismaMock.programWorkoutOccurrence.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.programWorkoutOccurrence.createMany.mockResolvedValue({ count: 0 });
+      prismaMock.program.findUniqueOrThrow.mockResolvedValue(fakeProgram);
 
       await ProgramService.createFromTemplate({
         userId: "u-1",
@@ -201,6 +249,10 @@ describe("ProgramService", () => {
     it("creates a custom program", async () => {
       prismaMock.program.findFirst.mockResolvedValue(null);
       prismaMock.program.create.mockResolvedValue(fakeProgram);
+      prismaMock.program.update.mockResolvedValue({});
+      prismaMock.programWorkoutOccurrence.deleteMany.mockResolvedValue({ count: 0 });
+      prismaMock.programWorkoutOccurrence.createMany.mockResolvedValue({ count: 1 });
+      prismaMock.program.findUniqueOrThrow.mockResolvedValue(fakeProgram);
 
       const result = await ProgramService.createCustomProgram({
         userId: "u-1",
@@ -208,8 +260,22 @@ describe("ProgramService", () => {
         difficulty: "intermediate" as never,
         goal: "hypertrophy" as never,
         splitType: "push_pull_legs" as never,
-        daysPerWeek: 6,
-        workouts: [],
+        daysPerWeek: 1,
+        scheduleKind: "sync_week" as never,
+        schedulePattern: [...sevenSlotPattern()],
+        workouts: [
+          {
+            name: "A",
+            dayNumber: 1,
+            exercises: [
+              {
+                exerciseId: "ex-1",
+                order: 1,
+                targetSets: 3,
+              },
+            ],
+          },
+        ],
       });
 
       expect(result).toEqual(fakeProgram);
@@ -225,8 +291,16 @@ describe("ProgramService", () => {
           difficulty: "intermediate" as never,
           goal: "hypertrophy" as never,
           splitType: "push_pull_legs" as never,
-          daysPerWeek: 6,
-          workouts: [],
+          daysPerWeek: 1,
+          scheduleKind: "sync_week" as never,
+          schedulePattern: [...sevenSlotPattern()],
+          workouts: [
+            {
+              name: "A",
+              dayNumber: 1,
+              exercises: [{ exerciseId: "ex-1", order: 1, targetSets: 3 }],
+            },
+          ],
         }),
       ).rejects.toThrow(ConflictError);
     });
@@ -341,6 +415,9 @@ describe("ProgramService", () => {
   describe("addProgramWorkout", () => {
     it("creates a workout when user owns program", async () => {
       prismaMock.program.findUnique.mockResolvedValue(fakeProgram);
+      prismaMock.programWorkout.aggregate.mockResolvedValue({
+        _max: { sequenceIndex: 0 },
+      });
       const workout = {
         id: "w-1",
         programId: "p-1",

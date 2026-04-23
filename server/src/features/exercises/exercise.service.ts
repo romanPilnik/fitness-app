@@ -1,4 +1,5 @@
 import type { ExerciseModel } from "@/generated/prisma/models/Exercise";
+import type { ProgramListSort } from "@/features/programs/program.dtos";
 import type {
   GetExercisesDTO,
   GetExerciseByIdDTO,
@@ -17,10 +18,34 @@ import {
 } from "@/lib/pagination";
 import { isExerciseVisibleToUser } from "./exercise.access";
 
+function exerciseListOrderBy(
+  sort: ProgramListSort,
+):
+  | [{ createdAt: "desc" }, { id: "desc" }]
+  | [{ createdAt: "asc" }, { id: "asc" }]
+  | [{ name: "asc" }, { id: "asc" }]
+  | [{ name: "desc" }, { id: "desc" }] {
+  switch (sort) {
+    case "created_desc":
+      return [{ createdAt: "desc" }, { id: "desc" }];
+    case "created_asc":
+      return [{ createdAt: "asc" }, { id: "asc" }];
+    case "name_asc":
+      return [{ name: "asc" }, { id: "asc" }];
+    case "name_desc":
+      return [{ name: "desc" }, { id: "desc" }];
+    default: {
+      const _exhaustive: never = sort;
+      return _exhaustive;
+    }
+  }
+}
+
 async function getExercises(
   input: GetExercisesDTO,
 ): Promise<CursorPage<ExerciseModel>> {
-  const { primaryMuscle, equipment, category, movementPattern, userId } = input;
+  const { primaryMuscle, equipment, category, movementPattern, userId, sort } =
+    input;
   const { cursor, limit } = input;
   const items = await prisma.exercise.findMany({
     where: {
@@ -30,7 +55,7 @@ async function getExercises(
       movementPattern,
       OR: [{ createdByUserId: null }, { createdByUserId: userId }],
     },
-    orderBy: { id: "asc" },
+    orderBy: exerciseListOrderBy(sort),
     ...buildCursorArgs({ cursor, limit }),
   });
 

@@ -17,6 +17,9 @@ import {
   updateWorkoutExerciseSchema,
   deleteWorkoutExerciseSchema,
   bulkReorderWorkoutExercisesSchema,
+  getProgramOccurrencesSchema,
+  getNextWorkoutSchema,
+  patchProgramOccurrenceSchema,
 } from "./program.validation";
 
 const programRouter = Router();
@@ -100,6 +103,28 @@ programRouter.get(
  *         description: Unauthorized
  */
 programRouter.get("/active", verifySession, ProgramController.getActiveProgram);
+
+programRouter.get(
+  "/:id/next-workout",
+  verifySession,
+  validate(getNextWorkoutSchema),
+  ProgramController.getNextWorkout,
+);
+
+programRouter.get(
+  "/:id/occurrences",
+  verifySession,
+  validate(getProgramOccurrencesSchema),
+  ProgramController.getProgramOccurrences,
+);
+
+programRouter.patch(
+  "/:id/occurrences/:occurrenceId",
+  verifySession,
+  apiLimiter,
+  validate(patchProgramOccurrenceSchema),
+  ProgramController.patchOccurrence,
+);
 
 /**
  * @openapi

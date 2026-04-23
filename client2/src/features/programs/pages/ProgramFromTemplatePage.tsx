@@ -53,10 +53,6 @@ export function ProgramFromTemplatePage() {
 
   const mutation = useMutation({
     mutationFn: createProgramFromTemplate,
-    onSuccess: (program) => {
-      qc.invalidateQueries({ queryKey: programQueryKeys.all });
-      navigate(`/programs/${program.id}`);
-    },
   });
 
   if (!templateIdParam) {
@@ -114,6 +110,8 @@ export function ProgramFromTemplatePage() {
           }
           try {
             await mutation.mutateAsync(body);
+            qc.invalidateQueries({ queryKey: programQueryKeys.all });
+            navigate('/programs');
           } catch (e) {
             if (e instanceof ApiError) {
               if (

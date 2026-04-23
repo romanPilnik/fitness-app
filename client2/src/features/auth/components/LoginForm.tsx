@@ -94,6 +94,15 @@ export function LoginForm() {
         {mutation.isPending ? 'Signing in…' : 'Sign in'}
       </Button>
 
+      <p className="text-center text-sm">
+        <Link
+          to="/forgot-password"
+          className="font-medium text-(--accent) underline-offset-2 hover:underline"
+        >
+          Forgot password?
+        </Link>
+      </p>
+
       <p className="text-center text-sm text-(--text)">
         No account?{' '}
         <Link

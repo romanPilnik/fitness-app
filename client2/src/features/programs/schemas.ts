@@ -49,16 +49,46 @@ export const fromTemplateFormSchema = z.object({
 
 export type FromTemplateForm = z.infer<typeof fromTemplateFormSchema>;
 
-export const customProgramFormSchema = z.object({
-  name: z.string().max(50).trim().min(1),
-  description: z.string().max(500).trim().optional(),
-  difficulty,
-  goal,
-  splitType,
-  daysPerWeek: intField(1, 14),
-  startDate: z.string().trim().min(1, 'Start date is required'),
-  workouts: z.array(programWorkoutSchema).min(1),
-});
+const scheduleSlotInputSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('rest') }),
+  z.object({
+    type: z.literal('workout'),
+    workoutIndex: z.number().int().min(0),
+  }),
+]);
+
+export const customProgramFormSchema = z
+  .object({
+    name: z.string().max(50).trim().min(1),
+    description: z.string().max(500).trim().optional(),
+    difficulty,
+    goal,
+    splitType,
+    daysPerWeek: intField(1, 14),
+    startDate: z.string().trim().min(1, 'Start date is required'),
+    lengthWeeks: intField(1, 104),
+    scheduleKind: z.enum(['sync_week', 'async_block']),
+    syncPattern: z.array(scheduleSlotInputSchema).length(7),
+    asyncPattern: z.array(scheduleSlotInputSchema).min(1),
+    workouts: z.array(programWorkoutSchema).min(1),
+  })
+  .superRefine((data, ctx) => {
+    const n = data.workouts.length;
+    const checkSlots = (slots: { type: string; workoutIndex?: number }[], path: 'syncPattern' | 'asyncPattern') => {
+      for (let i = 0; i < slots.length; i++) {
+        const s = slots[i];
+        if (s.type === 'workout' && s.workoutIndex !== undefined && s.workoutIndex >= n) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Workout index must be between 0 and ${n - 1}`,
+            path: [path, i],
+          });
+        }
+      }
+    };
+    checkSlots(data.syncPattern, 'syncPattern');
+    checkSlots(data.asyncPattern, 'asyncPattern');
+  });
 
 export type CustomProgramForm = z.infer<typeof customProgramFormSchema>;
 
@@ -72,11 +102,47 @@ export const editProgramMetadataSchema = z.object({
     if (v === '' || v == null) return undefined;
     return typeof v === 'string' ? Number(v) : (v as number);
   }, z.number().int().min(1).max(14).optional()),
+  lengthWeeks: z.preprocess((v) => {
+    if (v === '' || v == null) return undefined;
+    return typeof v === 'string' ? Number(v) : (v as number);
+  }, z.number().int().min(1).max(104).optional()),
   status: programStatus.optional(),
   startDate: z.string().optional(),
 });
 
 export type EditProgramMetadataForm = z.infer<typeof editProgramMetadataSchema>;
+
+/** Edit program page: metadata + weekly / block schedule (mirrors create flow). */
+export const editProgramFormSchema = editProgramMetadataSchema
+  .extend({
+    scheduleKind: z.enum(['sync_week', 'async_block']),
+    syncPattern: z.array(scheduleSlotInputSchema).length(7),
+    asyncPattern: z.array(scheduleSlotInputSchema).min(1),
+    __workoutCount: z.coerce.number().int().min(0),
+  })
+  .superRefine((data, ctx) => {
+    const n = data.__workoutCount;
+    if (n < 1) return;
+    const checkSlots = (
+      slots: { type: string; workoutIndex?: number }[],
+      path: 'syncPattern' | 'asyncPattern',
+    ) => {
+      for (let i = 0; i < slots.length; i++) {
+        const s = slots[i];
+        if (s.type === 'workout' && s.workoutIndex !== undefined && s.workoutIndex >= n) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Workout index must be between 0 and ${n - 1}`,
+            path: [path, i],
+          });
+        }
+      }
+    };
+    checkSlots(data.syncPattern, 'syncPattern');
+    checkSlots(data.asyncPattern, 'asyncPattern');
+  });
+
+export type EditProgramForm = z.infer<typeof editProgramFormSchema>;
 
 export const addWorkoutFormSchema = z.object({
   name: z.string().max(50).trim().min(1),

@@ -5,6 +5,7 @@ import {
   ExerciseCategory,
   MovementPattern,
 } from "@/generated/prisma/enums";
+import { programListSortValues } from "@/features/programs/program.dtos";
 import { cursorPaginationSchema } from "@/lib/pagination";
 
 export const getExercisesSchema = z.object({
@@ -14,6 +15,7 @@ export const getExercisesSchema = z.object({
       equipment: z.enum(Equipment).optional(),
       category: z.enum(ExerciseCategory).optional(),
       movementPattern: z.enum(MovementPattern).optional(),
+      sort: z.enum(programListSortValues).default("name_asc"),
     })
     .extend(cursorPaginationSchema.shape),
 });

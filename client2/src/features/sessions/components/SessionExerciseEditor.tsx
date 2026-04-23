@@ -1,12 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useId, useRef } from 'react';
-import { ChevronDown, ChevronUp, RefreshCw, Trash2 } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { MoreVertical } from 'lucide-react';
 import { useFieldArray, type UseFormReturn } from 'react-hook-form';
 import { useConfirm } from '@/components/ConfirmProvider';
 import { Button } from '@/components/ui/button';
 import { ExerciseIdSelect } from '@/features/exercises/components/ExerciseIdSelect';
 import { exerciseQueryKeys, fetchExerciseById } from '@/features/exercises/api';
 import { useCurrentUser } from '@/features/users/useCurrentUser';
+import { useDisplayRirPreference } from '@/lib/displayRirPreference';
 import { cn } from '@/lib/utils';
 import { oneEmptySet } from '../sessionFormDefaults';
 import type { LogSessionForm } from '../schemas';
@@ -21,8 +22,7 @@ type Props = {
   ei: number;
   form: UseFormReturn<LogSessionForm, unknown, LogSessionForm>;
   exerciseCount: number;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
+  onOpenReorder: () => void;
   onRemove: () => void;
 };
 
@@ -30,17 +30,37 @@ export function SessionExerciseEditor({
   ei,
   form,
   exerciseCount,
-  onMoveUp,
-  onMoveDown,
+  onOpenReorder,
   onRemove,
 }: Props) {
   const confirm = useConfirm();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
   const me = useCurrentUser();
+  const displayRir = useDisplayRirPreference();
   const weightUnitLabel = me.data?.units === 'imperial' ? 'lb' : 'kg';
 
   const pickDialogRef = useRef<HTMLDialogElement>(null);
   const pickTitleId = useId();
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
   const setsFA = useFieldArray({
     control: form.control,
     name: `exercises.${ei}.sets`,
@@ -74,66 +94,72 @@ export function SessionExerciseEditor({
     })();
   };
 
-  const showExerciseTargets = hasTarget(tw) || hasTarget(ttr) || hasTarget(ttsr) || hasTarget(trir);
-
-  const toolbarBtn =
-    'transition-transform duration-150 active:scale-[0.96] active:brightness-95 hover:brightness-110';
-  /** ~390×844 and similar: 44px min touch target; slightly larger from `sm:` up */
-  const toolbarIconBtn = cn('min-h-11 min-w-11 px-0 py-0 sm:min-h-12 sm:min-w-12', toolbarBtn);
+  const showExerciseTargets =
+    hasTarget(tw) || hasTarget(ttr) || hasTarget(ttsr) || (displayRir && hasTarget(trir));
 
   return (
     <section className="rounded-2xl border border-(--border) bg-[#0a0a0b] p-2.5 shadow-(--shadow) sm:p-3 md:p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h2 className="min-w-0 text-xl font-semibold leading-snug text-(--text-h) sm:text-2xl md:text-[1.65rem]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="min-w-0 flex-1 text-xl font-semibold leading-snug text-(--text-h) sm:text-2xl md:text-[1.65rem]">
           {exerciseLabel}
         </h2>
-        <div className="flex shrink-0 flex-wrap gap-1.5">
-          <Button
+        <div className="relative shrink-0" ref={menuRef}>
+          <button
             type="button"
-            variant="secondary"
-            className={toolbarIconBtn}
-            disabled={ei === 0}
-            onClick={onMoveUp}
-            aria-label="Move exercise up"
+            aria-label={`Exercise options: ${exerciseLabel}`}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className="inline-flex size-11 items-center justify-center rounded-lg border border-(--border) text-(--text-h) transition-colors hover:bg-(--code-bg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--accent-border) disabled:pointer-events-none disabled:opacity-50"
+            onClick={() => setMenuOpen((o) => !o)}
           >
-            <ChevronUp className="mx-auto size-5" aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className={toolbarIconBtn}
-            disabled={ei >= exerciseCount - 1}
-            onClick={onMoveDown}
-            aria-label="Move exercise down"
-          >
-            <ChevronDown className="mx-auto size-5" aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className={toolbarIconBtn}
-            onClick={() => pickDialogRef.current?.showModal()}
-            aria-label="Change exercise"
-          >
-            <RefreshCw className="mx-auto size-5" aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className={cn('text-red-600 hover:bg-red-950/30', toolbarIconBtn)}
-            disabled={exerciseCount <= 1}
-            onClick={() => {
-              void confirm(`Remove “${exerciseLabel}” from this workout?`, {
-                confirmLabel: 'Remove',
-                cancelLabel: 'Cancel',
-              }).then((ok) => {
-                if (ok) onRemove();
-              });
-            }}
-            aria-label="Remove exercise"
-          >
-            <Trash2 className="mx-auto size-5" aria-hidden />
-          </Button>
+            <MoreVertical className="size-4" strokeWidth={2.25} aria-hidden />
+          </button>
+          {menuOpen ? (
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-50 mt-1 min-w-52 rounded-lg border border-(--border) bg-(--bg) py-1 shadow-lg ring-1 ring-black/5 dark:ring-white/10"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                className="block w-full px-3 py-2.5 text-left text-sm text-(--text-h) hover:bg-(--code-bg) focus-visible:outline-2 focus-visible:outline-inset"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenReorder();
+                }}
+              >
+                Reorder exercises
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="block w-full px-3 py-2.5 text-left text-sm text-(--text-h) hover:bg-(--code-bg) focus-visible:outline-2 focus-visible:outline-inset"
+                onClick={() => {
+                  setMenuOpen(false);
+                  pickDialogRef.current?.showModal();
+                }}
+              >
+                Swap exercise
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="block w-full px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-500/10 focus-visible:outline-2 focus-visible:outline-inset dark:text-red-400"
+                disabled={exerciseCount <= 1}
+                onClick={() => {
+                  setMenuOpen(false);
+                  void confirm(`Remove “${exerciseLabel}” from this workout?`, {
+                    confirmLabel: 'Remove',
+                    cancelLabel: 'Cancel',
+                  }).then((ok) => {
+                    if (ok) onRemove();
+                  });
+                }}
+              >
+                Remove exercise
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -183,7 +209,7 @@ export function SessionExerciseEditor({
               Top-set reps {String(ttsr)}
             </span>
           ) : null}
-          {hasTarget(trir) ? (
+          {displayRir && hasTarget(trir) ? (
             <span className="rounded-md bg-zinc-800/80 px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-500">
               RIR {String(trir)}
             </span>
@@ -206,18 +232,18 @@ export function SessionExerciseEditor({
             ? Number(setTargetWeight)
             : undefined;
           const displayTargetReps = hasTarget(setTargetReps) ? Number(setTargetReps) : undefined;
-          const displayTargetRir = hasTarget(trir) ? Number(trir) : undefined;
+          const displayTargetRir =
+            displayRir && hasTarget(trir) ? Number(trir) : undefined;
 
           const repsNum = typeof repsWatched === 'number' ? repsWatched : Number(repsWatched) || 0;
           const weightNum =
             typeof weightWatched === 'number' ? weightWatched : Number(weightWatched) || 0;
           const showIncompleteLoggedHint = setCompleted && (repsNum === 0 || weightNum === 0);
 
-          /** Inputs flex to fill each column; shared sizing across breakpoints */
           const fieldClass =
-            'no-spinner h-10 min-h-10 min-w-0 w-full flex-1 rounded-md border border-(--border) pl-1.5 pr-1 text-sm tabular-nums text-(--text-h) sm:h-11 sm:min-h-11 sm:rounded-lg sm:pl-3 sm:pr-2 sm:text-base md:h-12 md:min-h-12 md:pl-4 md:pr-2.5 md:text-lg';
+            'no-spinner h-10 min-h-10 min-w-0 w-full max-w-[4rem] flex-none rounded-md border border-(--border) pl-1 pr-0.5 text-sm tabular-nums text-(--text-h) sm:max-w-[4.5rem] sm:h-11 sm:min-h-11 sm:rounded-lg sm:pl-2 sm:pr-1 sm:text-base md:max-w-24 md:h-12 md:min-h-12 md:pl-3 md:pr-2 md:text-lg';
           const unitClass =
-            'shrink-0 whitespace-nowrap pl-0 text-[0.6875rem] font-medium tabular-nums text-(--text) sm:pl-0.5 sm:text-sm md:text-base';
+            'shrink-0 whitespace-nowrap pl-0.5 text-[0.6875rem] font-medium tabular-nums text-(--text) sm:pl-1 sm:text-sm md:text-base';
           const targetClass =
             'block w-full max-w-full truncate text-left text-[0.625rem] leading-tight font-medium tabular-nums text-zinc-500 sm:text-[0.6875rem]';
 
@@ -259,7 +285,7 @@ export function SessionExerciseEditor({
                   {si + 1}
                 </button>
 
-                <div className="flex w-full min-w-0 flex-1 items-end gap-1.5 sm:gap-2 md:gap-3">
+                <div className="flex w-full min-w-0 flex-1 items-end gap-2 sm:gap-2.5 md:gap-3">
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     {displayTargetWeight != null && (
                       <span
@@ -269,7 +295,7 @@ export function SessionExerciseEditor({
                         {displayTargetWeight} {weightUnitLabel}
                       </span>
                     )}
-                    <div className="flex w-full min-w-0 items-center gap-0.5 sm:gap-1 md:gap-1.5">
+                    <div className="flex w-full min-w-0 items-center justify-start gap-0.5 sm:gap-1">
                       <input
                         type="number"
                         min={0}
@@ -286,7 +312,7 @@ export function SessionExerciseEditor({
                         {displayTargetReps} reps
                       </span>
                     )}
-                    <div className="flex w-full min-w-0 items-center gap-0.5 sm:gap-1 md:gap-1.5">
+                    <div className="flex w-full min-w-0 items-center justify-start gap-0.5 sm:gap-1">
                       <input
                         type="number"
                         min={0}
@@ -297,24 +323,28 @@ export function SessionExerciseEditor({
                       <span className={unitClass}>reps</span>
                     </div>
                   </div>
-                  <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    {displayTargetRir != null && (
-                      <span className={targetClass} title={`${displayTargetRir} RIR`}>
-                        {displayTargetRir} RIR
-                      </span>
-                    )}
-                    <div className="flex w-full min-w-0 items-center gap-0.5 sm:gap-1 md:gap-1.5">
-                      <input
-                        type="number"
-                        min={0}
-                        inputMode="numeric"
-                        className={fieldClass}
-                        {...rirField}
-                        onFocus={(e) => e.currentTarget.select()}
-                      />
-                      <span className={unitClass}>RIR</span>
+                  {displayRir ? (
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      {displayTargetRir != null && (
+                        <span className={targetClass} title={`${displayTargetRir} RIR`}>
+                          {displayTargetRir} RIR
+                        </span>
+                      )}
+                      <div className="flex w-full min-w-0 items-center justify-start gap-0.5 sm:gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          inputMode="numeric"
+                          className={fieldClass}
+                          {...rirField}
+                          onFocus={(e) => e.currentTarget.select()}
+                        />
+                        <span className={unitClass}>RIR</span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <input type="hidden" {...rirField} />
+                  )}
                 </div>
               </div>
               {showIncompleteLoggedHint ? (
@@ -346,9 +376,10 @@ export function SessionExerciseEditor({
                   exTw != null ? Number(exTw) : undefined,
                   exTr != null ? Number(exTr) : undefined,
                 ),
+                { shouldFocus: false },
               );
             } else {
-              setsFA.append(oneEmptySet());
+              setsFA.append(oneEmptySet(), { shouldFocus: false });
             }
           }}
         >

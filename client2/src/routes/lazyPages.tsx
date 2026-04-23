@@ -6,6 +6,14 @@ export const LoginPage = lazy(() =>
 export const RegisterPage = lazy(() =>
   import('@/features/auth/pages/RegisterPage').then((m) => ({ default: m.RegisterPage })),
 );
+export const ForgotPasswordPage = lazy(() =>
+  import('@/features/auth/pages/ForgotPasswordPage').then((m) => ({
+    default: m.ForgotPasswordPage,
+  })),
+);
+export const ResetPasswordPage = lazy(() =>
+  import('@/features/auth/pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })),
+);
 export const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })));
 export const LibraryPage = lazy(() =>
   import('@/pages/LibraryPage').then((m) => ({ default: m.LibraryPage })),
@@ -78,6 +86,11 @@ export const SessionDetailPage = lazy(() =>
 export const LogSessionPage = lazy(() =>
   import('@/features/sessions/pages/LogSessionPage').then((m) => ({ default: m.LogSessionPage })),
 );
+export const ReorderSessionExercisesPage = lazy(() =>
+  import('@/features/sessions/pages/ReorderSessionExercisesPage').then((m) => ({
+    default: m.ReorderSessionExercisesPage,
+  })),
+);
 export const StartWorkoutPage = lazy(() =>
   import('@/features/sessions/pages/StartWorkoutPage').then((m) => ({
     default: m.StartWorkoutPage,
@@ -89,6 +102,21 @@ export const AccountPage = lazy(() =>
 export const ChangePasswordPage = lazy(() =>
   import('@/features/users/pages/ChangePasswordPage').then((m) => ({
     default: m.ChangePasswordPage,
+  })),
+);
+export const AccountDevicesPage = lazy(() =>
+  import('@/features/users/pages/AccountDevicesPage').then((m) => ({
+    default: m.AccountDevicesPage,
+  })),
+);
+export const AiPreferencesPage = lazy(() =>
+  import('@/features/users/pages/AiPreferencesPage').then((m) => ({
+    default: m.AiPreferencesPage,
+  })),
+);
+export const AdvancedFeaturesPage = lazy(() =>
+  import('@/features/users/pages/AdvancedFeaturesPage').then((m) => ({
+    default: m.AdvancedFeaturesPage,
   })),
 );
 export const AdminExercisesPage = lazy(() =>

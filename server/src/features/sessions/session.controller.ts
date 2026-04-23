@@ -12,7 +12,7 @@ import type {
 
 async function getSessions(req: Request, res: Response) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const query = req.query as unknown as GetSessionsQuery;
   const sessions = await SessionService.getSessions({
     userId: req.user.id,
@@ -26,7 +26,7 @@ async function getSessionById(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const session = await SessionService.getSessionById({
     sessionId: req.params.id,
     userId: req.user.id,
@@ -39,7 +39,7 @@ async function createSession(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const session = await SessionService.createSession({
     userId: req.user.id,
     ...req.body,
@@ -49,7 +49,7 @@ async function createSession(
 
 async function deleteSession(req: Request<DeleteSessionParams>, res: Response) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   await SessionService.deleteSession({
     sessionId: req.params.id,
     userId: req.user.id,

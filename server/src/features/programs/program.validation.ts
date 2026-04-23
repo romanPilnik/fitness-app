@@ -5,6 +5,7 @@ import {
   Goal,
   SplitType,
   ProgramSources,
+  ProgramScheduleKind,
 } from "@/generated/prisma/enums.js";
 import { cursorPaginationSchema } from "@/lib/pagination.js";
 import { programListSortValues } from "./program.dtos.js";
@@ -44,25 +45,60 @@ const programWorkoutSchema = z.object({
   exercises: z.array(programWorkoutExerciseSchema).min(1),
 });
 
+const schedulePatternInputSlotSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("rest") }),
+  z.object({
+    type: z.literal("workout"),
+    workoutIndex: z.number().int().min(0),
+  }),
+]);
+
+const scheduleSlotStoredSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("rest") }),
+  z.object({
+    type: z.literal("workout"),
+    programWorkoutId: z.string().min(1),
+  }),
+]);
+
 export const createFromTemplateSchema = z.object({
   body: z.object({
     templateId: z.string(),
     name: z.string().max(50).trim().optional(),
     startDate: z.iso.datetime().optional(),
+    lengthWeeks: z.number().int().min(1).max(104).optional(),
+    timeZone: z.string().min(1).optional(),
   }),
 });
 
 export const createCustomProgramSchema = z.object({
-  body: z.object({
-    name: z.string().max(50).trim(),
-    description: z.string().max(500).optional(),
-    difficulty: z.enum(Difficulty),
-    goal: z.enum(Goal),
-    splitType: z.enum(SplitType),
-    daysPerWeek: z.number().int().min(1).max(14),
-    startDate: z.iso.datetime().optional(),
-    workouts: z.array(programWorkoutSchema).min(1),
-  }),
+  body: z
+    .object({
+      name: z.string().max(50).trim(),
+      description: z.string().max(500).optional(),
+      difficulty: z.enum(Difficulty),
+      goal: z.enum(Goal),
+      splitType: z.enum(SplitType),
+      daysPerWeek: z.number().int().min(1).max(14),
+      startDate: z.iso.datetime().optional(),
+      lengthWeeks: z.number().int().min(1).max(104).optional(),
+      scheduleKind: z.enum(ProgramScheduleKind),
+      schedulePattern: z.array(schedulePatternInputSlotSchema).min(1),
+      timeZone: z.string().min(1).optional(),
+      workouts: z.array(programWorkoutSchema).min(1),
+    })
+    .superRefine((body, ctx) => {
+      if (
+        body.scheduleKind === ProgramScheduleKind.sync_week &&
+        body.schedulePattern.length !== 7
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "sync_week schedulePattern must have exactly 7 slots",
+          path: ["schedulePattern"],
+        });
+      }
+    }),
 });
 
 export const updateProgramSchema = z.object({
@@ -79,9 +115,64 @@ export const updateProgramSchema = z.object({
       daysPerWeek: z.number().int().min(1).max(14).optional(),
       status: z.enum(ProgramStatuses).optional(),
       startDate: z.iso.datetime().optional(),
+      lengthWeeks: z.number().int().min(1).max(104).optional(),
+      scheduleKind: z.enum(ProgramScheduleKind).optional(),
+      schedulePattern: z.array(scheduleSlotStoredSchema).optional(),
+      timeZone: z.string().min(1).optional(),
     })
-    .refine((data) => Object.keys(data).length > 0, {
-      message: "At least one field must be provided",
+    .superRefine((data, ctx) => {
+      if (Object.keys(data).length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "At least one field must be provided",
+        });
+      }
+      if (
+        data.scheduleKind === ProgramScheduleKind.sync_week &&
+        data.schedulePattern &&
+        data.schedulePattern.length !== 7
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "sync_week schedulePattern must have exactly 7 slots",
+          path: ["schedulePattern"],
+        });
+      }
+    }),
+});
+
+export const getProgramOccurrencesSchema = z.object({
+  params: z.object({
+    id: z.string(),
+  }),
+  query: z.object({
+    dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  }),
+});
+
+export const getNextWorkoutSchema = z.object({
+  params: z.object({
+    id: z.string(),
+  }),
+  query: z.object({
+    timeZone: z.string().min(1).optional(),
+  }),
+});
+
+export const patchProgramOccurrenceSchema = z.object({
+  params: z.object({
+    id: z.string(),
+    occurrenceId: z.string(),
+  }),
+  body: z
+    .object({
+      scheduledOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      status: z.enum(["planned", "skipped", "cancelled"]).optional(),
+      timeZone: z.string().min(1).optional(),
+    })
+    .refine((b) => Object.keys(b).filter((k) => k !== "timeZone").length > 0, {
+      message: "scheduledOn and/or status is required",
     }),
 });
 

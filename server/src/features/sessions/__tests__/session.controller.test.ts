@@ -139,6 +139,7 @@ describe("SessionController", () => {
     it("spreads body and adds userId", async () => {
       const body = {
         programId: "p-1",
+        programWorkoutId: "pw-1",
         workoutName: "Push",
         dayNumber: 1,
         sessionStatus: "completed",

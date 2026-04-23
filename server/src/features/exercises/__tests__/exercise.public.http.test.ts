@@ -1,22 +1,22 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ApiError } from "@/types/api.types.js";
 import { ERROR_CODES } from "@/types/error.types.js";
-import { bearerAuth, registerTestUser } from "@/test/authHelpers.js";
+import { registerTestUser, sessionAuth } from "@/test/authHelpers.js";
 import { testAgent } from "@/test/httpAgent.js";
 
 describe("exercises GET — validation (authenticated)", () => {
   const agent = testAgent();
-  let token: string;
+  let cookieHeader: string;
 
   beforeAll(async () => {
     const r = await registerTestUser(agent);
-    token = r.token;
+    cookieHeader = r.cookieHeader;
   });
 
   it("returns 400 for invalid primaryMuscle enum", async () => {
     const res = await agent
       .get("/api/v1/exercises")
-      .set(bearerAuth(token))
+      .set(sessionAuth(cookieHeader))
       .query({
         primaryMuscle: "invalid_muscle",
       });
@@ -29,7 +29,7 @@ describe("exercises GET — validation (authenticated)", () => {
   it("returns 400 when limit exceeds max", async () => {
     const res = await agent
       .get("/api/v1/exercises")
-      .set(bearerAuth(token))
+      .set(sessionAuth(cookieHeader))
       .query({ limit: 999 });
 
     expect(res.status).toBe(400);
@@ -40,7 +40,7 @@ describe("exercises GET — validation (authenticated)", () => {
   it("returns 400 when id is not a cuid", async () => {
     const res = await agent
       .get("/api/v1/exercises/not-a-cuid")
-      .set(bearerAuth(token));
+      .set(sessionAuth(cookieHeader));
 
     expect(res.status).toBe(400);
     const body = res.body as ApiError;

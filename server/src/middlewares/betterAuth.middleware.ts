@@ -19,7 +19,7 @@ export async function verifySession(
       throw new AppError(
         "Authentication required",
         401,
-        ERROR_CODES.TOKEN_REQUIRED,
+        ERROR_CODES.UNAUTHENTICATED,
       );
     }
 
@@ -37,10 +37,10 @@ export async function verifySession(
       id: user.id,
       email: user.email,
       name: user.name,
-      role: (user.role as Role) ?? "user",
+      role: user.role as Role,
       isActive: user.isActive ?? true,
-      units: (user.units as Units) ?? "metric",
-      weekStartsOn: (user.weekStartsOn as WeekStartsOn) ?? "sunday",
+      units: user.units as Units,
+      weekStartsOn: user.weekStartsOn as WeekStartsOn,
       createdAt: new Date(user.createdAt),
       updatedAt: new Date(user.updatedAt),
     };

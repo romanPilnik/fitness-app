@@ -12,6 +12,31 @@ export function parseIsoToLocalDateKey(iso: string): string {
   return localDateKey(new Date(iso));
 }
 
+/** True when `dateKey` (YYYY-MM-DD) is strictly before the user's local calendar today. */
+export function isLocalDateKeyBeforeToday(
+  dateKey: string,
+  now: Date = new Date(),
+): boolean {
+  return dateKey < localDateKey(now);
+}
+
+const DATE_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Whether the string is a valid YYYY-MM-DD (for query params). */
+export function isValidDateKey(s: string | null | undefined): s is string {
+  return Boolean(s && DATE_KEY_RE.test(s));
+}
+
+/** Local, timezone-stable display for a calendar YYYY-MM-DD. */
+export function formatDateKeyForDisplay(dateKey: string, locale?: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0, 0).toLocaleDateString(locale, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 export function startOfLocalMonth(year: number, monthIndex: number): Date {
   return new Date(year, monthIndex, 1, 0, 0, 0, 0);
 }
@@ -49,13 +74,14 @@ export type CalendarCell =
   | { kind: 'day'; date: Date; dateKey: string; isToday: boolean; isFuture: boolean };
 
 /**
- * Builds a fixed 6-row (42 cell) grid for `year`/`monthIndex`, Monday-first.
+ * Builds a fixed 6-row (42 cell) grid for `year`/`monthIndex`, Sunday-first (sync_week slot 0 = Sun).
  * Trailing cells after the last day of month are padding (still in grid but not selectable as in-month content — we use padding only at start in this implementation; for end we use padding cells too).
  */
 export function buildMonthGrid(year: number, monthIndex: number, now: Date = new Date()): CalendarCell[] {
   const first = startOfLocalMonth(year, monthIndex);
   const lastDay = endOfLocalMonth(year, monthIndex).getDate();
-  const startOffset = (first.getDay() + 6) % 7; // Monday = 0
+  /** Sunday-first columns to match server `sync_week` (slot index 0 = Sunday). */
+  const startOffset = first.getDay();
   const cells: CalendarCell[] = [];
 
   for (let i = 0; i < startOffset; i++) {
@@ -89,7 +115,8 @@ export function buildMonthGrid(year: number, monthIndex: number, now: Date = new
   return cells;
 }
 
-export const WEEKDAY_LABELS_MON_FIRST = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+/** Sun–Sat, aligned with server schedule materialization (`weekdaySun0FromDateKey`). */
+export const WEEKDAY_LABELS_SUN_FIRST = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
 export function formatDayDialogTitle(date: Date): string {
   return date.toLocaleDateString(undefined, {

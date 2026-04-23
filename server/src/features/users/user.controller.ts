@@ -4,13 +4,12 @@ import { AuthenticationError } from "@/errors/index";
 import { ERROR_CODES } from "@/types/error.types";
 import { prisma } from "@/lib/prisma";
 import type { Request, Response } from "express";
-import type { UpdateUserBody, ChangePasswordBody } from "./user.validation";
+import type { UpdateUserBody, PatchAiPreferencesBody } from "./user.validation";
 
 async function getCurrentUser(req: Request, res: Response) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
 
-  // Read fresh from DB — the session cookie cache can be stale after profile updates
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
     select: {
@@ -34,7 +33,7 @@ async function updateCurrentUser(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const { id } = req.user;
   const { name, units, weekStartsOn } = req.body;
   const user = await UserService.updateUser({
@@ -46,20 +45,28 @@ async function updateCurrentUser(
   return sendSuccess(res, user, 200, "User updated");
 }
 
-async function changePassword(
-  req: Request<object, object, ChangePasswordBody>,
+async function getAiPreferences(req: Request, res: Response) {
+  if (!req.user)
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
+  const { id } = req.user;
+  const preferences = await UserService.getNormalizedAiPreferencesForUser(id);
+  return sendSuccess(res, preferences, 200, "AI preferences retrieved");
+}
+
+async function patchAiPreferences(
+  req: Request<object, object, PatchAiPreferencesBody>,
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const { id } = req.user;
-  const { oldPassword, newPassword } = req.body;
-  await UserService.changePassword({ id, oldPassword, newPassword });
-  sendSuccess(res, null, 200, "Password changed successfully");
+  const preferences = await UserService.patchAiPreferences({ id, patch: req.body });
+  return sendSuccess(res, preferences, 200, "AI preferences updated");
 }
 
 export const UserController = {
   getCurrentUser,
   updateCurrentUser,
-  changePassword,
+  getAiPreferences,
+  patchAiPreferences,
 };

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "better-auth/crypto";
 import {
   Difficulty,
   Equipment,
@@ -400,6 +400,7 @@ const templateDefinitions: TemplateDef[] = [
 async function clearDatabase(): Promise<void> {
   await prisma.sessionExerciseSet.deleteMany();
   await prisma.sessionExercise.deleteMany();
+  await prisma.generatedWorkout.deleteMany();
   await prisma.session.deleteMany();
   await prisma.programWorkoutExercise.deleteMany();
   await prisma.programWorkout.deleteMany();
@@ -414,7 +415,7 @@ async function clearDatabase(): Promise<void> {
   await prisma.user.deleteMany();
 }
 
-/** Better Auth email/password uses `account` rows (`providerId: "credential"`), same hash as legacy `User.password`. */
+/** Better Auth email/password: credential `Account` row holds the password hash. */
 async function createCredentialAccount(
   userId: string,
   passwordHash: string,
@@ -428,63 +429,6 @@ async function createCredentialAccount(
       password: passwordHash,
     },
   });
-}
-
-const EXTRA_PAGINATION_TEMPLATES = 22;
-
-async function seedExtraTemplatesForPagination(ids: ExerciseIds): Promise<void> {
-  for (let i = 1; i <= EXTRA_PAGINATION_TEMPLATES; i++) {
-    await prisma.template.create({
-      data: {
-        name: `Pagination seed template ${String(i)}`,
-        description: "Minimal template for client pagination testing",
-        daysPerWeek: 1,
-        difficulty: Difficulty.beginner,
-        splitType: SplitType.full_body,
-        goal: Goal.hypertrophy,
-        createdByUserId: null,
-        workouts: {
-          create: [
-            {
-              name: "Day 1",
-              dayNumber: 1,
-              exercises: {
-                create: [
-                  {
-                    exerciseId: exerciseIdAt(ids, 0),
-                    order: 1,
-                    targetSets: 3,
-                    targetWeight: 60,
-                    targetTopSetReps: 8,
-                    targetTotalReps: 24,
-                    targetRir: 2,
-                  },
-                  {
-                    exerciseId: exerciseIdAt(ids, 1),
-                    order: 2,
-                    targetSets: 3,
-                    targetWeight: 80,
-                    targetTopSetReps: 8,
-                    targetTotalReps: 24,
-                    targetRir: 2,
-                  },
-                  {
-                    exerciseId: exerciseIdAt(ids, 2),
-                    order: 3,
-                    targetSets: 3,
-                    targetWeight: 120,
-                    targetTopSetReps: 5,
-                    targetTotalReps: 15,
-                    targetRir: 2,
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    });
-  }
 }
 
 function exerciseIdAt(ids: ExerciseIds, index: number): string {
@@ -546,11 +490,10 @@ async function seed(): Promise<void> {
     console.log(`Created ${String(createdExercises.length)} exercises`);
 
     console.log("Creating test users...");
-    const hashedPassword = await bcrypt.hash("password123", 10);
+    const hashedPassword = await hashPassword("password123");
     const regularUser = await prisma.user.create({
       data: {
         email: "test@test.com",
-        password: hashedPassword,
         name: "Test User",
         role: Role.user,
         units: Units.metric,
@@ -560,7 +503,6 @@ async function seed(): Promise<void> {
     const adminUser = await prisma.user.create({
       data: {
         email: "admin@test.com",
-        password: hashedPassword,
         name: "Admin User",
         role: Role.admin,
         units: Units.metric,
@@ -575,9 +517,7 @@ async function seed(): Promise<void> {
 
     console.log("Creating program templates...");
     await seedTemplates(exerciseIds);
-    await seedExtraTemplatesForPagination(exerciseIds);
-    const templateCount =
-      templateDefinitions.length + EXTRA_PAGINATION_TEMPLATES;
+    const templateCount = templateDefinitions.length;
     console.log(`Created ${String(templateCount)} program templates`);
 
     console.log("\n--- Seed Complete ---");

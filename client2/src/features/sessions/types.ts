@@ -2,6 +2,8 @@ export type SessionSummary = {
   id: string;
   userId: string;
   programId: string;
+  /** Present when session is tied to a program workout (list API includes Prisma scalar). */
+  programWorkoutId?: string | null;
   workoutName: string;
   dayNumber: number;
   datePerformed: string;

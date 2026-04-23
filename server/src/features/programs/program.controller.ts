@@ -26,7 +26,7 @@ import { AuthenticationError, ERROR_CODES } from "@/errors";
 
 async function getPrograms(req: Request, res: Response) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const query = req.query as unknown as GetProgramsQuery;
   const programs = await ProgramService.getPrograms({
     ...query,
@@ -37,7 +37,7 @@ async function getPrograms(req: Request, res: Response) {
 
 async function getActiveProgram(req: Request, res: Response) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const program = await ProgramService.getActiveProgram({
     userId: req.user.id,
   });
@@ -49,7 +49,7 @@ async function getProgramById(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const program = await ProgramService.getProgramById({
     programId: req.params.id,
     userId: req.user.id,
@@ -57,18 +57,71 @@ async function getProgramById(
   return sendSuccess(res, program, 200, "Program retrieved");
 }
 
+async function getProgramOccurrences(
+  req: Request<{ id: string }, unknown, unknown, { dateFrom?: string; dateTo?: string }>,
+  res: Response,
+) {
+  if (!req.user)
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
+  const rows = await ProgramService.getProgramOccurrences({
+    programId: req.params.id,
+    userId: req.user.id,
+    dateFrom: req.query.dateFrom,
+    dateTo: req.query.dateTo,
+  });
+  return sendSuccess(res, rows, 200, "Occurrences retrieved");
+}
+
+async function getNextWorkout(
+  req: Request<{ id: string }, unknown, unknown, { timeZone?: string }>,
+  res: Response,
+) {
+  if (!req.user)
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
+  const tz = req.query.timeZone?.trim();
+  const row = await ProgramService.getNextWorkout({
+    programId: req.params.id,
+    userId: req.user.id,
+    timeZone: tz != null && tz.length > 0 ? tz : "UTC",
+  });
+  return sendSuccess(res, row, 200, "Next workout retrieved");
+}
+
+async function patchOccurrence(
+  req: Request<{ id: string; occurrenceId: string }>,
+  res: Response,
+) {
+  if (!req.user)
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
+  const { scheduledOn, status } = req.body as {
+    scheduledOn?: string;
+    status?: "planned" | "skipped" | "cancelled";
+  };
+  const row = await ProgramService.patchOccurrence({
+    programId: req.params.id,
+    occurrenceId: req.params.occurrenceId,
+    userId: req.user.id,
+    timeZone: "UTC",
+    scheduledOn,
+    status,
+  });
+  return sendSuccess(res, row, 200, "Occurrence updated");
+}
+
 async function createFromTemplate(
   req: Request<object, object, CreateFromTemplateBody>,
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
-  const { templateId, name, startDate } = req.body;
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
+  const { templateId, name, startDate, lengthWeeks, timeZone } = req.body;
   const program = await ProgramService.createFromTemplate({
     userId: req.user.id,
     templateId,
     name,
     startDate,
+    lengthWeeks,
+    timeZone,
   });
   return sendSuccess(res, program, 201, "Program created from template");
 }
@@ -78,7 +131,7 @@ async function createCustomProgram(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const program = await ProgramService.createCustomProgram({
     userId: req.user.id,
     ...req.body,
@@ -91,7 +144,7 @@ async function updateProgram(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const program = await ProgramService.updateProgram({
     programId: req.params.id,
     userId: req.user.id,
@@ -102,7 +155,7 @@ async function updateProgram(
 
 async function deleteProgram(req: Request<DeleteProgramParams>, res: Response) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   await ProgramService.deleteProgram({
     programId: req.params.id,
     userId: req.user.id,
@@ -115,7 +168,7 @@ async function addProgramWorkout(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const { name, dayNumber } = req.body;
   const workout = await ProgramService.addProgramWorkout({
     programId: req.params.id,
@@ -131,7 +184,7 @@ async function updateProgramWorkout(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const { name, dayNumber } = req.body;
   const workout = await ProgramService.updateProgramWorkout({
     programId: req.params.id,
@@ -148,7 +201,7 @@ async function deleteProgramWorkout(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   await ProgramService.deleteProgramWorkout({
     programId: req.params.id,
     workoutId: req.params.workoutId,
@@ -162,7 +215,7 @@ async function addWorkoutExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const {
     exerciseId,
     order,
@@ -192,7 +245,7 @@ async function updateWorkoutExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const workoutExercise = await ProgramService.updateWorkoutExercise({
     programId: req.params.id,
     workoutId: req.params.workoutId,
@@ -208,7 +261,7 @@ async function deleteWorkoutExercise(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   await ProgramService.deleteWorkoutExercise({
     programId: req.params.id,
     workoutId: req.params.workoutId,
@@ -227,7 +280,7 @@ async function bulkReorderWorkoutExercises(
   res: Response,
 ) {
   if (!req.user)
-    throw new AuthenticationError("Unauthorized", ERROR_CODES.TOKEN_REQUIRED);
+    throw new AuthenticationError("Unauthorized", ERROR_CODES.UNAUTHENTICATED);
   const result = await ProgramService.bulkReorderWorkoutExercises({
     programId: req.params.id,
     workoutId: req.params.workoutId,
@@ -241,6 +294,9 @@ export const ProgramController = {
   getPrograms,
   getActiveProgram,
   getProgramById,
+  getProgramOccurrences,
+  getNextWorkout,
+  patchOccurrence,
   createFromTemplate,
   createCustomProgram,
   updateProgram,

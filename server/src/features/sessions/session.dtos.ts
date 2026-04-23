@@ -40,11 +40,23 @@ export interface GetSessionByIdDTO {
 export interface CreateSessionDTO {
   userId: string;
   programId: string;
+  programWorkoutId: string;
   workoutName: string;
   dayNumber: number;
   sessionStatus: SessionStatuses;
   sessionDuration: number;
   exercises: SessionExerciseDTO[];
+  /** When set, links the session to this planned occurrence and marks it completed. */
+  occurrenceId?: string;
+  /** ISO datetime for when the workout was performed; defaults to now. */
+  datePerformed?: string;
+  /** Used to match a planned occurrence to a calendar day when occurrenceId is omitted. */
+  timeZone?: string;
+  /**
+   * User's local calendar date (YYYY-MM-DD) for this workout — preferred over deriving from
+   * `datePerformed` so occurrence linking matches materialized `scheduledOn` dates.
+   */
+  performedOnLocalDate?: string;
 }
 
 export interface DeleteSessionDTO {

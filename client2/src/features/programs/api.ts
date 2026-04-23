@@ -12,6 +12,9 @@ import type {
   ProgramSummary,
   ProgramWorkout,
   ProgramWorkoutExercise,
+  ProgramWorkoutOccurrence,
+  ProgramScheduleKind,
+  SchedulePatternStoredSlot,
 } from './types';
 
 export const programQueryKeys = {
@@ -19,6 +22,10 @@ export const programQueryKeys = {
   list: () => [...programQueryKeys.all, 'list'] as const,
   detail: (id: string) => [...programQueryKeys.all, 'detail', id] as const,
   active: () => [...programQueryKeys.all, 'active'] as const,
+  occurrences: (programId: string, range: { dateFrom: string; dateTo: string }) =>
+    [...programQueryKeys.all, 'occurrences', programId, range] as const,
+  nextWorkout: (programId: string, timeZone: string) =>
+    [...programQueryKeys.all, 'next-workout', programId, timeZone] as const,
 };
 
 export type ProgramListParams = {
@@ -71,7 +78,13 @@ export type CreateFromTemplateBody = {
   templateId: string;
   name?: string;
   startDate?: string;
+  lengthWeeks?: number;
+  timeZone?: string;
 };
+
+export type SchedulePatternInputSlot =
+  | { type: 'rest' }
+  | { type: 'workout'; workoutIndex: number };
 
 export type CreateCustomProgramBody = {
   name: string;
@@ -81,6 +94,10 @@ export type CreateCustomProgramBody = {
   splitType: string;
   daysPerWeek: number;
   startDate?: string;
+  lengthWeeks?: number;
+  scheduleKind: ProgramScheduleKind;
+  schedulePattern: SchedulePatternInputSlot[];
+  timeZone?: string;
   workouts: Array<{
     name: string;
     dayNumber: number;
@@ -105,6 +122,10 @@ export type UpdateProgramBody = Partial<{
   daysPerWeek: number;
   status: string;
   startDate: string;
+  lengthWeeks: number;
+  scheduleKind: ProgramScheduleKind;
+  schedulePattern: SchedulePatternStoredSlot[];
+  timeZone: string;
 }>;
 
 export type AddProgramWorkoutBody = { name: string; dayNumber: number };
@@ -224,4 +245,58 @@ export async function bulkReorderWorkoutExercises(
     `/programs/${encodeURIComponent(programId)}/workouts/${encodeURIComponent(workoutId)}/exercises/reorder`,
     body,
   );
+}
+
+export async function fetchProgramOccurrences(
+  programId: string,
+  params: { dateFrom: string; dateTo: string },
+): Promise<ProgramWorkoutOccurrence[]> {
+  return getEnvelope<ProgramWorkoutOccurrence[]>(
+    `/programs/${encodeURIComponent(programId)}/occurrences`,
+    {
+      params: {
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+      },
+    },
+  );
+}
+
+export async function fetchNextProgramWorkout(
+  programId: string,
+  timeZone?: string,
+): Promise<ProgramWorkoutOccurrence | null> {
+  return getEnvelope<ProgramWorkoutOccurrence | null>(
+    `/programs/${encodeURIComponent(programId)}/next-workout`,
+    {
+      params: timeZone ? { timeZone } : undefined,
+    },
+  );
+}
+
+export type GeneratedTargetsPayload = {
+  generatedWorkoutId: string;
+  createdAt: string;
+  exercises: Array<{
+    exerciseId: string;
+    order: number;
+    targetSets: number;
+    targetRir: number | null;
+    notes: string | null;
+    sets: Array<{
+      setNumber: number;
+      targetWeight: number;
+      targetReps: number;
+      targetRir: number | null;
+    }>;
+  }>;
+};
+
+export async function fetchGeneratedTargetsBatch(programWorkoutIds: string[]): Promise<
+  Array<{ programWorkoutId: string; targets: GeneratedTargetsPayload | null }>
+> {
+  const res = await postEnvelope<{
+    items: Array<{ programWorkoutId: string; targets: GeneratedTargetsPayload | null }>;
+  }>('/generated-targets/batch', { programWorkoutIds });
+  return res.items;
 }

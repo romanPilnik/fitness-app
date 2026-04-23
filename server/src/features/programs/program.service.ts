@@ -1,3 +1,8 @@
+import type { Prisma } from "@/generated/prisma/client.js";
+import {
+  ProgramScheduleKind,
+  OccurrenceStatus,
+} from "@/generated/prisma/enums.js";
 import { prisma } from "@/lib/prisma.js";
 import {
   NotFoundError,
@@ -27,11 +32,23 @@ import type {
   UpdateWorkoutExerciseDTO,
   DeleteWorkoutExerciseDTO,
   BulkReorderWorkoutExercisesDTO,
+  GetProgramOccurrencesDTO,
+  GetNextWorkoutDTO,
+  PatchOccurrenceDTO,
 } from "./program.dtos.js";
+import {
+  buildDefaultSyncPattern,
+  buildOccurrenceCreateMany,
+  dateKeyToDbDate,
+  parseSchedulePatternJson,
+  resolveSchedulePatternFromIndices,
+  validateSchedulePattern,
+} from "./programSchedule.js";
 
 /** Nested exercise id+name for program workout slots (API responses). */
 const programWithWorkoutsInclude = {
   programWorkouts: {
+    orderBy: { sequenceIndex: "asc" as const },
     include: {
       programWorkoutExercises: {
         include: {
@@ -41,6 +58,37 @@ const programWithWorkoutsInclude = {
     },
   },
 } as const;
+
+async function replaceOccurrencesForProgram(
+  db: Prisma.TransactionClient | typeof prisma,
+  programId: string,
+  timeZone: string,
+): Promise<void> {
+  const program = await db.program.findUnique({
+    where: { id: programId },
+    include: { programWorkouts: { select: { id: true } } },
+  });
+  if (!program) return;
+  const pattern = parseSchedulePatternJson(program.schedulePattern);
+  if (pattern.length === 0) {
+    await db.programWorkoutOccurrence.deleteMany({ where: { programId } });
+    return;
+  }
+  const ids = new Set(program.programWorkouts.map((w) => w.id));
+  validateSchedulePattern(program.scheduleKind, pattern, ids);
+  await db.programWorkoutOccurrence.deleteMany({ where: { programId } });
+  const rows = buildOccurrenceCreateMany({
+    programId,
+    lengthWeeks: program.lengthWeeks,
+    scheduleKind: program.scheduleKind,
+    schedulePattern: pattern,
+    startDate: program.startDate,
+    timeZone,
+  });
+  if (rows.length > 0) {
+    await db.programWorkoutOccurrence.createMany({ data: rows });
+  }
+}
 
 function programListOrderBy(
   sort: ProgramListSort,
@@ -114,7 +162,8 @@ async function createFromTemplate(
     );
   }
 
-  return prisma.program.create({
+  const start = startDate ? new Date(startDate) : new Date();
+  const program = await prisma.program.create({
     data: {
       userId,
       sourceTemplateId: templateId,
@@ -127,11 +176,15 @@ async function createFromTemplate(
       splitType: template.splitType,
       daysPerWeek: template.daysPerWeek,
       status: "active",
-      startDate: startDate ? new Date(startDate) : new Date(),
+      startDate: start,
+      lengthWeeks: input.lengthWeeks ?? 8,
+      scheduleKind: ProgramScheduleKind.sync_week,
+      schedulePattern: [],
       programWorkouts: {
         create: template.workouts.map((workout) => ({
           name: workout.name,
           dayNumber: workout.dayNumber,
+          sequenceIndex: workout.dayNumber,
           programWorkoutExercises: {
             create: workout.exercises.map((ex) => ({
               exerciseId: ex.exerciseId,
@@ -147,6 +200,32 @@ async function createFromTemplate(
         })),
       },
     },
+    include: programWithWorkoutsInclude,
+  });
+
+  const ordered = [...program.programWorkouts].sort(
+    (a, b) => a.sequenceIndex - b.sequenceIndex,
+  );
+  const pattern = buildDefaultSyncPattern(
+    ordered.map((w) => w.id),
+    template.daysPerWeek,
+  );
+
+  await prisma.program.update({
+    where: { id: program.id },
+    data: {
+      schedulePattern: pattern as unknown as Prisma.InputJsonValue,
+    },
+  });
+
+  await replaceOccurrencesForProgram(
+    prisma,
+    program.id,
+    input.timeZone ?? "UTC",
+  );
+
+  return prisma.program.findUniqueOrThrow({
+    where: { id: program.id },
     include: programWithWorkoutsInclude,
   });
 }
@@ -166,7 +245,7 @@ async function createCustomProgram(
     );
   }
 
-  return prisma.program.create({
+  const program = await prisma.program.create({
     data: {
       userId,
       name,
@@ -178,10 +257,14 @@ async function createCustomProgram(
       createdFrom: "scratch",
       status: "active",
       startDate: input.startDate ? new Date(input.startDate) : new Date(),
+      lengthWeeks: input.lengthWeeks ?? 8,
+      scheduleKind: input.scheduleKind,
+      schedulePattern: [],
       programWorkouts: {
-        create: input.workouts.map((workout) => ({
+        create: input.workouts.map((workout, idx) => ({
           name: workout.name,
           dayNumber: workout.dayNumber,
+          sequenceIndex: idx + 1,
           programWorkoutExercises: {
             create: workout.exercises.map((ex) => ({
               exerciseId: ex.exerciseId,
@@ -196,6 +279,37 @@ async function createCustomProgram(
         })),
       },
     },
+    include: programWithWorkoutsInclude,
+  });
+
+  const idsInOrder = [...program.programWorkouts]
+    .sort((a, b) => a.sequenceIndex - b.sequenceIndex)
+    .map((w) => w.id);
+  const resolved = resolveSchedulePatternFromIndices(
+    input.schedulePattern,
+    idsInOrder,
+  );
+  validateSchedulePattern(
+    input.scheduleKind,
+    resolved,
+    new Set(idsInOrder),
+  );
+
+  await prisma.program.update({
+    where: { id: program.id },
+    data: {
+      schedulePattern: resolved as unknown as Prisma.InputJsonValue,
+    },
+  });
+
+  await replaceOccurrencesForProgram(
+    prisma,
+    program.id,
+    input.timeZone ?? "UTC",
+  );
+
+  return prisma.program.findUniqueOrThrow({
+    where: { id: program.id },
     include: programWithWorkoutsInclude,
   });
 }
@@ -237,6 +351,10 @@ async function updateProgram(input: UpdateProgramDTO): Promise<ProgramModel> {
     daysPerWeek,
     status,
     startDate,
+    lengthWeeks,
+    scheduleKind,
+    schedulePattern,
+    timeZone,
   } = input;
 
   const existing = await prisma.program.findUnique({
@@ -246,7 +364,14 @@ async function updateProgram(input: UpdateProgramDTO): Promise<ProgramModel> {
     throw new NotFoundError("Program not found", ERROR_CODES.PROGRAM_NOT_FOUND);
   }
 
-  return prisma.program.update({
+  const patternData =
+    schedulePattern !== undefined
+      ? ({
+          schedulePattern: schedulePattern as unknown as Prisma.InputJsonValue,
+        } as const)
+      : ({} as const);
+
+  const updated = await prisma.program.update({
     where: { id: programId },
     data: {
       name,
@@ -257,9 +382,31 @@ async function updateProgram(input: UpdateProgramDTO): Promise<ProgramModel> {
       daysPerWeek,
       status,
       startDate: startDate ? new Date(startDate) : undefined,
+      lengthWeeks,
+      scheduleKind,
+      ...patternData,
     },
     include: programWithWorkoutsInclude,
   });
+
+  const shouldRematerialize =
+    lengthWeeks !== undefined ||
+    scheduleKind !== undefined ||
+    schedulePattern !== undefined ||
+    startDate !== undefined;
+  if (shouldRematerialize) {
+    await replaceOccurrencesForProgram(
+      prisma,
+      programId,
+      timeZone ?? "UTC",
+    );
+    return prisma.program.findUniqueOrThrow({
+      where: { id: programId },
+      include: programWithWorkoutsInclude,
+    });
+  }
+
+  return updated;
 }
 
 async function deleteProgram(input: DeleteProgramDTO): Promise<void> {
@@ -285,11 +432,18 @@ async function addProgramWorkout(input: AddProgramWorkoutDTO) {
     throw new NotFoundError("Program not found", ERROR_CODES.PROGRAM_NOT_FOUND);
   }
 
+  const agg = await prisma.programWorkout.aggregate({
+    where: { programId },
+    _max: { sequenceIndex: true },
+  });
+  const nextSeq = (agg._max.sequenceIndex ?? 0) + 1;
+
   return prisma.programWorkout.create({
     data: {
       programId,
       name,
       dayNumber,
+      sequenceIndex: nextSeq,
     },
   });
 }
@@ -525,6 +679,124 @@ async function deleteWorkoutExercise(input: DeleteWorkoutExerciseDTO) {
   });
 }
 
+async function getProgramOccurrences(input: GetProgramOccurrencesDTO) {
+  const program = await prisma.program.findFirst({
+    where: { id: input.programId, userId: input.userId },
+    select: { id: true },
+  });
+  if (!program) {
+    throw new NotFoundError("Program not found", ERROR_CODES.PROGRAM_NOT_FOUND);
+  }
+
+  const { dateFrom, dateTo } = input;
+  const where: Prisma.ProgramWorkoutOccurrenceWhereInput = {
+    programId: input.programId,
+  };
+  if (dateFrom !== undefined || dateTo !== undefined) {
+    where.scheduledOn = {};
+    if (dateFrom !== undefined) {
+      where.scheduledOn.gte = dateKeyToDbDate(dateFrom);
+    }
+    if (dateTo !== undefined) {
+      where.scheduledOn.lte = dateKeyToDbDate(dateTo);
+    }
+  }
+
+  return prisma.programWorkoutOccurrence.findMany({
+    where,
+    orderBy: { scheduledOn: "asc" },
+    include: {
+      programWorkout: {
+        select: { id: true, name: true, sequenceIndex: true },
+      },
+      session: { select: { id: true } },
+    },
+  });
+}
+
+async function getNextWorkout({ programId, userId }: GetNextWorkoutDTO) {
+  const program = await prisma.program.findFirst({
+    where: { id: programId, userId },
+    select: { id: true },
+  });
+  if (!program) {
+    throw new NotFoundError("Program not found", ERROR_CODES.PROGRAM_NOT_FOUND);
+  }
+
+  // Earliest still-planned occurrence (backlog). Do not use scheduledOn >= today: users who miss
+  // a day must still see that occurrence as "next" (catch-up) instead of jumping to a future slot.
+
+  return prisma.programWorkoutOccurrence.findFirst({
+    where: {
+      programId,
+      status: OccurrenceStatus.planned,
+      sessionId: null,
+    },
+    orderBy: { scheduledOn: "asc" },
+    include: {
+      programWorkout: {
+        include: {
+          programWorkoutExercises: {
+            orderBy: { order: "asc" },
+            include: { exercise: { select: { id: true, name: true } } },
+          },
+        },
+      },
+    },
+  });
+}
+
+async function patchOccurrence(input: PatchOccurrenceDTO) {
+  const occ = await prisma.programWorkoutOccurrence.findFirst({
+    where: {
+      id: input.occurrenceId,
+      programId: input.programId,
+      program: { userId: input.userId },
+    },
+  });
+  if (!occ) {
+    throw new NotFoundError("Occurrence not found", ERROR_CODES.NOT_FOUND);
+  }
+  if (occ.sessionId) {
+    throw new BadRequestError(
+      "Cannot modify an occurrence that already has a logged session",
+      ERROR_CODES.INVALID_INPUT,
+    );
+  }
+
+  const data: Prisma.ProgramWorkoutOccurrenceUpdateInput = {};
+  if (input.status !== undefined) {
+    data.status = input.status;
+  }
+  if (input.scheduledOn !== undefined) {
+    data.scheduledOn = dateKeyToDbDate(input.scheduledOn);
+  }
+
+  try {
+    return await prisma.programWorkoutOccurrence.update({
+      where: { id: occ.id },
+      data,
+      include: {
+        programWorkout: {
+          select: { id: true, name: true, sequenceIndex: true },
+        },
+      },
+    });
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      "code" in err &&
+      (err as { code?: string }).code === "P2002"
+    ) {
+      throw new ConflictError(
+        "Another occurrence already exists on that date",
+        ERROR_CODES.DUPLICATE_VALUE,
+      );
+    }
+    throw err;
+  }
+}
+
 export const ProgramService = {
   getPrograms,
   createFromTemplate,
@@ -540,4 +812,8 @@ export const ProgramService = {
   updateWorkoutExercise,
   deleteWorkoutExercise,
   bulkReorderWorkoutExercises,
+  getProgramOccurrences,
+  getNextWorkout,
+  patchOccurrence,
+  replaceOccurrencesForProgram,
 };

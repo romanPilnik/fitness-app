@@ -30,7 +30,7 @@ describe("requireRole", () => {
     const err = next.mock.calls[0]?.[0] as unknown;
     expect(err).toBeInstanceOf(AuthenticationError);
     if (err instanceof AuthenticationError) {
-      expect(err.code).toBe(ERROR_CODES.TOKEN_REQUIRED);
+      expect(err.code).toBe(ERROR_CODES.UNAUTHENTICATED);
     }
   });
 

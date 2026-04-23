@@ -19,12 +19,19 @@ export type ConfirmOptions = {
   cancelLabel?: string;
   /** Only the confirm button (resolve still returns `true` on click). */
   singleButton?: boolean;
+  /**
+   * Third action, rendered as the primary (accent) button after cancel + confirm.
+   * When set, resolve returns `'save'` if chosen; otherwise `false` (cancel) or `true` (confirm).
+   */
+  extraLabel?: string;
 };
 
-type Pending = ConfirmOptions & { resolve: (value: boolean) => void };
+type ConfirmResolve = boolean | 'save';
+
+type Pending = ConfirmOptions & { resolve: (value: ConfirmResolve) => void };
 
 const ConfirmContext = createContext<
-  ((message: string, options?: Omit<ConfirmOptions, 'message'>) => Promise<boolean>) | null
+  ((message: string, options?: Omit<ConfirmOptions, 'message'>) => Promise<ConfirmResolve>) | null
 >(null);
 
 /**
@@ -45,7 +52,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   }, [pending]);
 
   const confirm = useCallback((message: string, options?: Omit<ConfirmOptions, 'message'>) => {
-    return new Promise<boolean>((resolve) => {
+    return new Promise<ConfirmResolve>((resolve) => {
       setPending((prev) => {
         if (prev) prev.resolve(false);
         return {
@@ -53,13 +60,14 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           confirmLabel: options?.confirmLabel,
           cancelLabel: options?.cancelLabel,
           singleButton: options?.singleButton,
+          extraLabel: options?.extraLabel,
           resolve,
         };
       });
     });
   }, []);
 
-  const finish = useCallback((value: boolean) => {
+  const finish = useCallback((value: ConfirmResolve) => {
     setPending((p) => {
       if (p) p.resolve(value);
       return null;
@@ -72,7 +80,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       <dialog
         ref={dialogRef}
-        className="fixed top-1/2 left-1/2 z-100 w-[min(100%-2rem,22rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-(--border) bg-(--bg) p-4 shadow-(--shadow)"
+        className="fixed top-1/2 left-1/2 z-100 w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-(--border) bg-(--bg) p-0 shadow-(--shadow)"
         aria-labelledby={titleId}
         aria-modal="true"
         role="alertdialog"
@@ -82,24 +90,67 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         }}
       >
         {pending ? (
-          <div className="flex flex-col gap-4">
-            <p id={titleId} className="text-base text-(--text-h)">
+          <div className="flex max-h-[min(28rem,calc(100dvh-2rem))] flex-col gap-5 overflow-y-auto px-4 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))]">
+            <p
+              id={titleId}
+              className="text-base font-medium leading-snug tracking-tight text-pretty text-(--text-h)"
+            >
               {pending.message}
             </p>
-            <div className="flex flex-wrap justify-end gap-2">
-              {pending.singleButton ? null : (
+            <div className="flex flex-col gap-3">
+              {pending.singleButton ? (
                 <Button
                   type="button"
-                  variant="secondary"
-                  className="min-h-11"
-                  onClick={() => finish(false)}
+                  className="min-h-12 w-full justify-center text-base"
+                  onClick={() => finish(true)}
                 >
-                  {pending.cancelLabel ?? 'Cancel'}
+                  {pending.confirmLabel ?? 'OK'}
                 </Button>
+              ) : pending.extraLabel ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="min-h-12 w-full justify-center text-base"
+                    onClick={() => finish(false)}
+                  >
+                    {pending.cancelLabel ?? 'Cancel'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="min-h-12 w-full justify-center text-base"
+                    onClick={() => finish(true)}
+                  >
+                    {pending.confirmLabel ?? 'OK'}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="min-h-12 w-full justify-center text-base"
+                    onClick={() => finish('save')}
+                  >
+                    {pending.extraLabel}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="min-h-12 w-full justify-center text-base"
+                    onClick={() => finish(false)}
+                  >
+                    {pending.cancelLabel ?? 'Cancel'}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="min-h-12 w-full justify-center text-base"
+                    onClick={() => finish(true)}
+                  >
+                    {pending.confirmLabel ?? 'OK'}
+                  </Button>
+                </>
               )}
-              <Button type="button" className="min-h-11" onClick={() => finish(true)}>
-                {pending.confirmLabel ?? 'OK'}
-              </Button>
             </div>
           </div>
         ) : null}

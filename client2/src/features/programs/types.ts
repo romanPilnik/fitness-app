@@ -25,10 +25,17 @@ export type ProgramWorkout = {
   programId: string;
   name: string;
   dayNumber: number;
+  sequenceIndex?: number;
   createdAt: string;
   updatedAt: string;
   programWorkoutExercises: ProgramWorkoutExercise[];
 };
+
+export type ProgramScheduleKind = 'sync_week' | 'async_block';
+
+export type SchedulePatternStoredSlot =
+  | { type: 'rest' }
+  | { type: 'workout'; programWorkoutId: string };
 
 export type ProgramSummary = {
   id: string;
@@ -44,10 +51,24 @@ export type ProgramSummary = {
   daysPerWeek: number;
   status: string;
   startDate: string;
+  lengthWeeks?: number;
+  scheduleKind?: ProgramScheduleKind;
+  schedulePattern?: SchedulePatternStoredSlot[] | unknown;
   createdAt: string;
   updatedAt: string;
 };
 
 export type ProgramDetail = ProgramSummary & {
   programWorkouts: ProgramWorkout[];
+};
+
+export type ProgramWorkoutOccurrence = {
+  id: string;
+  programId: string;
+  programWorkoutId: string;
+  scheduledOn: string;
+  status: string;
+  sessionId: string | null;
+  programWorkout: { id: string; name: string; sequenceIndex: number };
+  session?: { id: string } | null;
 };

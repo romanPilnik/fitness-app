@@ -7,9 +7,18 @@ import { errorMessageFromUnknown } from '@/lib/utils';
 import { exercisePerformanceQueryKeys } from '@/features/exercise-performance/api';
 import { deleteSession, fetchSessionById, sessionQueryKeys } from '../api';
 
+type BacklogAckState = {
+  /** Local calendar line e.g. "Tue, Apr 8" when the log was tied to a scheduled date. */
+  scheduleLabel: string | null;
+  workoutName: string;
+  programId: string;
+  programName: string;
+};
+
 type SessionDetailLocationState = {
   from?: 'exercise-progress';
   exerciseId?: string;
+  backlogAck?: BacklogAckState;
 } | null;
 
 export function SessionDetailPage() {
@@ -20,6 +29,8 @@ export function SessionDetailPage() {
   const qc = useQueryClient();
 
   const backState = location.state as SessionDetailLocationState;
+  const backlogAck = backState?.backlogAck;
+
   const sessionBackFallback =
     backState?.from === 'exercise-progress' && backState.exerciseId
       ? `/exercises/${backState.exerciseId}/progress`
@@ -95,6 +106,13 @@ export function SessionDetailPage() {
   const s = query.data;
   const exercises = [...s.sessionExercises].sort((a, b) => a.order - b.order);
 
+  const dismissBacklogAck = () => {
+    const nextState: SessionDetailLocationState = backState?.from
+      ? { from: backState.from, exerciseId: backState.exerciseId }
+      : null;
+    navigate(location.pathname, { replace: true, state: nextState });
+  };
+
   return (
     <>
       <SubpageHeader
@@ -103,6 +121,31 @@ export function SessionDetailPage() {
         title={s.workoutName}
       />
       <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
+        {backlogAck ? (
+          <div
+            className="rounded-xl border border-emerald-600/35 bg-emerald-500/10 px-4 py-3 text-sm text-(--text)"
+            role="status"
+          >
+            <p className="text-(--text)">
+              <span className="font-medium text-(--text-h)">{backlogAck.workoutName}</span>
+              {backlogAck.scheduleLabel ? (
+                <span> · {backlogAck.scheduleLabel}</span>
+              ) : null}{' '}
+              — logged. This planned day is complete and one slot is removed from your backlog.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Link
+                to={`/programs/${encodeURIComponent(backlogAck.programId)}`}
+                className="inline-flex min-h-9 items-center justify-center rounded-lg bg-(--text-h) px-3 py-1.5 text-sm font-medium text-(--bg) hover:opacity-90"
+              >
+                View {backlogAck.programName}
+              </Link>
+              <Button type="button" variant="secondary" className="min-h-9 text-sm" onClick={dismissBacklogAck}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        ) : null}
       <header className="flex flex-col gap-2">
         <p className="text-sm capitalize text-(--text)">
           Day {s.dayNumber} · {s.sessionStatus} · {Math.round(s.sessionDuration)} min

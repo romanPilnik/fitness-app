@@ -2,6 +2,8 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
 export type LiveSessionChromeApi = {
+  /** 'workout' = timer + all controls. 'reorder' = back + title + save only. */
+  headerVariant?: 'workout' | 'reorder';
   workoutTitleLine: string;
   elapsedLabel: string;
   isPaused: boolean;

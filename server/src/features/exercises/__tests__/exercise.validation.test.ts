@@ -19,7 +19,10 @@ describe("getExercisesSchema", () => {
   it("accepts empty query with defaults", () => {
     const r = getExercisesSchema.safeParse({ query: {} });
     expect(r.success).toBe(true);
-    if (r.success) expect(r.data.query.limit).toBe(20);
+    if (r.success) {
+      expect(r.data.query.limit).toBe(20);
+      expect(r.data.query.sort).toBe("name_asc");
+    }
   });
 
   it("accepts filters and cursor", () => {

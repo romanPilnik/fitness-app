@@ -1,9 +1,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { formatEnumLabel } from '@/lib/formatEnumLabel';
+import { cn } from '@/lib/utils';
+import type { ExerciseListSort } from '../types';
 import { exerciseQueryKeys, fetchExercisesPage } from '../api';
 
 const GROUP_LIMIT = 80;
@@ -15,6 +17,9 @@ type Props = {
   equipment?: string;
   category?: string;
   movementPattern?: string;
+  sort: ExerciseListSort;
+  /** When set (e.g. only one group visible under filters), start expanded like the chevron is toggled. */
+  defaultOpen?: boolean;
 };
 
 export function ExerciseMuscleGroupSection({
@@ -23,7 +28,14 @@ export function ExerciseMuscleGroupSection({
   equipment,
   category,
   movementPattern,
+  sort,
+  defaultOpen = false,
 }: Props) {
+  const [sectionOpen, setSectionOpen] = useState(defaultOpen);
+  useEffect(() => {
+    setSectionOpen(defaultOpen);
+  }, [defaultOpen]);
+
   const query = useInfiniteQuery({
     queryKey: [
       ...exerciseQueryKeys.all,
@@ -32,12 +44,14 @@ export function ExerciseMuscleGroupSection({
       equipment ?? '',
       category ?? '',
       movementPattern ?? '',
+      sort,
     ],
     queryFn: ({ pageParam }) =>
       fetchExercisesPage({
         cursor: pageParam,
         limit: GROUP_LIMIT,
         primaryMuscle: muscle,
+        sort,
         ...(equipment ? { equipment } : {}),
         ...(category ? { category } : {}),
         ...(movementPattern ? { movementPattern } : {}),
@@ -47,10 +61,10 @@ export function ExerciseMuscleGroupSection({
     staleTime: 1000 * 60 * 5,
   });
 
-  const items = useMemo(() => {
-    const flat = query.data?.pages.flatMap((p) => p.data) ?? [];
-    return [...flat].sort((a, b) => a.name.localeCompare(b.name));
-  }, [query.data]);
+  const items = useMemo(
+    () => query.data?.pages.flatMap((p) => p.data) ?? [],
+    [query.data],
+  );
 
   const countLabel = query.isPending
     ? '…'
@@ -59,13 +73,25 @@ export function ExerciseMuscleGroupSection({
       : String(items.length);
 
   return (
-    <details className="rounded-xl border border-(--border) bg-(--bg)">
+    <details
+      className="rounded-xl border border-(--border) bg-(--bg)"
+      open={sectionOpen}
+      onToggle={(e) => {
+        setSectionOpen((e.currentTarget as HTMLDetailsElement).open);
+      }}
+    >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-(--text-h) [&::-webkit-details-marker]:hidden">
         <span className="min-w-0 font-medium">
           {formatEnumLabel(muscle)}{' '}
           <span className="font-normal text-(--text)">({countLabel})</span>
         </span>
-        <ChevronDown className="size-5 shrink-0 text-(--text)" aria-hidden />
+        <ChevronDown
+          className={cn(
+            'size-5 shrink-0 text-(--text) transition-transform duration-200',
+            sectionOpen && 'rotate-180',
+          )}
+          aria-hidden
+        />
       </summary>
       <div className="border-t border-(--border) px-2 pb-3 pt-1">
         {query.isError ? (

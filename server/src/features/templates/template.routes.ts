@@ -21,7 +21,7 @@ const templateRouter = Router();
  *       - Templates
  *     summary: List program templates
  *     security:
- *       - bearerAuth: []
+ *       - sessionCookie: []
  *     parameters:
  *       - in: query
  *         name: splitType
@@ -190,7 +190,7 @@ templateRouter.post(
  *       - Templates
  *     summary: Get template by id
  *     security:
- *       - bearerAuth: []
+ *       - sessionCookie: []
  *     parameters:
  *       - in: path
  *         name: id

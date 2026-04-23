@@ -1,9 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { QueryErrorMessage } from '@/components/QueryErrorMessage';
 import { Button } from '@/components/ui/button';
+import {
+  fetchActivePrograms,
+  fetchProgramOccurrences,
+  programQueryKeys,
+} from '@/features/programs/api';
 import { formatEnumLabel } from '@/lib/formatEnumLabel';
 import { cn } from '@/lib/utils';
 import { fetchAllSessionsInDateRange, sessionQueryKeys } from '../api';
@@ -13,12 +18,27 @@ import {
   buildMonthGrid,
   formatDayDialogTitle,
   formatMonthYear,
+  localDateKey,
   monthToApiRange,
-  WEEKDAY_LABELS_MON_FIRST,
+  isLocalDateKeyBeforeToday,
+  parseIsoToLocalDateKey,
+  startOfLocalMonth,
+  endOfLocalMonth,
+  WEEKDAY_LABELS_SUN_FIRST,
 } from '../sessionCalendarUtils';
 import type { SessionSummary } from '../types';
 
 type VisibleMonth = { year: number; monthIndex: number };
+
+type PlannedDayItem = {
+  id: string;
+  programId: string;
+  programWorkoutId: string;
+  programName: string;
+  workoutName: string;
+  /** Planned day is in the past and still not logged or skipped. */
+  isOverdue: boolean;
+};
 
 function shiftMonth(v: VisibleMonth, delta: number): VisibleMonth {
   const d = new Date(v.year, v.monthIndex + delta, 1);
@@ -34,6 +54,21 @@ export function WorkoutCalendar() {
 
   const range = useMemo(() => monthToApiRange(visible.year, visible.monthIndex), [visible]);
 
+  const monthDateFrom = useMemo(
+    () => localDateKey(startOfLocalMonth(visible.year, visible.monthIndex)),
+    [visible.year, visible.monthIndex],
+  );
+  const monthDateTo = useMemo(
+    () => localDateKey(endOfLocalMonth(visible.year, visible.monthIndex)),
+    [visible.year, visible.monthIndex],
+  );
+
+  const activeProgramsQ = useQuery({
+    queryKey: programQueryKeys.active(),
+    queryFn: fetchActivePrograms,
+    staleTime: 60_000,
+  });
+
   const sessionsQuery = useQuery({
     queryKey: sessionQueryKeys.list('home-calendar', {
       dateFrom: range.dateFrom,
@@ -42,6 +77,59 @@ export function WorkoutCalendar() {
     queryFn: () => fetchAllSessionsInDateRange(range),
     staleTime: 30_000,
   });
+
+  const occQueries = useQueries({
+    queries: (activeProgramsQ.data ?? []).map((prog) => ({
+      queryKey: programQueryKeys.occurrences(prog.id, {
+        dateFrom: monthDateFrom,
+        dateTo: monthDateTo,
+      }),
+      queryFn: () =>
+        fetchProgramOccurrences(prog.id, {
+          dateFrom: monthDateFrom,
+          dateTo: monthDateTo,
+        }),
+      enabled: Boolean(activeProgramsQ.data?.length),
+    })),
+  });
+
+  const sessionDedupeKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sessionsQuery.data ?? []) {
+      const pw = s.programWorkoutId;
+      if (!pw) continue;
+      const k = parseIsoToLocalDateKey(s.datePerformed);
+      set.add(`${s.programId}|${pw}|${k}`);
+    }
+    return set;
+  }, [sessionsQuery.data]);
+
+  const plannedByDay = useMemo(() => {
+    const map = new Map<string, PlannedDayItem[]>();
+    const programs = activeProgramsQ.data;
+    if (!programs) return map;
+    occQueries.forEach((q, i) => {
+      const prog = programs[i];
+      if (!prog || !q.data) return;
+      for (const o of q.data) {
+        if (o.status !== 'planned' || o.sessionId) continue;
+        const key = parseIsoToLocalDateKey(o.scheduledOn);
+        if (sessionDedupeKeys.has(`${prog.id}|${o.programWorkoutId}|${key}`)) continue;
+        const isOverdue = isLocalDateKeyBeforeToday(key);
+        const list = map.get(key) ?? [];
+        list.push({
+          id: o.id,
+          programId: prog.id,
+          programWorkoutId: o.programWorkoutId,
+          programName: prog.name,
+          workoutName: o.programWorkout.name,
+          isOverdue,
+        });
+        map.set(key, list);
+      }
+    });
+    return map;
+  }, [activeProgramsQ.data, occQueries, sessionDedupeKeys]);
 
   const byDay = useMemo(
     () => aggregateSessionsByLocalDay(sessionsQuery.data ?? []),
@@ -54,8 +142,17 @@ export function WorkoutCalendar() {
   );
 
   const totalInMonth = sessionsQuery.data?.length ?? 0;
+  const plannedCountInMonth = useMemo(() => {
+    let n = 0;
+    for (const items of plannedByDay.values()) n += items.length;
+    return n;
+  }, [plannedByDay]);
 
-  const [detail, setDetail] = useState<{ date: Date; sessions: SessionSummary[] } | null>(null);
+  const [detail, setDetail] = useState<{
+    date: Date;
+    sessions: SessionSummary[];
+    planned: PlannedDayItem[];
+  } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -124,10 +221,12 @@ export function WorkoutCalendar() {
 
         {sessionsQuery.isError ? (
           <QueryErrorMessage error={sessionsQuery.error} refetch={() => sessionsQuery.refetch()} />
+        ) : activeProgramsQ.isError ? (
+          <QueryErrorMessage error={activeProgramsQ.error} refetch={() => activeProgramsQ.refetch()} />
         ) : (
           <>
             <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[10px] font-medium uppercase tracking-wide text-(--text) sm:text-xs">
-              {WEEKDAY_LABELS_MON_FIRST.map((d) => (
+              {WEEKDAY_LABELS_SUN_FIRST.map((d) => (
                 <div key={d} className="py-1">
                   {d}
                 </div>
@@ -142,7 +241,9 @@ export function WorkoutCalendar() {
 
                 const { date, dateKey, isToday, isFuture } = cell;
                 const sessions = byDay.get(dateKey) ?? [];
-                const count = sessions.length;
+                const planned = plannedByDay.get(dateKey) ?? [];
+                const hasOverduePlanned = planned.some((p) => p.isOverdue);
+                const count = sessions.length + planned.length;
                 const label = badgeCount(count);
 
                 return (
@@ -155,13 +256,14 @@ export function WorkoutCalendar() {
                       !isToday && count > 0 && 'bg-(--code-bg) text-(--text-h)',
                       !isToday && count === 0 && 'text-(--text)',
                       isFuture && count === 0 && 'opacity-45',
+                      hasOverduePlanned && !isToday && 'ring-1 ring-amber-500/45',
                     )}
                     aria-label={
                       count > 0
                         ? `${formatDayDialogTitle(date)}, ${count} workout${count === 1 ? '' : 's'}`
                         : `${formatDayDialogTitle(date)}, no workouts`
                     }
-                    onClick={() => setDetail({ date, sessions })}
+                    onClick={() => setDetail({ date, sessions, planned })}
                   >
                     <span className="font-medium leading-none">{date.getDate()}</span>
                     {label ? (
@@ -179,10 +281,13 @@ export function WorkoutCalendar() {
 
             {sessionsQuery.isPending ? (
               <p className="mt-3 text-center text-xs text-(--text)">Loading workouts…</p>
-            ) : totalInMonth > 0 ? (
+            ) : totalInMonth > 0 || plannedCountInMonth > 0 ? (
               <p className="mt-3 text-center text-xs text-(--text)">
-                {totalInMonth} workout{totalInMonth === 1 ? '' : 's'} in{' '}
-                {formatMonthYear(visible.year, visible.monthIndex)}
+                {totalInMonth} logged
+                {plannedCountInMonth > 0
+                  ? ` · ${plannedCountInMonth} planned`
+                  : ''}{' '}
+                in {formatMonthYear(visible.year, visible.monthIndex)}
               </p>
             ) : null}
           </>
@@ -202,13 +307,13 @@ export function WorkoutCalendar() {
                 {formatDayDialogTitle(detail.date)}
               </h2>
               <p className="mt-0.5 text-xs text-(--text)">
-                {detail.sessions.length === 0
-                  ? 'No workouts logged for this day.'
-                  : `${detail.sessions.length} workout${detail.sessions.length === 1 ? '' : 's'}`}
+                {detail.sessions.length === 0 && detail.planned.length === 0
+                  ? 'Nothing scheduled or logged this day.'
+                  : `${detail.sessions.length} logged${detail.planned.length ? ` · ${detail.planned.length} planned` : ''}`}
               </p>
             </div>
             <div className="max-h-[min(50vh,320px)] overflow-y-auto p-3">
-              {detail.sessions.length === 0 ? null : (
+              {detail.sessions.length === 0 && detail.planned.length === 0 ? null : (
                 <ul className="flex flex-col gap-2">
                   {detail.sessions.map((s) => (
                     <li key={s.id}>
@@ -221,6 +326,21 @@ export function WorkoutCalendar() {
                         <p className="mt-0.5 text-xs text-(--text)">
                           {s.program?.name ?? 'No program'} · {formatEnumLabel(s.sessionStatus)} ·{' '}
                           {Math.round(s.sessionDuration)} min
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                  {detail.planned.map((p) => (
+                    <li key={p.id}>
+                      <Link
+                        to={`/sessions/new?programId=${encodeURIComponent(p.programId)}&programWorkoutId=${encodeURIComponent(p.programWorkoutId)}&occurrenceId=${encodeURIComponent(p.id)}&scheduledOn=${encodeURIComponent(localDateKey(detail.date))}`}
+                        className="block rounded-lg border border-dashed border-(--border) px-3 py-2.5 transition-colors hover:bg-(--code-bg)"
+                        onClick={() => dialogRef.current?.close()}
+                      >
+                        <span className="text-sm font-medium text-(--text-h)">{p.workoutName}</span>
+                        <p className="mt-0.5 text-xs text-(--text)">
+                          {p.isOverdue ? 'Missed — tap to log · ' : 'Planned · '}
+                          {p.programName}
                         </p>
                       </Link>
                     </li>

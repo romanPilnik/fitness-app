@@ -23,6 +23,7 @@ const validExercise = {
 
 const minimalSessionBody = {
   programId: "prog-1",
+  programWorkoutId: "pw-1",
   workoutName: "Legs",
   dayNumber: 1,
   sessionStatus: SessionStatuses.completed,

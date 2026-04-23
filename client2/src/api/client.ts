@@ -5,15 +5,9 @@ import axios, {
   isAxiosError,
 } from 'axios';
 import { getApiV1BaseUrl } from './config';
-import { getAuthToken } from './authToken';
 import { ApiError, tryParseApiErrorBody } from './errors';
 import { notifyUnauthorized } from './unauthorized';
 import type { ApiSuccessBody } from './types';
-
-function isPublicAuthPath(url: string | undefined): boolean {
-  if (!url) return false;
-  return url.includes('/auth/login') || url.includes('/auth/register');
-}
 
 function unwrapEnvelope<T>(data: unknown): T {
   if (!data || typeof data !== 'object' || !('success' in data)) {
@@ -34,14 +28,6 @@ export const api: AxiosInstance = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  const token = getAuthToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
 api.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
@@ -51,7 +37,7 @@ api.interceptors.response.use(
     const status = error.response.status;
     const data = error.response.data;
 
-    if (status === 401 && !isPublicAuthPath(error.config?.url)) {
+    if (status === 401) {
       notifyUnauthorized();
     }
 

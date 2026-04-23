@@ -1,6 +1,10 @@
 import { z } from "zod";
-import { passwordRegex } from "@/features/auth/auth.validation.js";
 import { Units, WeekStartsOn } from "@/generated/prisma/enums";
+import {
+  deloadSensitivitySchema,
+  progressionPreferenceSchema,
+  progressionStyleSchema,
+} from "@/validations/aiUserPreferences.js";
 
 export const updateUser = z.object({
   body: z
@@ -14,16 +18,18 @@ export const updateUser = z.object({
     }),
 });
 
-export const changePassword = z.object({
-  body: z.object({
-    oldPassword: z.string(),
-    newPassword: z
-      .string()
-      .min(8)
-      .max(128)
-      .regex(passwordRegex, "Password must contain letters and numbers"),
-  }),
+export const patchAiPreferences = z.object({
+  body: z
+    .object({
+      progressionStyle: progressionStyleSchema.optional(),
+      progressionPreference: progressionPreferenceSchema.optional(),
+      deloadSensitivity: deloadSensitivitySchema.optional(),
+      rirFloor: z.number().int().min(0).max(4).optional(),
+    })
+    .refine((data) => Object.keys(data).length > 0, {
+      message: "At least one field must be provided",
+    }),
 });
 
 export type UpdateUserBody = z.infer<typeof updateUser>["body"];
-export type ChangePasswordBody = z.infer<typeof changePassword>["body"];
+export type PatchAiPreferencesBody = z.infer<typeof patchAiPreferences>["body"];

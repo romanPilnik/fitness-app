@@ -53,11 +53,19 @@ export const getSessionByIdSchema = z.object({
 export const createSessionSchema = z.object({
   body: z.object({
     programId: z.string(),
+    programWorkoutId: z.string().min(1),
     workoutName: z.string().max(35).trim(),
     dayNumber: z.number().int().min(1),
     sessionStatus: z.enum(SessionStatuses),
     sessionDuration: z.number().min(0).max(600),
     exercises: z.array(sessionExerciseSchema).min(1),
+    occurrenceId: z.string().min(1).optional(),
+    datePerformed: z.iso.datetime().optional(),
+    timeZone: z.string().min(1).optional(),
+    performedOnLocalDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
   }),
 });
 

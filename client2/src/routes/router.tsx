@@ -3,6 +3,7 @@ import { AppShellLayout } from '@/layouts/AppShellLayout';
 import { AdminRoute } from './AdminRoute';
 import * as P from './lazyPages';
 import { ProtectedRoute } from './ProtectedRoute';
+import { LogSessionNewLayout } from '@/features/sessions/pages/LogSessionNewLayout';
 import { RootLayout } from './RootLayout';
 import { RootRedirect } from './RootRedirect';
 
@@ -14,6 +15,8 @@ export const router = createBrowserRouter([
       { index: true, element: <RootRedirect /> },
       { path: 'login', element: <P.LoginPage /> },
       { path: 'register', element: <P.RegisterPage /> },
+      { path: 'forgot-password', element: <P.ForgotPasswordPage /> },
+      { path: 'reset-password', element: <P.ResetPasswordPage /> },
       {
         element: <AppShellLayout />,
         children: [
@@ -45,11 +48,21 @@ export const router = createBrowserRouter([
               { path: 'programs/:id', element: <P.ProgramDetailPage /> },
               { path: 'sessions', element: <P.SessionsPage /> },
               { path: 'sessions/start', element: <P.StartWorkoutPage /> },
-              { path: 'sessions/new', element: <P.LogSessionPage /> },
+              {
+                path: 'sessions/new',
+                element: <LogSessionNewLayout />,
+                children: [
+                  { index: true, element: <P.LogSessionPage /> },
+                  { path: 'reorder-exercises', element: <P.ReorderSessionExercisesPage /> },
+                ],
+              },
               { path: 'workouts/log', element: <Navigate to="/sessions/start" replace /> },
               { path: 'sessions/:id', element: <P.SessionDetailPage /> },
               { path: 'account', element: <P.AccountPage /> },
               { path: 'account/password', element: <P.ChangePasswordPage /> },
+              { path: 'account/devices', element: <P.AccountDevicesPage /> },
+              { path: 'account/ai-preferences', element: <P.AiPreferencesPage /> },
+              { path: 'account/advanced', element: <P.AdvancedFeaturesPage /> },
             ],
           },
         ],

@@ -111,6 +111,7 @@ sessionRouter.get(
  *             type: object
  *             required:
  *               - programId
+ *               - programWorkoutId
  *               - workoutName
  *               - dayNumber
  *               - sessionStatus
@@ -119,6 +120,9 @@ sessionRouter.get(
  *             properties:
  *               programId:
  *                 type: string
+ *               programWorkoutId:
+ *                 type: string
+ *                 description: Program workout this session was logged against (FK to ProgramWorkout)
  *               workoutName:
  *                 type: string
  *                 maxLength: 35

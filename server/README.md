@@ -18,10 +18,10 @@ Node.js REST API (Express, TypeScript, Prisma, PostgreSQL). See the monorepo roo
 
 Central utilities: [src/test/authHelpers.ts](src/test/authHelpers.ts).
 
-- **`bearerAuth(token)`** — `{ Authorization: 'Bearer …' }` for `.set(...)` (the API does not use cookies for JWT).
-- **`mintBearerAuth(userId)`** — JWT signed with `JWT_SECRET` for an existing user id (middleware still loads the user from the DB).
-- **`registerTestUser(agent, overrides?)`** — `POST /api/v1/auth/register` with unique email by default; returns `token`, `user`, and credentials.
-- **`loginTestUser(agent, email, password)`** — `POST /api/v1/auth/login`.
+- **`sessionAuth(cookieHeader)`** — `{ Cookie, Origin }` for `.set(...)` (Better Auth session cookie + trusted origin for CSRF).
+- **`bearerAuth(cookieHeader)`** — alias of `sessionAuth` (name kept for older specs).
+- **`registerTestUser(agent, overrides?)`** — `POST /api/auth/sign-up/email` with unique email by default; returns `cookieHeader`, `user`, and credentials.
+- **`loginTestUser(agent, email, password)`** — `POST /api/auth/sign-in/email`.
 
 **Env:** Copy [.env.test.example](.env.test.example) to `.env.test`, run commands from `server/`. HTTP tests that load [src/app.ts](src/app.ts) need a valid `DATABASE_URL` (see [src/config/config.ts](src/config/config.ts)).
 

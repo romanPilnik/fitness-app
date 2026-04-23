@@ -20,3 +20,4 @@ server/node_modules
 .env
 .env.*
 !server/.env.test.example
+!client2/.env.example
